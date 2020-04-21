@@ -5,7 +5,44 @@
 
 static char address[FULL_ADDRESS_LENGTH];
 
-static uint8_t set_result_get_address() {
+static uint8_t setResultGetAddress();
+void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx);
+
+////////////////////////////////////////////////////////////////////////////////
+// UI interface for validating the address on screen
+UX_STEP_NOCB(
+    ux_display_public_flow_5_step, 
+    bnnn_paging, 
+    {
+        .title = "Address",
+        .text = address,
+    });
+UX_STEP_VALID(
+    ux_display_public_flow_6_step, 
+    pb, 
+    sendResponse(setResultGetAddress(), true),
+    {
+        &C_icon_validate_14,
+        "Approve",
+    });
+UX_STEP_VALID(
+    ux_display_public_flow_7_step, 
+    pb, 
+    sendResponse(0, false),
+    {
+        &C_icon_crossmark,
+        "Reject",
+    });
+
+UX_FLOW(ux_display_public_flow,
+    &ux_display_public_flow_5_step,
+    &ux_display_public_flow_6_step,
+    &ux_display_public_flow_7_step
+);
+
+////////////////////////////////////////////////////////////////////////////////
+
+static uint8_t setResultGetAddress() {
     uint8_t tx = 0;
     const uint8_t address_size = strlen(address);
 
@@ -15,36 +52,8 @@ static uint8_t set_result_get_address() {
 
     return tx;
 }
-// UI interface for validating the address on screen
-UX_STEP_NOCB(
-    ux_display_public_flow_5_step, 
-    bnnn_paging, 
-    {
-      .title = "Address",
-      .text = address,
-    });
-UX_STEP_VALID(
-    ux_display_public_flow_6_step, 
-    pb, 
-    sendResponse(set_result_get_address(), true),
-    {
-      &C_icon_validate_14,
-      "Approve",
-    });
-UX_STEP_VALID(
-    ux_display_public_flow_7_step, 
-    pb, 
-    sendResponse(0, false),
-    {
-      &C_icon_crossmark,
-      "Reject",
-    });
 
-UX_FLOW(ux_display_public_flow,
-  &ux_display_public_flow_5_step,
-  &ux_display_public_flow_6_step,
-  &ux_display_public_flow_7_step
-);
+////////////////////////////////////////////////////////////////////////////////
 
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);
@@ -52,13 +61,13 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     uint8_t publicKey[32];
     uint32_t account, index;
 
-    if (dataLength != 8) {
+    if (dataLength != sizeof(uint32_t) * 2) {
         THROW(ERR_INVALID_ARGUMENTS);
         return;
     }
 
     account = readUint32BE(dataBuffer);
-    index = readUint32BE(dataBuffer + 4);
+    index = readUint32BE(dataBuffer + sizeof(uint32_t));
     getPublicKey(account, index, publicKey);
     switch(p2) {
         case P2_DISPLAY_BECH32:
@@ -70,11 +79,11 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
         default:
             THROW(ERR_INVALID_ARGUMENTS);
             return;
-    } 
+    }
 
     if (p1 == P1_NON_CONFIRM) {
-        *tx = set_result_get_address();
-        THROW(0x9000);
+        *tx = setResultGetAddress();
+        THROW(MSG_OK);
     } else {
         ux_flow_init(0, ux_display_public_flow, NULL);
         *flags |= IO_ASYNCH_REPLY;

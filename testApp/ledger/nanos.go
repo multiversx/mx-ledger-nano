@@ -1,0 +1,207 @@
+package ledger
+
+import (
+	"bytes"
+	"encoding/binary"
+	"errors"
+	"fmt"
+
+	"github.com/karalabe/hid"
+)
+
+const (
+	cla = 0xED // identifies an Elrond app command
+
+	cmdGetVersion       = 0x01
+	cmdGetConfiguration = 0x02
+	cmdGetAddress       = 0x03
+	cmdSignTxn          = 0x04
+
+	p1WithConfirmation = 0x01
+	p1NoConfirmation   = 0x00
+	p2DisplayBech32    = 0x00
+	p2DisplayHex       = 0x01
+)
+
+const (
+	codeSuccess              = 0x9000
+	codeUserRejected         = 0x6985
+	codeUnknownInstruction   = 0x6d00
+	codeWrongCLA             = 0x6e00
+	codeInvalidArguments     = 0x6e01
+	codeInvalidMessage       = 0x6e02
+	codeInvalidP1            = 0x6e03
+	codeMessageTooLong       = 0x6e04
+	codeReceiverTooLong      = 0x6e05
+	codeAmountTooLong        = 0x6e06
+	codeContractDataDisabled = 0x6e07
+)
+
+const (
+	errBadConfigResponse  = "GetConfiguration erroneous response"
+	errBadAddressResponse = "Invalid get address response"
+	errBadSignature       = "Invalid signature received from Ledger"
+	errNotDetected        = "Nano S not detected"
+)
+
+var (
+	errUserRejected         = errors.New("user denied request")
+	errUnknownInstruction   = errors.New("unknown instruction (INS)")
+	errWrongCLA             = errors.New("wrong CLA")
+	errInvalidArguments     = errors.New("invalid arguments")
+	errInvalidMessage       = errors.New("invalid message")
+	errInvalidP1            = errors.New("invalid P1")
+	errMessageTooLong       = errors.New("message too long")
+	errReceiverTooLong      = errors.New("receiver address too long")
+	errAmountTooLong        = errors.New("amount string too long")
+	errContractDataDisabled = errors.New("contract data is disabled")
+)
+
+type NanoS struct {
+	device *apduFramer
+}
+
+// Exchange sends a command to the device and returns the response
+func (n *NanoS) Exchange(cmd byte, p1, p2, lc byte, data []byte) (resp []byte, err error) {
+	resp, err = n.device.Exchange(APDU{
+		CLA:  cla,
+		INS:  cmd,
+		P1:   p1,
+		P2:   p2,
+		LC:   lc,
+		DATA: data,
+	})
+	if err != nil {
+		return nil, err
+	} else if len(resp) < 2 {
+		return nil, errors.New(errMissingStatusCode)
+	}
+	code := binary.BigEndian.Uint16(resp[len(resp)-2:])
+	resp = resp[:len(resp)-2]
+	switch code {
+	case codeSuccess:
+		err = nil
+	case codeUserRejected:
+		err = errUserRejected
+	case codeUnknownInstruction:
+		err = errUnknownInstruction
+	case codeWrongCLA:
+		err = errWrongCLA
+	case codeInvalidArguments:
+		err = errInvalidArguments
+	case codeInvalidMessage:
+		err = errInvalidMessage
+	case codeInvalidP1:
+		err = errInvalidP1
+	case codeMessageTooLong:
+		err = errMessageTooLong
+	case codeReceiverTooLong:
+		err = errReceiverTooLong
+	case codeAmountTooLong:
+		err = errAmountTooLong
+	case codeContractDataDisabled:
+		err = errContractDataDisabled
+	default:
+		err = fmt.Errorf("Error code 0x%x", code)
+	}
+	return
+}
+
+// GetVersion retrieves from device the app version
+func (n *NanoS) GetVersion() (version string, err error) {
+	resp, err := n.Exchange(cmdGetVersion, 0, 0, 0, nil)
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}
+
+// GetConfiguration retrieves from device its configuration
+func (n *NanoS) GetConfiguration() (network, contractData, account, addressIndex uint8, ledgerVersion string, err error) {
+	resp, err := n.Exchange(cmdGetConfiguration, 0, 0, 0, nil)
+	if err != nil {
+		return
+	}
+	if len(resp) != 7 {
+		err = errors.New(errBadConfigResponse)
+		return
+	}
+	network = resp[0]
+	contractData = resp[1]
+	account = resp[2]
+	addressIndex = resp[3]
+	ledgerVersion = fmt.Sprintf("%v.%v.%v", resp[4], resp[5], resp[6])
+	return
+}
+
+// GetAddress retrieves from device the address based on account and address index
+func (n *NanoS) GetAddress(account uint32, index uint32) (pubkey []byte, err error) {
+	encAccount := make([]byte, 4)
+	binary.LittleEndian.PutUint32(encAccount, account)
+	encIndex := make([]byte, 4)
+	binary.LittleEndian.PutUint32(encIndex, index)
+
+	resp, err := n.Exchange(cmdGetAddress, p1WithConfirmation, p2DisplayBech32, 8, append(encAccount, encIndex...))
+	if err != nil {
+		return nil, err
+	}
+	if int(resp[0]) != len(resp)-1 {
+		return nil, errors.New(errBadAddressResponse)
+	}
+	pubkey = resp[1:]
+	return pubkey, nil
+}
+
+// SignTxn sends a json marshalized transaction to the device and returns the signature
+func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
+	buf := new(bytes.Buffer)
+	buf.Write(txData)
+
+	var resp []byte
+	for buf.Len() > 0 {
+		var p1 byte = 0x80
+		if resp == nil {
+			p1 = 0x00
+		}
+		toSend := buf.Next(255)
+		resp, err = n.Exchange(cmdSignTxn, p1, 0, byte(len(toSend)), toSend)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(resp) != 65 || resp[0] != 64 {
+		return nil, errors.New(errBadSignature)
+	}
+	sig = make([]byte, 64)
+	copy(sig[:], resp[1:])
+	return
+}
+
+// OpenNanoS establishes the connection to the device
+func OpenNanoS() (*NanoS, error) {
+	const (
+		ledgerVendorID       = 0x2c97
+		ledgerNanoSProductID = 0x1015
+	)
+
+	// search for Nano S
+	devices := hid.Enumerate(ledgerVendorID, ledgerNanoSProductID)
+	if len(devices) == 0 {
+		return nil, errors.New(errNotDetected)
+	}
+
+	// open the device
+	device, err := devices[0].Open()
+	if err != nil {
+		return nil, err
+	}
+
+	// wrap raw device I/O in HID+APDU protocols
+	return &NanoS{
+		device: &apduFramer{
+			hf: &hidFramer{
+				rw: device,
+			},
+		},
+	}, nil
+}

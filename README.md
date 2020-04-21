@@ -6,6 +6,8 @@ This is the official Elrond wallet app for the [Ledger Nano S](https://www.ledge
 
 ## Building and installing
 
+Before proceeding with the installation, please make sure your device is up-to-date with the latest firmware.
+
 To build and install the app on your Nano S, you must first set up the environment:
 
 ```$ source prepare-devenv s```
