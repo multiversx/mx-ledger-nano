@@ -12,7 +12,7 @@
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH 5
-#define COIN_TYPE_ERD 476UL
+#define COIN_TYPE_ERD 508UL
 #define HRP      "erd"
 #define HRP_TEST "terd"
 #define DECIMAL_PLACES 18
