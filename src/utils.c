@@ -24,7 +24,7 @@ void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t
 void sendResponse(uint8_t tx, bool approve);
 
 ////////////////////////////////////////////////////////////////////////////////
-
+// readUint32BE reads 4 bytes from the buffer and returns an uint32_t with big endian encoding
 uint32_t readUint32BE(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }

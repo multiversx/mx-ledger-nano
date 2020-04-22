@@ -58,7 +58,13 @@ var (
 )
 
 type NanoS struct {
-	device *apduFramer
+	Network       uint8
+	ContractData  uint8
+	Account       uint8
+	AddressIndex  uint8
+	AppVersion    string
+	LedgerVersion string
+	device        *apduFramer
 }
 
 // Exchange sends a command to the device and returns the response
@@ -108,30 +114,30 @@ func (n *NanoS) Exchange(cmd byte, p1, p2, lc byte, data []byte) (resp []byte, e
 }
 
 // GetVersion retrieves from device the app version
-func (n *NanoS) GetVersion() (version string, err error) {
+func (n *NanoS) GetVersion() error {
 	resp, err := n.Exchange(cmdGetVersion, 0, 0, 0, nil)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return string(resp), nil
+	n.AppVersion = string(resp)
+	return nil
 }
 
 // GetConfiguration retrieves from device its configuration
-func (n *NanoS) GetConfiguration() (network, contractData, account, addressIndex uint8, ledgerVersion string, err error) {
+func (n *NanoS) GetConfiguration() error {
 	resp, err := n.Exchange(cmdGetConfiguration, 0, 0, 0, nil)
 	if err != nil {
-		return
+		return err
 	}
 	if len(resp) != 7 {
-		err = errors.New(errBadConfigResponse)
-		return
+		return errors.New(errBadConfigResponse)
 	}
-	network = resp[0]
-	contractData = resp[1]
-	account = resp[2]
-	addressIndex = resp[3]
-	ledgerVersion = fmt.Sprintf("%v.%v.%v", resp[4], resp[5], resp[6])
-	return
+	n.Network = resp[0]
+	n.ContractData = resp[1]
+	n.Account = resp[2]
+	n.AddressIndex = resp[3]
+	n.LedgerVersion = fmt.Sprintf("%v.%v.%v", resp[4], resp[5], resp[6])
+	return nil
 }
 
 // GetAddress retrieves from device the address based on account and address index

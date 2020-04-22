@@ -22,8 +22,7 @@ const char* const settings_submenu_getter_values[] = {
 };
 const char* const info_submenu_getter_values[] = {
     "View address",
-    "View pub key",
-    "App version ",
+    "App version",
     "Back",
 };
 
@@ -84,7 +83,7 @@ UX_FLOW(ux_idle_flow,
 );
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Enable contract data submenu:
+// Network submenu:
 void setting_network_change(unsigned int enabled) {
     nvm_write((void *)&N_storage.setting_network, &enabled, 1);
     ui_idle();
@@ -114,7 +113,7 @@ void setting_network_selector(unsigned int idx) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Display contract data submenu:
+// Contract data submenu:
 void setting_contract_data_change(unsigned int enabled) {
     nvm_write((void *)&N_storage.setting_contract_data, &enabled, 1);
     ui_idle();
@@ -183,9 +182,6 @@ void info_submenu_selector(unsigned int idx) {
         viewAddressAsBech32(N_storage.setting_account, N_storage.setting_address_index);
         break;
     case 1:
-        viewAddressAsHex(N_storage.setting_account, N_storage.setting_address_index);
-        break;
-    case 2:
         viewAppVersion();
         break;
     default:
