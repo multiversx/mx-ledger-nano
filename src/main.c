@@ -45,8 +45,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len);
 void app_exit(void);
 void nv_app_state_init();
 
-////////////////////////////////////////////////////////////////////////////////
-
 void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
 
@@ -117,8 +115,6 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     END_TRY;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 void elrond_main(void) {
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
@@ -184,13 +180,10 @@ void elrond_main(void) {
     return;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // override point, but nothing more to do
 void io_seproxyhal_display(const bagl_element_t *element) {
     io_seproxyhal_display_default((bagl_element_t*)element);
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
@@ -245,8 +238,6 @@ unsigned char io_event(unsigned char channel) {
     return 1;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     switch (channel & ~(IO_FLAGS)) {
         case CHANNEL_KEYBOARD:
@@ -273,8 +264,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 void app_exit(void) {
     BEGIN_TRY_L(exit) {
         TRY_L(exit) {
@@ -285,8 +274,6 @@ void app_exit(void) {
     }
     END_TRY_L(exit);
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
@@ -301,8 +288,6 @@ void nv_app_state_init() {
     setting_network = N_storage.setting_network;
     setting_contract_data = N_storage.setting_contract_data;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 __attribute__((section(".boot"))) int main(void) {
     // exit critical section

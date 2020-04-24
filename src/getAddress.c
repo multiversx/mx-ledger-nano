@@ -6,9 +6,7 @@
 static char address[FULL_ADDRESS_LENGTH];
 
 static uint8_t setResultGetAddress();
-void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx);
 
-////////////////////////////////////////////////////////////////////////////////
 // UI interface for validating the address on screen
 UX_STEP_NOCB(
     ux_display_public_flow_5_step, 
@@ -40,8 +38,6 @@ UX_FLOW(ux_display_public_flow,
     &ux_display_public_flow_7_step
 );
 
-////////////////////////////////////////////////////////////////////////////////
-
 static uint8_t setResultGetAddress() {
     uint8_t tx = 0;
     const uint8_t address_size = strlen(address);
@@ -52,8 +48,6 @@ static uint8_t setResultGetAddress() {
 
     return tx;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     UNUSED(dataLength);

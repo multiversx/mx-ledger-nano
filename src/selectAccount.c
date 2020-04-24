@@ -14,9 +14,7 @@ void intToString();
 static unsigned int select_address_index_ui_button(unsigned int button_mask, unsigned int button_mask_counter);
 static unsigned int select_account_ui_button(unsigned int button_mask, unsigned int button_mask_counter);
 void ui_address_menu_idle();
-void selectAccount();
 
-//////////////////////////////////////////////////////////////////////////////////////
 // UI for selecting the Account
 static const bagl_element_t select_account_ui[] = {
     {
@@ -56,7 +54,6 @@ static const bagl_element_t select_account_ui[] = {
     },
 };
 
-//////////////////////////////////////////////////////////////////////////////////////
 // UI for selecting the Address index
 static const bagl_element_t select_address_index_ui[] = {
     {
@@ -96,8 +93,6 @@ static const bagl_element_t select_address_index_ui[] = {
     },
 };
 
-//////////////////////////////////////////////////////////////////////////////////////
-
 void intToString() {
     account[0] = intAccount / 100 + 48;
     account[1] = intAccount / 10 % 10 + 48;
@@ -108,8 +103,6 @@ void intToString() {
     address_index[2] = intAddressIndex % 10 + 48;
     address_index[3] = '\0';
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 static unsigned int select_address_index_ui_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
@@ -149,14 +142,10 @@ static unsigned int select_address_index_ui_button(unsigned int button_mask, uns
     return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-
 static unsigned int select_account_ui_button(unsigned int button_mask, unsigned int button_mask_counter) {
     select_address_index_ui_button(button_mask, button_mask_counter);
     return 0;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 void ui_address_menu_idle() {
     if (menu_selection == ACCOUNT_MENU) {
@@ -165,8 +154,6 @@ void ui_address_menu_idle() {
         UX_DISPLAY(select_address_index_ui, NULL);
     }
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 void selectAccount() {
     intAccount = N_storage.setting_account;

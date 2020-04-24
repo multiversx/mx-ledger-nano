@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
-
 	"github.com/btcsuite/btcutil/bech32"
 )
 
@@ -29,22 +29,27 @@ const (
 	gasPrice        = uint64(100000000000000)
 	gasLimit        = uint64(100000)
 	gasPerDataByte  = uint64(1500)
+	hrpMainnet      = "erd"
+	hrpTestnet      = "terd"
 )
 
 var network = [...]string{"Mainnet", "Testnet"}
 var status = [...]string{"Disabled", "Enabled"}
 
 const (
-	errOpenDevice         = "Couldn't open device"
-	errGetAppVersion      = "Couldn't get app version"
-	errGetConfig          = "Couldn't get configuration"
-	errGetAddress         = "Couldn't get address"
-	errGetBalanceAndNonce = "Couldn't get address balance and nonce"
-	errEmptyAddress       = "Empty address"
-	errInvalidAddress     = "Invalid receiver address"
-	errInvalidAmount      = "Invalid ERD amount"
-	errSigningTx          = "Signing error"
-	errSendingTx          = "Error sending tx"
+	errOpenDevice           = "couldn't open device"
+	errGetAppVersion        = "couldn't get app version"
+	errGetConfig            = "couldn't get configuration"
+	errGetAddress           = "couldn't get address"
+	errGetBalanceAndNonce   = "couldn't get address balance and nonce"
+	errEmptyAddress         = "empty address"
+	errInvalidAddress       = "invalid receiver address"
+	errInvalidAmount        = "invalid ERD amount"
+	errSigningTx            = "signing error"
+	errSendingTx            = "error sending tx"
+	errInvalidBalanceString = "invalid balance string"
+	errInvalidHRP           = "invalid bech32 hrp"
+	errGetAddressShard      = "getAddressShard error"
 )
 
 type transaction struct {
@@ -90,27 +95,42 @@ func getSenderInfo(address string) (*big.Int, uint64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	balance, _ := big.NewInt(0).SetString(balanceMsg.Account.Balance, 10)
+	balance, ok := big.NewInt(0).SetString(balanceMsg.Account.Balance, 10)
+	if !ok {
+		return nil, 0, errors.New(errInvalidBalanceString)
+	}
 
 	return balance, balanceMsg.Account.Nonce, nil
 }
 
 // getAddressShard returns the assigned shard of an address
-func getAddressShard(bech32Address string, noOfShards uint32) uint32 {
+func getAddressShard(bech32Address string, noOfShards uint32) (uint32, error) {
 	// convert sender from bech32 to hex pubkey
-	_, pubkeyBech32, _ := bech32.Decode(bech32Address)
-	pubkey, _ := bech32.ConvertBits(pubkeyBech32, 5, 8, false)
+	hrp, pubkeyBech32, err := bech32.Decode(bech32Address)
+	if err != nil {
+		return 0, err
+	}
+	if hrp != hrpMainnet && hrp != hrpTestnet {
+		return 0, errors.New(errInvalidHRP)
+	}
+	pubkey, err := bech32.ConvertBits(pubkeyBech32, 5, 8, false)
+	if err != nil {
+		return 0, err
+	}
 	address := hex.EncodeToString(pubkey)
 
 	n := math.Ceil(math.Log2(float64(noOfShards)))
 	var maskHigh, maskLow uint32 = (1 << uint(n)) - 1, (1 << uint(n-1)) - 1
-	addressBytes, _ := hex.DecodeString(address)
+	addressBytes, err := hex.DecodeString(address)
+	if err != nil {
+		return 0, err
+	}
 	addr := uint32(addressBytes[len(addressBytes)-1])
 	shard := addr & maskHigh
 	if shard > noOfShards-1 {
 		shard = addr & maskLow
 	}
-	return shard
+	return shard, nil
 }
 
 // getDeviceInfo retrieves various informations from Ledger
@@ -178,7 +198,10 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 
 // signTransaction sends the tx to Ledger for user confirmation and signing
 func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
-	toSign, _ := json.Marshal(&tx)
+	toSign, err := json.Marshal(tx)
+	if err != nil {
+		return err
+	}
 	fmt.Println("Signing transaction. Please confirm on your Ledger")
 	signature, err := nanos.SignTxn(toSign)
 	if err != nil {
@@ -248,14 +271,20 @@ func main() {
 	bigFloatBalance, _ := big.NewFloat(0).SetString(balance.String())
 	bigFloatBalance.Quo(bigFloatBalance, denomination)
 	strBalance := bigFloatBalance.String()
-	strSenderShard := getAddressShard(string(senderAddress), noOfShards)
+	strSenderShard, err := getAddressShard(string(senderAddress), noOfShards)
+	if err != nil {
+		log.Fatalln(errGetAddressShard, err)
+	}
 	fmt.Printf("Sender shard: %v\n\rBalance: %v ERD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
 
 	strReceiverAddress, bigIntAmount, data, err := getTxDataFromUser(nanos.ContractData)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	strReceiverShard := getAddressShard(strReceiverAddress, noOfShards)
+	strReceiverShard, err := getAddressShard(strReceiverAddress, noOfShards)
+	if err != nil {
+		log.Fatalln(errGetAddressShard, err)
+	}
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
 	// generate and sign transaction

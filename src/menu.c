@@ -39,9 +39,7 @@ const char* settings_submenu_getter(unsigned int idx);
 void settings_submenu_selector(unsigned int idx);
 const char* info_submenu_getter(unsigned int idx);
 void info_submenu_selector(unsigned int idx);
-void ui_idle(void);
 
-//////////////////////////////////////////////////////////////////////////////////////
 // UI interface for the main menu
 UX_STEP_NOCB(
     ux_idle_flow_1_step, 
@@ -82,22 +80,17 @@ UX_FLOW(ux_idle_flow,
     FLOW_LOOP
 );
 
-//////////////////////////////////////////////////////////////////////////////////////
 // Network submenu:
 void setting_network_change(unsigned int enabled) {
     nvm_write((void *)&N_storage.setting_network, &enabled, 1);
     ui_idle();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 const char* setting_network_getter(unsigned int idx) {
     if (idx < ARRAYLEN(setting_network_getter_values))
         return setting_network_getter_values[idx];
     return NULL;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void setting_network_selector(unsigned int idx) {
     switch(idx) {
@@ -109,25 +102,21 @@ void setting_network_selector(unsigned int idx) {
         break;
     default:
         ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
+        break;
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
 // Contract data submenu:
 void setting_contract_data_change(unsigned int enabled) {
     nvm_write((void *)&N_storage.setting_contract_data, &enabled, 1);
     ui_idle();
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 const char* setting_contract_data_getter(unsigned int idx) {
     if (idx < ARRAYLEN(setting_contract_data_getter_values))
         return setting_contract_data_getter_values[idx];
     return NULL;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void setting_contract_data_selector(unsigned int idx) {
     switch(idx) {
@@ -139,10 +128,10 @@ void setting_contract_data_selector(unsigned int idx) {
         break;
     default:
         ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
+        break;
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
 // Settings menu:
 const char* settings_submenu_getter(unsigned int idx) {
     if (idx < ARRAYLEN(settings_submenu_getter_values))
@@ -163,18 +152,16 @@ void settings_submenu_selector(unsigned int idx) {
         break;
     default:
         ui_idle();
+        break;
     }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
 // Info menu:
 const char* info_submenu_getter(unsigned int idx) {
     if (idx < ARRAYLEN(info_submenu_getter_values))
         return info_submenu_getter_values[idx];
     return NULL;
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 void info_submenu_selector(unsigned int idx) {
     switch(idx) {
@@ -186,10 +173,9 @@ void info_submenu_selector(unsigned int idx) {
         break;
     default:
         ui_idle();
+        break;
     }
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
 
 void ui_idle(void) {
     // reserve a display stack slot if none yet

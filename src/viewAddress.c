@@ -5,9 +5,6 @@
 
 static char address[FULL_ADDRESS_LENGTH];
 
-void viewAddressAsBech32(uint32_t account, uint32_t index);
-
-////////////////////////////////////////////////////////////////////////////////
 // UI for displaying the address in either bech32 or hex formats
 UX_STEP_NOCB(
     ux_display_public_flow_8_step, 
@@ -28,8 +25,6 @@ UX_FLOW(ux_view_address_flow,
     &ux_display_public_flow_8_step,
     &ux_display_public_flow_9_step
 );
-
-////////////////////////////////////////////////////////////////////////////////
 
 void viewAddressAsBech32(uint32_t account, uint32_t index) {
     uint8_t publicKey[32];

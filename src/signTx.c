@@ -4,6 +4,15 @@
 #include "utils.h"
 #include <jsmn.h>
 
+typedef struct {
+    char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
+    uint16_t bufLen;
+
+    char receiver[FULL_ADDRESS_LENGTH];
+    char amount[MAX_AMOUNT_LEN];
+    char signature[64];
+} tx_context_t;
+
 static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
@@ -12,9 +21,7 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
 void signTx();
-void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx);
 
-////////////////////////////////////////////////////////////////////////////////
 // UI for confirming the receiver and amount of a transaction on screen
 UX_STEP_NOCB(
     ux_sign_tx_flow_8_step, 
@@ -54,8 +61,6 @@ UX_FLOW(ux_sign_tx_flow,
   &ux_sign_tx_flow_11_step
 );
 
-////////////////////////////////////////////////////////////////////////////////
-
 static uint8_t setResultSignature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
@@ -65,7 +70,6 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // make the ERD amount look pretty. Add decimals and decimal point
 void makeAmountPretty() {
     int len = strlen(tx_context.amount);
@@ -88,7 +92,6 @@ void makeAmountPretty() {
     os_memmove(tx_context.amount + strlen(tx_context.amount), suffix, 5);
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // helper for comparing json keys
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 	short int tokLen = tok->end - tok->start;
@@ -98,7 +101,6 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 	return -1;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // txDataReceive is called when a signTx APDU is received. it appends the received data to the buffer
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
     if (tx_context.bufLen + dataLength >= MAX_BUFFER_LEN)
@@ -109,7 +111,6 @@ uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
     return MSG_OK;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // parseData parses the received tx data
 uint16_t parseData() {
     int i, r;
@@ -156,7 +157,6 @@ uint16_t parseData() {
     return MSG_OK;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // signTx performs the actual tx signing after the full tx data has beed received
 void signTx() {
     cx_ecfp_private_key_t privateKey;
@@ -172,7 +172,6 @@ void signTx() {
     END_TRY;
 }
 
-////////////////////////////////////////////////////////////////////////////////
 // handleSignTx handles tx data receiving, parsing and signing. in the end it calls the user confirmation UI
 void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     uint16_t retCode;
@@ -189,6 +188,7 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
     default:
         // unknown packet type
         retCode = ERR_INVALID_P1;
+        break;
     }
     if (retCode != MSG_OK) {
         THROW(retCode);

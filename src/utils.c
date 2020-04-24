@@ -16,20 +16,10 @@ static const uint32_t derivePath[BIP32_PATH] = {
   0 | HARDENED_OFFSET
 };
 
-uint32_t readUint32BE(uint8_t *buffer);
-void getAddressHexFromBinary(uint8_t *publicKey, char *address);
-void getAddressBech32FromBinary(uint8_t *publicKey, char *address);
-void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray);
-void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey);
-void sendResponse(uint8_t tx, bool approve);
-
-////////////////////////////////////////////////////////////////////////////////
 // readUint32BE reads 4 bytes from the buffer and returns an uint32_t with big endian encoding
 uint32_t readUint32BE(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void getAddressHexFromBinary(uint8_t *publicKey, char *address) {
     const char hex[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -41,8 +31,6 @@ void getAddressHexFromBinary(uint8_t *publicKey, char *address) {
     }
     address[64] = '\0';
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
     uint8_t buffer[33];
@@ -56,8 +44,6 @@ void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
         hrp = HRP_TEST;
     bech32EncodeFromBytes(address, hrp, buffer, 33);
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray) {
     cx_ecfp_private_key_t privateKey;
@@ -82,8 +68,6 @@ void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArra
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey) {
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
@@ -104,8 +88,6 @@ void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t
     }
     END_TRY;
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 void sendResponse(uint8_t tx, bool approve) {
     uint16_t response = MSG_OK;
