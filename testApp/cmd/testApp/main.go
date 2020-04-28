@@ -30,7 +30,7 @@ const (
 	gasLimit        = uint64(100000)
 	gasPerDataByte  = uint64(1500)
 	hrpMainnet      = "erd"
-	hrpTestnet      = "terd"
+	hrpTestnet      = "xerd"
 )
 
 var network = [...]string{"Mainnet", "Testnet"}
@@ -209,7 +209,6 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 		return err
 	}
 
-	// send transaction
 	sigHex := hex.EncodeToString(signature)
 	if !isProxy {
 		tx.Data = base64.StdEncoding.EncodeToString([]byte(tx.Data))

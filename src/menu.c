@@ -29,10 +29,10 @@ const char* const info_submenu_getter_values[] = {
 volatile uint8_t setting_network;
 volatile uint8_t setting_contract_data;
 
-void setting_network_change(unsigned int enabled);
+void setting_network_change(unsigned int network);
 const char* setting_network_getter(unsigned int idx);
 void setting_network_selector(unsigned int idx);
-void setting_contract_data_change(unsigned int enabled);
+void setting_contract_data_change(unsigned int contract_data);
 const char* setting_contract_data_getter(unsigned int idx);
 void setting_contract_data_selector(unsigned int idx);
 const char* settings_submenu_getter(unsigned int idx);
@@ -81,8 +81,8 @@ UX_FLOW(ux_idle_flow,
 );
 
 // Network submenu:
-void setting_network_change(unsigned int enabled) {
-    nvm_write((void *)&N_storage.setting_network, &enabled, 1);
+void setting_network_change(unsigned int network) {
+    nvm_write((void *)&N_storage.setting_network, &network, 1);
     ui_idle();
 }
 
@@ -94,11 +94,11 @@ const char* setting_network_getter(unsigned int idx) {
 
 void setting_network_selector(unsigned int idx) {
     switch(idx) {
-    case 0:
-        setting_network_change(0);
+    case NETWORK_MAINNET:
+        setting_network_change(NETWORK_MAINNET);
         break;
-    case 1:
-        setting_network_change(1);
+    case NETWORK_TESTNET:
+        setting_network_change(NETWORK_TESTNET);
         break;
     default:
         ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
@@ -107,8 +107,8 @@ void setting_network_selector(unsigned int idx) {
 }
 
 // Contract data submenu:
-void setting_contract_data_change(unsigned int enabled) {
-    nvm_write((void *)&N_storage.setting_contract_data, &enabled, 1);
+void setting_contract_data_change(unsigned int contract_data) {
+    nvm_write((void *)&N_storage.setting_contract_data, &contract_data, 1);
     ui_idle();
 }
 
@@ -120,11 +120,11 @@ const char* setting_contract_data_getter(unsigned int idx) {
 
 void setting_contract_data_selector(unsigned int idx) {
     switch(idx) {
-    case 0:
-        setting_contract_data_change(0);
+    case CONTRACT_DATA_DISABLED:
+        setting_contract_data_change(CONTRACT_DATA_DISABLED);
         break;
-    case 1:
-        setting_contract_data_change(1);
+    case CONTRACT_DATA_ENABLED:
+        setting_contract_data_change(CONTRACT_DATA_ENABLED);
         break;
     default:
         ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);

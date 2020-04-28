@@ -14,15 +14,21 @@
 #define BIP32_PATH 5
 #define COIN_TYPE_ERD 508UL
 #define HRP      "erd"
-#define HRP_TEST "terd"
+#define HRP_TEST "xerd"
 #define DECIMAL_PLACES 18
 
-#define NETWORK_MAINNET 0
-#define NETWORK_TESTNET 1
+typedef enum {
+    NETWORK_MAINNET = 0,
+    NETWORK_TESTNET = 1
+} network_t;
+
 #define DEFAULT_NETWORK NETWORK_MAINNET
 
-#define CONTRACT_DATA_ENABLED  true
-#define CONTRACT_DATA_DISABLED false
+typedef enum {
+    CONTRACT_DATA_ENABLED  = true,
+    CONTRACT_DATA_DISABLED = false
+} contract_data_t;
+
 #define DEFAULT_CONTRACT_DATA CONTRACT_DATA_DISABLED
 
 #define MSG_OK                     0x9000
