@@ -5,17 +5,6 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
-typedef enum rlpTxType {
-    TX_LENGTH = 0,
-    TX_TYPE,
-    TX_SENDER,
-    TX_RECIPIENT,
-    TX_AMOUNT,
-    TX_FEE
-} rlpTxType;
-
-unsigned int ui_prepro(const bagl_element_t *element);
-
 void getAddressBech32FromBinary(uint8_t *publicKey, char *address);
 void getAddressHexFromBinary(uint8_t *publicKey, char *address);
 
@@ -33,7 +22,7 @@ void sendResponse(uint8_t tx, bool approve);
     {{BAGL_ICON        , 0x00,   3,  12,   7,   7, 0, 0, 0        , 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CROSS  }, NULL, 0, 0, 0, NULL, NULL, NULL },\
     {{BAGL_ICON        , 0x00, 117,  13,   8,   6, 0, 0, 0        , 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_CHECK  }, NULL, 0, 0, 0, NULL, NULL, NULL }
 
-#define UI_FIRST 1
+#define UI_FIRST  1
 #define UI_SECOND 0
 
 #define UI_LABELINE(userId, text, isFirst, font, horizontalScrollSpeed)    \

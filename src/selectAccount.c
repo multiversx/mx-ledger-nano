@@ -3,22 +3,17 @@
 #include "cx.h"
 #include "utils.h"
 
-bool menu_selection; // true = account ; false = address_index
+#define ACCOUNT_MENU       true
+#define ADDRESS_INDEX_MENU false
+
+bool menu_selection;
 static char account[4], address_index[4]; // hold the int_to_string representations
 char intAccount, intAddressIndex; // temporary copies of NV variables
 
+void intToString();
+static unsigned int select_address_index_ui_button(unsigned int button_mask, unsigned int button_mask_counter);
+static unsigned int select_account_ui_button(unsigned int button_mask, unsigned int button_mask_counter);
 void ui_address_menu_idle();
-
-void int_to_string() {
-    account[0] = intAccount / 100 + 48;
-    account[1] = intAccount / 10 % 10 + 48;
-    account[2] = intAccount % 10 + 48;
-    account[3] = '\0';
-    address_index[0] = intAddressIndex / 100 + 48;
-    address_index[1] = intAddressIndex / 10 % 10 + 48;
-    address_index[2] = intAddressIndex % 10 + 48;
-    address_index[3] = '\0';
-}
 
 // UI for selecting the Account
 static const bagl_element_t select_account_ui[] = {
@@ -98,11 +93,22 @@ static const bagl_element_t select_address_index_ui[] = {
     },
 };
 
+void intToString() {
+    account[0] = intAccount / 100 + 48;
+    account[1] = intAccount / 10 % 10 + 48;
+    account[2] = intAccount % 10 + 48;
+    account[3] = '\0';
+    address_index[0] = intAddressIndex / 100 + 48;
+    address_index[1] = intAddressIndex / 10 % 10 + 48;
+    address_index[2] = intAddressIndex % 10 + 48;
+    address_index[3] = '\0';
+}
+
 static unsigned int select_address_index_ui_button(unsigned int button_mask, unsigned int button_mask_counter) {
     switch (button_mask) {
     case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // EXIT
-        if (menu_selection) {
-            menu_selection = false;
+        if (menu_selection == ACCOUNT_MENU) {
+            menu_selection = ADDRESS_INDEX_MENU;
             ui_address_menu_idle();
         } else {
             nvm_write((void *)&N_storage.setting_account, &intAccount, 1);
@@ -111,25 +117,25 @@ static unsigned int select_address_index_ui_button(unsigned int button_mask, uns
         }
         break;
     case BUTTON_LEFT | BUTTON_EVT_RELEASED:
-        if (menu_selection) {
+        if (menu_selection == ACCOUNT_MENU) {
             if (intAccount > 0)
                 intAccount--;
         } else {
             if (intAddressIndex > 0)
                 intAddressIndex--;
         }
-        int_to_string();
+        intToString();
         ui_address_menu_idle();
         break;
     case BUTTON_RIGHT | BUTTON_EVT_RELEASED:
-        if (menu_selection) {
+        if (menu_selection == ACCOUNT_MENU) {
             if (intAccount < 255)
                 intAccount++;
         } else {
             if (intAddressIndex < 255)
                 intAddressIndex++;
         }
-        int_to_string();
+        intToString();
         ui_address_menu_idle();
         break;
     }
@@ -142,7 +148,7 @@ static unsigned int select_account_ui_button(unsigned int button_mask, unsigned 
 }
 
 void ui_address_menu_idle() {
-    if (menu_selection) {
+    if (menu_selection == ACCOUNT_MENU) {
         UX_DISPLAY(select_account_ui, NULL);
     } else {
         UX_DISPLAY(select_address_index_ui, NULL);
@@ -152,7 +158,7 @@ void ui_address_menu_idle() {
 void selectAccount() {
     intAccount = N_storage.setting_account;
     intAddressIndex = N_storage.setting_address_index;
-    menu_selection = true;
-    int_to_string();
+    menu_selection = ACCOUNT_MENU;
+    intToString();
     ui_address_menu_idle();
 }

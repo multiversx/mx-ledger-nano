@@ -12,16 +12,29 @@
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH 5
-#define COIN_TYPE_ERD 476UL
+#define COIN_TYPE_ERD 508UL
 #define HRP      "erd"
-#define HRP_TEST "terd"
+#define HRP_TEST "xerd"
 #define DECIMAL_PLACES 18
 
-#define NETWORK_MAINNET 0
-#define NETWORK_TESTNET 1
-#define DEFAULT_NETWORK NETWORK_MAINNET
-#define DEFAULT_CONTRACT_DATA false
+typedef enum {
+    NETWORK_MAINNET = 0,
+    NETWORK_TESTNET = 1
+} network_t;
 
+#define DEFAULT_NETWORK NETWORK_MAINNET
+
+typedef enum {
+    CONTRACT_DATA_ENABLED  = true,
+    CONTRACT_DATA_DISABLED = false
+} contract_data_t;
+
+#define DEFAULT_CONTRACT_DATA CONTRACT_DATA_DISABLED
+
+#define MSG_OK                     0x9000
+#define ERR_USER_DENIED            0x6985
+#define ERR_UNKNOWN_INSTRUCTION    0x6D00 // unknown INS
+#define ERR_WRONG_CLA              0x6E00
 #define ERR_INVALID_ARGUMENTS      0x6E01
 #define ERR_INVALID_MESSAGE        0x6E02 // signTx
 #define ERR_INVALID_P1             0x6E03 // signTx

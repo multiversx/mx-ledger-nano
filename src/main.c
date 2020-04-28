@@ -1,5 +1,19 @@
 /*******************************************************************************
-* TODO: LICENSE AGREEMENT                                                            *
+*   (c) 2016 Ledger
+*   (c) 2018 ZondaX GmbH
+*   (c) 2020 Elrond Ltd
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*      http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
 ********************************************************************************/
 
 #include "utils.h"
@@ -7,8 +21,6 @@
 #include "signTx.h"
 #include "menu.h"
 #include "globals.h"
-
-unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
 #define CLA 0xED
 #define INS_GET_APP_VERSION       0x01
@@ -23,13 +35,23 @@ unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 #define OFFSET_LC    4
 #define OFFSET_CDATA 5
 
+unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
+
+void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx);
+void elrond_main(void);
+void io_seproxyhal_display(const bagl_element_t *element);
+unsigned char io_event(unsigned char channel);
+unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len);
+void app_exit(void);
+void nv_app_state_init();
+
 void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
 
     BEGIN_TRY {
         TRY {
             if (G_io_apdu_buffer[OFFSET_CLA] != CLA) {
-            THROW(0x6E00);
+            THROW(ERR_WRONG_CLA);
             }
 
             switch (G_io_apdu_buffer[OFFSET_INS]) {
@@ -37,7 +59,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                 case INS_GET_APP_VERSION:
                     *tx = strlen(APPVERSION);
                     os_memcpy(G_io_apdu_buffer, APPVERSION, *tx);
-                    THROW(0x9000);
+                    THROW(MSG_OK);
                     break;
 
                 case INS_GET_APP_CONFIGURATION:
@@ -49,7 +71,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     G_io_apdu_buffer[5] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[6] = LEDGER_PATCH_VERSION;
                     *tx = 7;
-                    THROW(0x9000);
+                    THROW(MSG_OK);
                     break;
 
                 case INS_GET_ADDR:
@@ -61,7 +83,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 default:
-                    THROW(0x6D00);
+                    THROW(ERR_UNKNOWN_INSTRUCTION);
                     break;
             }
         }
@@ -73,7 +95,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
             case 0x6000:
                 sw = e;
                 break;
-            case 0x9000:
+            case MSG_OK:
                 // All is well
                 sw = e;
                 break;
@@ -131,7 +153,7 @@ void elrond_main(void) {
                     case 0x6000:
                         sw = e;
                         break;
-                    case 0x9000:
+                    case MSG_OK:
                         // All is well
                         sw = e;
                         break;
@@ -140,7 +162,7 @@ void elrond_main(void) {
                         sw = 0x6800 | (e & 0x7FF);
                         break;
                 }
-                if (e != 0x9000) {
+                if (e != MSG_OK) {
                     flags &= ~IO_ASYNCH_REPLY;
                 }
                 // Unexpected exception => report
@@ -154,7 +176,7 @@ void elrond_main(void) {
         END_TRY;
     }
 
-//return_to_dashboard:
+    //return_to_dashboard:
     return;
 }
 
@@ -216,7 +238,6 @@ unsigned char io_event(unsigned char channel) {
     return 1;
 }
 
-
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     switch (channel & ~(IO_FLAGS)) {
         case CHANNEL_KEYBOARD:
@@ -243,7 +264,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
     return 0;
 }
 
-
 void app_exit(void) {
     BEGIN_TRY_L(exit) {
         TRY_L(exit) {
@@ -255,7 +275,7 @@ void app_exit(void) {
     END_TRY_L(exit);
 }
 
-void nv_app_state_init(){
+void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
         internalStorage_t storage;
         storage.setting_network = DEFAULT_NETWORK;
