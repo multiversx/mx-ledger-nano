@@ -20,7 +20,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const observerHost string = "https://wallet-api.elrond.com"
+const observerHost string = "https://api.elrond.com"
 const isProxy bool = true // if true, send "data" field as string, else send as base64
 
 const (
