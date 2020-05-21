@@ -2,14 +2,23 @@ language: python
 os:
   - linux
 
-services:
-  - docker
-
 before_install:
-  - docker pull nbasim/ledger-blue-sdk
-  - docker run nbasim/ledger-blue-sdk -c "sudo apt-get install libc6-dev-i386"
-  - docker ps -a
+  - mkdir buildchain
+  - mkdir sdk
+
+  - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+  - tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+  - mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
+
+  - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
+  - tar xf clang+llvm.tar.xz
+  - mv clang+llvm* buildchain/clang-arm-fropi
+
+  - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
+  - tar xf nanos-secure-sdk.tar.gz
+  - mv nanos-secure-sdk* sdk/nanos-secure-sdk
 
 script:
   - ls
   - echo "Test"
+  - clang --version
