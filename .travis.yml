@@ -20,5 +20,7 @@ before_install:
   - tar xf nanos-secure-sdk.tar.gz
   - mv nanos-secure-sdk* sdk/nanos-secure-sdk
 
+  - pip3 install Pillow
+
 script:
   - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk/nanos-secure-sdk-nanos-160
