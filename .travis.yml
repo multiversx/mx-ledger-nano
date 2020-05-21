@@ -7,11 +7,12 @@ matrix:
       os: linux
       dist: bionic
       before_install:
-        - go version
-        - python3 --version
-        - pip3 --version
         - sudo apt-get update
         - sudo apt install gcc-multilib g++-multilib -y
+        - go version
+        - python3 --version
+        - sudo apt install python3-pip
+        - pip3 --version
         - pip3 install Pillow
 
       install:
@@ -49,4 +50,6 @@ matrix:
       before_script:
       script:
         - cd ./testApp/cmd/testApp
+        - go mod verify
+        - go mod download
         - go build .
