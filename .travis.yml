@@ -3,6 +3,8 @@ os:
   - linux
 
 before_install:
+  - sudo apt-get install libstdc++6
+  
   - mkdir buildchain
   - mkdir buildchain/clang-arm-fropi
   - mkdir sdk
