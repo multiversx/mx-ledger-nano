@@ -1,33 +1,47 @@
-language: python
-os:
-  - linux
-dist: bionic
+arch:
+  - amd64
 
-before_install:
-  - sudo apt-get update
-  - sudo apt install gcc-multilib g++-multilib -y
+matrix:
+  include:
+    - language: python
+      os: linux
+      dist: bionic
+      before_install:
+        - sudo apt-get update
+        - sudo apt install gcc-multilib g++-multilib -y
+        - pip3 install Pillow
 
-  - mkdir buildchain
-  - mkdir buildchain/clang-arm-fropi
-  - mkdir sdk
-  - mkdir sdk/nanos-secure-sdk
+      install:
+        - mkdir buildchain
+        - mkdir buildchain/clang-arm-fropi
+        - mkdir sdk
+        - mkdir sdk/nanos-secure-sdk
 
-  - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-  - tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-  - rm gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-  - mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
+        - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - rm gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
 
-  - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
-  - tar xf clang+llvm.tar.xz
-  - rm clang+llvm.tar.xz
-  - mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
+        - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
+        - tar xf clang+llvm.tar.xz
+        - rm clang+llvm.tar.xz
+        - mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
 
-  - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
-  - tar xf nanos-secure-sdk.tar.gz
-  - rm nanos-secure-sdk.tar.gz
-  - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
+        - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
+        - tar xf nanos-secure-sdk.tar.gz
+        - rm nanos-secure-sdk.tar.gz
+        - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
+      before_script:
+      script:
+        - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
 
-  - pip3 install Pillow
-
-script:
-  - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
+    - language: go
+      os: osx
+      osx_image: xcode11.3
+      before_install:
+        - go version
+      install:
+        - go version
+      before_script:
+      script:
+        - go version
