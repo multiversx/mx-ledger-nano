@@ -21,6 +21,4 @@ before_install:
   - mv nanos-secure-sdk* sdk/nanos-secure-sdk
 
 script:
-  - ls -R buildchain
-  - ls -R sdk
-  - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
+  - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk-160
