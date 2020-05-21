@@ -11,7 +11,6 @@ matrix:
         - sudo apt install gcc-multilib g++-multilib -y
         - go version
         - python3 --version
-        - #sudo apt install python3-pip
         - pip3 --version
         - pip3 install Pillow
 
@@ -38,8 +37,17 @@ matrix:
       before_script:
       script:
         - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
-        #- cd ./testApp/cmd/testApp
-        #- go build .
+        - ls bin
+    
+    - language: go
+      os: linux
+      before_install:
+        - go version
+      install:
+      before_script:
+      script:
+        - cd ./testApp/cmd/testApp
+        - GO111MODULE=on go build .
 
     - language: go
       os: osx
@@ -50,8 +58,6 @@ matrix:
       before_script:
       script:
         - cd ./testApp/cmd/testApp
-        - GO111MODULE=on go mod verify
-        - GO111MODULE=on go mod download
         - GO111MODULE=on go build .
 
     - language: go
@@ -62,6 +68,4 @@ matrix:
       before_script:
       script:
         - cd ./testApp/cmd/testApp
-        - GO111MODULE=on go mod verify
-        - GO111MODULE=on go mod download
         - GO111MODULE=on go build .
