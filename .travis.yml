@@ -3,10 +3,13 @@ arch:
 
 matrix:
   include:
-    - language: python
+    - language: go
       os: linux
       dist: bionic
       before_install:
+        - go version
+        - python3 --version
+        - pip3 --version
         - sudo apt-get update
         - sudo apt install gcc-multilib g++-multilib -y
         - pip3 install Pillow
@@ -34,6 +37,8 @@ matrix:
       before_script:
       script:
         - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
+        - cd ./testApp/cmd/testApp
+        - go build .
 
     - language: go
       os: osx
@@ -41,7 +46,7 @@ matrix:
       before_install:
         - go version
       install:
-        - go version
       before_script:
       script:
-        - go version
+        - cd ./testApp/cmd/testApp
+        - go build .
