@@ -4,6 +4,7 @@ os:
 dist: bionic
 
 before_install:
+  - sudo apt-get update
   - sudo apt install gcc-multilib g++-multilib -y
 
   - mkdir buildchain
