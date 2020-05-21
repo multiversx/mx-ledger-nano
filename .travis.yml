@@ -1,0 +1,15 @@
+language: python
+os:
+  - linux
+
+services:
+  - docker
+
+before_install:
+  - docker pull nbasim/ledger-blue-sdk
+  - docker run nbasim/ledger-blue-sdk -c "sudo apt-get install libc6-dev-i386"
+  - docker ps -a
+
+script:
+  - ls
+  - echo "Test"
