@@ -4,7 +4,7 @@ os:
 dist: bionic
 
 before_install:
-  - sudo apt install gcc-multilib g++-multilib libudev-dev libusb-1.0-0-dev -y
+  - sudo apt install gcc-multilib g++-multilib -y
 
   - mkdir buildchain
   - mkdir buildchain/clang-arm-fropi
