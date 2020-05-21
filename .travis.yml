@@ -24,4 +24,4 @@ script:
   - ls
   - echo "Test"
   - clang --version
-  - make BOLOS_ENV=./buildchain BOLOS_SDK=./sdk
+  - make BOLOS_ENV=./buildchain BOLOS_SDK=./sdk/nanos-secure-sdk
