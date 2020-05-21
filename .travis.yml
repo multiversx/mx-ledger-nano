@@ -16,12 +16,12 @@ before_install:
   - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
   - tar xf clang+llvm.tar.xz
   - rm clang+llvm.tar.xz
-  - mv clang+llvm* buildchain/clang-arm-fropi
+  - mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
 
   - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
   - tar xf nanos-secure-sdk.tar.gz
   - rm nanos-secure-sdk.tar.gz
-  - mv nanos-secure-sdk* sdk/nanos-secure-sdk
+  - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
 
   - pip3 install Pillow
 
