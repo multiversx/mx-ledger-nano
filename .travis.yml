@@ -46,7 +46,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - ls
@@ -65,7 +65,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - ls
@@ -83,7 +83,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - ls
