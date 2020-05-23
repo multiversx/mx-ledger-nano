@@ -46,33 +46,36 @@ matrix:
       install:
       before_script:
       script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
         - cd ./testApp/cmd/testApp
-        - GO111MODULE=on go build .
+        - GO111MODULE=on go build -o $FILE_NAME .
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
-        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/testApp
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
         skip_cleanup: true
         draft: true
 
-    # - language: go
-    #   os: osx
-    #   osx_image: xcode11.3
-    #   before_install:
-    #     - go version
-    #   install:
-    #   before_script:
-    #   script:
-    #     - cd ./testApp/cmd/testApp
-    #     - GO111MODULE=on go build .
+    - language: go
+      os: osx
+      osx_image: xcode11.3
+      before_install:
+        - go version
+      install:
+      before_script:
+      script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
+        - cd ./testApp/cmd/testApp
+        - GO111MODULE=on go build -o $FILE_NAME .
 
-    # - language: go
-    #   os: windows
-    #   before_install:
-    #     - go version
-    #   install:
-    #   before_script:
-    #   script:
-    #     - cd ./testApp/cmd/testApp
-    #     - GO111MODULE=on go build .
+    - language: go
+      os: windows
+      before_install:
+        - go version
+      install:
+      before_script:
+      script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
+        - cd ./testApp/cmd/testApp
+        - GO111MODULE=on go build -o $FILE_NAME .
 
