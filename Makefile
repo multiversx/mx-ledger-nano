@@ -151,7 +151,7 @@ release: all
 	cat load-template.sh | envsubst > load.sh
 	chmod +x load.sh
 	tar -zcf elrond-ledger-app-$(APPVERSION).tar.gz load.sh bin/app.hex
-	#rm load.sh
+	rm load.sh
 
 # import generic rules from the sdk
 include $(BOLOS_SDK)/Makefile.rules
