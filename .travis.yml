@@ -49,6 +49,7 @@ matrix:
         - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
@@ -67,6 +68,13 @@ matrix:
         - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
+        skip_cleanup: true
+        draft: true
 
     - language: go
       os: windows
@@ -78,4 +86,11 @@ matrix:
         - FILE_NAME=ElrondTestApp_LedgerNano_$TRAVIS_OS_NAME_$TRAVIS_BUILD_NUMBER_$TRAVIS_COMMIT
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
+        skip_cleanup: true
+        draft: true
 
