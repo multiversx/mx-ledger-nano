@@ -36,15 +36,13 @@ matrix:
         - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
       before_script:
       script:
-        - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
-        - ls bin
-        - ARCHIVE=ElrondSignerApp_LedgerNano_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}.tar.gz
-        - tar czvf $ARCHIVE bin/*
-        - ls
+        - BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk make 
+        - FILE_NAME=elrond-ledger-app-v1.0.0.hex
+        - cp bin/app.hex $FILE_NAME
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
-        file: $ARCHIVE
+        file: $FILE_NAME
         skip_cleanup: true
         draft: true
     
