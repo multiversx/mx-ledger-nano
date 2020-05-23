@@ -3,41 +3,50 @@ arch:
 
 matrix:
   include:
-    # - language: python
-    #   os: linux
-    #   dist: bionic
-    #   before_install:
-    #     - sudo apt-get update
-    #     - sudo apt install gcc-multilib g++-multilib -y
-    #     - go version
-    #     - python3 --version
-    #     - pip3 --version
-    #     - pip3 install Pillow
+    - language: python
+      os: linux
+      dist: bionic
+      before_install:
+        - sudo apt-get update
+        - sudo apt install gcc-multilib g++-multilib -y
+        - go version
+        - python3 --version
+        - pip3 --version
+        - pip3 install Pillow
 
-    #   install:
-    #     - mkdir buildchain
-    #     - mkdir buildchain/clang-arm-fropi
-    #     - mkdir sdk
-    #     - mkdir sdk/nanos-secure-sdk
+      install:
+        - mkdir buildchain
+        - mkdir buildchain/clang-arm-fropi
+        - mkdir sdk
+        - mkdir sdk/nanos-secure-sdk
 
-    #     - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-    #     - tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-    #     - rm gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-    #     - mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
+        - wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - rm gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
+        - mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
 
-    #     - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
-    #     - tar xf clang+llvm.tar.xz
-    #     - rm clang+llvm.tar.xz
-    #     - mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
+        - wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
+        - tar xf clang+llvm.tar.xz
+        - rm clang+llvm.tar.xz
+        - mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
 
-    #     - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
-    #     - tar xf nanos-secure-sdk.tar.gz
-    #     - rm nanos-secure-sdk.tar.gz
-    #     - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
-    #   before_script:
-    #   script:
-    #     - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
-    #     - ls bin
+        - wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
+        - tar xf nanos-secure-sdk.tar.gz
+        - rm nanos-secure-sdk.tar.gz
+        - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
+      before_script:
+      script:
+        - make BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk
+        - ls bin
+        - ARCHIVE=ElrondSignerApp_LedgerNano_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
+        - tar czvf $ARCHIVE bin/*
+        - ls
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: $ARCHIVE
+        skip_cleanup: true
+        draft: true
     
     - language: go
       os: linux
@@ -46,33 +55,51 @@ matrix:
       install:
       before_script:
       script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
         - cd ./testApp/cmd/testApp
-        - GO111MODULE=on go build .
+        - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
       deploy:
         provider: releases
         api_key: $GITHUB_OAUTH_TOKEN
-        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/testApp
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
         skip_cleanup: true
         draft: true
 
-    # - language: go
-    #   os: osx
-    #   osx_image: xcode11.3
-    #   before_install:
-    #     - go version
-    #   install:
-    #   before_script:
-    #   script:
-    #     - cd ./testApp/cmd/testApp
-    #     - GO111MODULE=on go build .
+    - language: go
+      os: osx
+      osx_image: xcode11.3
+      before_install:
+        - go version
+      install:
+      before_script:
+      script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
+        - cd ./testApp/cmd/testApp
+        - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
+        skip_cleanup: true
+        draft: true
 
-    # - language: go
-    #   os: windows
-    #   before_install:
-    #     - go version
-    #   install:
-    #   before_script:
-    #   script:
-    #     - cd ./testApp/cmd/testApp
-    #     - GO111MODULE=on go build .
+    - language: go
+      os: windows
+      before_install:
+        - go version
+      install:
+      before_script:
+      script:
+        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}.exe
+        - cd ./testApp/cmd/testApp
+        - GO111MODULE=on go build -o $FILE_NAME .
+        - ls
+      deploy:
+        provider: releases
+        api_key: $GITHUB_OAUTH_TOKEN
+        file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
+        skip_cleanup: true
+        draft: true
 
