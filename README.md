@@ -59,7 +59,13 @@ The `testApp` folder contains a sample *Go* application to prepare Elrond transa
 
 Download the latest `ElrondTestApp_LedgerNano*` file from our [releases page](https://github.com/ElrondNetwork/ledger-elrond/releases). Linux, MacOS and Windows are supported. Then execute the file while the device is connected to your computer. You will be requested to enter transaction details and then continue with the signing step.
 
-Please note that on Windows you might receive the _Unknown publisher_ warning from the [UAC facility](https://en.wikipedia.org/wiki/User_Account_Control). 
+Before running the application, you need to mark it as executable on Linux / MacOS:
+
+```
+chmod +x ./ElrondTestApp_LedgerNano*
+```
+
+Also please note that on Windows you might receive the _Unknown publisher_ warning from the [UAC facility](https://en.wikipedia.org/wiki/User_Account_Control) when you first run the _testApp_.
 
 ## Development environment: building and installing
 
