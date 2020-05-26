@@ -147,6 +147,7 @@ delete:
 	python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
 
 release: all
+	echo ${APP_LOAD_PARAMS}
 	export APP_LOAD_PARAMS_EVALUATED="$(shell printf '\\"%s\\" ' $(APP_LOAD_PARAMS))"; \
 	cat load-template.sh | envsubst > load.sh
 	chmod +x load.sh
