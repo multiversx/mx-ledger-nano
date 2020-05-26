@@ -137,8 +137,11 @@ SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 SDK_SOURCE_PATH  += lib_ux
 endif
 
+display-params:
+	echo "APP PARAMS"
+	echo "$(shell printf '\\"%s\\" ' $(APP_LOAD_PARAMS))"
+
 load: all
-	echo ${APP_LOAD_PARAMS}
 	python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
 load-offline: all
@@ -148,7 +151,6 @@ delete:
 	python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
 
 release: all
-	echo ${APP_LOAD_PARAMS}
 	export APP_LOAD_PARAMS_EVALUATED="$(shell printf '\\"%s\\" ' $(APP_LOAD_PARAMS))"; \
 	cat load-template.sh | envsubst > load.sh
 	chmod +x load.sh
