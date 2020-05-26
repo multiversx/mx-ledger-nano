@@ -57,12 +57,12 @@ python3 -m ledgerblue.deleteApp --targetId 0x31100004 --appName Elrond
 
 The `testApp` folder contains a sample *Go* application to prepare Elrond transactions, which you can sign using the Ledger device. The signed transactions are then dispatched to the [Elrond Proxy](https://api.elrond.com), in order to be processed and saved on the blockchain.
 
-Download the latest `ElrondTestApp_LedgerNano*` file from our [releases page](https://github.com/ElrondNetwork/ledger-elrond/releases). Linux, MacOS and Windows are supported. Then execute the file while the device is connected to your computer. You will be requested to enter transaction details and then continue with the signing step.
+Download the latest `ElrondTestApp*` file from our [releases page](https://github.com/ElrondNetwork/ledger-elrond/releases). Linux, MacOS and Windows are supported. Then execute the file while the device is connected to your computer. You will be requested to enter transaction details and then continue with the signing step.
 
 Before running the application, you need to mark it as executable on Linux / MacOS:
 
 ```
-chmod +x ./ElrondTestApp_LedgerNano*
+chmod +x ./ElrondTestApp*
 ```
 
 Also please note that on Windows you might receive the _Unknown publisher_ warning from the [UAC facility](https://en.wikipedia.org/wiki/User_Account_Control) when you first run the _testApp_.
