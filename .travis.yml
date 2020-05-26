@@ -36,8 +36,8 @@ matrix:
         - mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
       before_script:
       script:
-        - BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk make 
-        - FILE_NAME=elrond-ledger-app-v1.0.0.hex
+        - BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk APPVERSION_M=${APPVERSION_M} APPVERSION_N=${APPVERSION_N} APPVERSION_P=${APPVERSION_P} make 
+        - FILE_NAME=elrond-ledger-app-v${APPVERSION_M}.${APPVERSION_N}.${APPVERSION_P}.hex
         - cp bin/app.hex $FILE_NAME
       deploy:
         provider: releases
@@ -53,7 +53,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
+        - FILE_NAME=ElrondTestApp_${TRAVIS_OS_NAME}_v${APPVERSION_M}.${APPVERSION_N}.${APPVERSION_P}
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - chmod +x $FILE_NAME
@@ -73,7 +73,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}
+        - FILE_NAME=ElrondTestApp_${TRAVIS_OS_NAME}_v${APPVERSION_M}.${APPVERSION_N}.${APPVERSION_P}
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - chmod +x $FILE_NAME
@@ -92,7 +92,7 @@ matrix:
       install:
       before_script:
       script:
-        - FILE_NAME=ElrondTestApp_LedgerNano_${TRAVIS_OS_NAME}_${TRAVIS_BUILD_NUMBER}_${TRAVIS_COMMIT}.exe
+        - FILE_NAME=ElrondTestApp_${TRAVIS_OS_NAME}_v${APPVERSION_M}.${APPVERSION_N}.${APPVERSION_P}.exe
         - cd ./testApp/cmd/testApp
         - GO111MODULE=on go build -o $FILE_NAME .
         - ls
