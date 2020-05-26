@@ -138,6 +138,7 @@ SDK_SOURCE_PATH  += lib_ux
 endif
 
 load: all
+	echo ${APP_LOAD_PARAMS}
 	python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
 load-offline: all
