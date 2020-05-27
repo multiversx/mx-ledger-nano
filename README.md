@@ -1,5 +1,7 @@
 # Elrond App for the Ledger Nano S
 
+[![Build Status](https://travis-ci.com/ElrondNetwork/ledger-elrond.svg?branch=master)](https://travis-ci.com/ElrondNetwork/ledger-elrond)
+
 ## Introduction
 
 This is the official Elrond wallet app for the [Ledger Nano S](https://www.ledgerwallet.com/products/ledger-nano-s).
