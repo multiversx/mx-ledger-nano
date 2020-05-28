@@ -46,7 +46,7 @@ Now that you've downloaded the app and `ledgerblue` package is available, let's 
 ```
 export APP_VERSION=1.0.0
 
-python3 -m ledgerblue.loadApp --curve ed25519 --path "44'/508'" --appFlags 0x240 --tlv --targetId 0x31100004 --targetVersion=1.6.0 --delete --appName Elrond --appVersion ${APP_VERSION} --fileName elrond-ledger-app-v${APP_VERSION}.hex --dataSize 64 --icon "010000000000ffffffffffffffffff67e627e4dffbaff567e667e6aff5dffb27e467e6ffffffffffff"
+python3 -m ledgerblue.loadApp --curve ed25519 --path "44'/508'" --appFlags 0x240 --tlv --targetId 0x31100004 --targetVersion=1.6.0 --delete --appName Elrond --appVersion ${APP_VERSION} --fileName elrond-ledger-app-v${APP_VERSION}.hex --dataSize 64 --icon "010000000000ffffffffffffffffff37ecdffbeff7f7eff7eff7eff7efeff7dffb37ecffffffffffff"
 ```
 
 To remove the app from the device, issue the following command:
