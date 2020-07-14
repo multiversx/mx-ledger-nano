@@ -122,7 +122,7 @@ uint16_t parseData() {
     r = jsmn_parse(&p, tx_context.buffer, tx_context.bufLen, t, sizeof(t)/sizeof(t[0]));
     if (r < 1 || t[0].type != JSMN_OBJECT) {
         // unable to parse. maybe we did not receive the entire tx so we return 'ok'
-        return MSG_OK;
+        return ERR_MESSAGE_INCOMPLETE;
     }
     int found_args = 0;
     bool hasDataField = false;
@@ -196,6 +196,12 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
     }
 
     retCode = parseData();
+
+    if (retCode == ERR_MESSAGE_INCOMPLETE) {
+        THROW(MSG_OK);
+        return;
+    }
+
     if (retCode != MSG_OK) {
         THROW(retCode);
         return;

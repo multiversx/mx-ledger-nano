@@ -163,7 +163,7 @@ func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
 	buf := new(bytes.Buffer)
 	buf.Write(txData)
 
-	var resp []byte
+	var resp []byte = nil
 	for buf.Len() > 0 {
 		var p1 byte = 0x80
 		if resp == nil {

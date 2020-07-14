@@ -42,6 +42,7 @@ typedef enum {
 #define ERR_RECEIVER_TOO_LONG      0x6E05 // signTx
 #define ERR_AMOUNT_TOO_LONG        0x6E06 // signTx
 #define ERR_CONTRACT_DATA_DISABLED 0x6E07 // signTx
+#define ERR_MESSAGE_INCOMPLETE     0x6E08 // signTx
 
 extern ux_state_t ux;
 // display stepped screens
