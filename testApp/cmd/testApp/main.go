@@ -81,7 +81,7 @@ type transaction struct {
 	Version   uint32 `json:"version"`
 }
 
-type accountInfo struct {
+type getAccountResponse struct {
 	Data struct {
 		Account struct {
 			Address string `json:"address"`
@@ -108,7 +108,7 @@ func getSenderInfo(address string) (*big.Int, uint64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	var accInfo accountInfo
+	var accInfo getAccountResponse
 	err = json.Unmarshal(body, &accInfo)
 	if err != nil {
 		return nil, 0, err

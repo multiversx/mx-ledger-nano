@@ -129,14 +129,14 @@ uint16_t parseData() {
     // iterate all json keys
 	for (i = 1; i < r; i++) {
         int len = t[i + 1].end - t[i + 1].start;
-		if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
+        if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
             if (len >= FULL_ADDRESS_LENGTH)
                 return ERR_RECEIVER_TOO_LONG;
             os_memmove(tx_context.receiver, tx_context.buffer + t[i + 1].start, len);
             tx_context.receiver[len] = '\0';
             found_args++;
         }
-		if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
+        if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
             if (len >= MAX_AMOUNT_LEN)
                 return ERR_AMOUNT_TOO_LONG;
             os_memmove(tx_context.amount, tx_context.buffer + t[i + 1].start, len);
