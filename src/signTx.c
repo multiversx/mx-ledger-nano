@@ -215,16 +215,27 @@ uint16_t parseData() {
             tx_context.gas_price = char2ULL(gas_price);
             found_args++;
         }
+        if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
+            if (len >= 10)
+                return ERR_INVALID_MESSAGE;
+            char version[11]; // enough to store a uint32 + \0
+            os_memmove(version, tx_context.buffer + t[i + 1].start, len);
+            version[len] = '\0';
+            if (char2ULL(version) != TX_VERSION)
+                return ERR_WRONG_TX_VERSION;
+            found_args++;
+        }
 		if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
             hasDataField = true;
         }
     }
-    // found_args should be 4 if we identified the receiver, amount, gasLimit and gasPrice
-    if (found_args != 4) 
+    // found_args should be 5 if we identified the receiver, amount, gasLimit, gasPrice and version
+    if (found_args != 5)
         return ERR_INVALID_MESSAGE;
     // check if the data field is not empty and contract data is not enabled from the menu
     if (hasDataField && N_storage.setting_contract_data == 0)
         return ERR_CONTRACT_DATA_DISABLED;
+    // TODO: define the fee as float64 and calculate it as price / denomination * limit
     unsigned long long fee = tx_context.gas_limit * tx_context.gas_price;
     makeFeePretty(fee);
     return MSG_OK;

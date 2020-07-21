@@ -17,6 +17,8 @@
 #define HRP_TEST "xerd"
 #define DECIMAL_PLACES 18
 
+#define TX_VERSION 1
+
 typedef enum {
     NETWORK_MAINNET = 0,
     NETWORK_TESTNET = 1
@@ -43,6 +45,7 @@ typedef enum {
 #define ERR_AMOUNT_TOO_LONG        0x6E06 // signTx
 #define ERR_CONTRACT_DATA_DISABLED 0x6E07 // signTx
 #define ERR_MESSAGE_INCOMPLETE     0x6E08 // signTx
+#define ERR_WRONG_TX_VERSION       0x6E09 // singTx
 
 extern ux_state_t ux;
 // display stepped screens
