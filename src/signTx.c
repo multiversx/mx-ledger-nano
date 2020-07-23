@@ -3,7 +3,7 @@
 #include "ux.h"
 #include "utils.h"
 #include <jsmn.h>
-#include <stdlib.h>
+#include <uint256.h>
 
 typedef struct {
     char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
@@ -11,8 +11,8 @@ typedef struct {
 
     char receiver[FULL_ADDRESS_LENGTH];
     char amount[MAX_AMOUNT_LEN];
-    unsigned long long gas_limit;
-    unsigned long long gas_price;
+    uint64_t gas_limit;
+    uint64_t gas_price;
     char fee[MAX_AMOUNT_LEN];
     char signature[64];
 } tx_context_t;
@@ -20,7 +20,9 @@ typedef struct {
 static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
+unsigned long long char2ULL(char *str);
 void makeAmountPretty();
+void makeFeePretty();
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
@@ -82,7 +84,21 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-// convert a string to a unsinged long long
+// make the ERD fee look pretty. Add decimals and decimal point
+void makeFeePretty() {
+    uint128_t limit, price, fee;
+    limit.elements[0] = 0;
+    limit.elements[1] = tx_context.gas_limit;
+    price.elements[0] = 0;
+    price.elements[1] = tx_context.gas_price;
+    mul128(&limit, &price, &fee);
+    char str_fee[MAX_UINT128_LEN+1];
+    bool ok = tostring128(&fee, 10, str_fee, MAX_UINT128_LEN);
+    os_memmove(tx_context.fee, str_fee, strlen(str_fee)+1);
+    makeAmountPretty(tx_context.fee);
+}
+
+// convert a string to a unsigned long long
 unsigned long long char2ULL(char *str) {
     unsigned long long result = 0; // Initialize result
     // Iterate through all characters of input string and update result
@@ -91,60 +107,26 @@ unsigned long long char2ULL(char *str) {
     return result;
 }
 
-// make the ERD fee look pretty. Add decimals and decimal point
-void makeFeePretty(unsigned long long fee) {
-    int len = 0;
-    tx_context.fee[0] = '0';
-    tx_context.fee[1] = '\0';
-    while (fee > 0) {
-        char digit = fee % 10;
-        fee /= 10;
-        len++;
-        os_memmove(tx_context.fee + 1, tx_context.fee, len);
-        tx_context.fee[len] = '\0';
-        tx_context.fee[0] = digit + '0';
-    }
-
-    len = strlen(tx_context.fee);
-    int missing = DECIMAL_PLACES - len + 1;
-    if (missing > 0) {
-        os_memmove(tx_context.fee + missing, tx_context.fee, len + 1);
-        os_memset(tx_context.fee, '0', missing);
-    }
-    len = strlen(tx_context.fee);
-    int dotPos = len - DECIMAL_PLACES;
-    os_memmove(tx_context.fee + dotPos + 1, tx_context.fee + dotPos, DECIMAL_PLACES + 1);
-    tx_context.fee[dotPos] = '.';
-    while (tx_context.fee[strlen(tx_context.fee) - 1] == '0') {
-        tx_context.fee[strlen(tx_context.fee) - 1] = '\0';
-    }
-    if (tx_context.fee[strlen(tx_context.fee) - 1] == '.') {
-        tx_context.amount[strlen(tx_context.fee) - 1] = '\0';
-    }
-    char suffix[5] = " ERD\0";
-    os_memmove(tx_context.fee + strlen(tx_context.fee), suffix, 5);
-}
-
 // make the ERD amount look pretty. Add decimals and decimal point
-void makeAmountPretty() {
-    int len = strlen(tx_context.amount);
+void makeAmountPretty(char *amount) {
+    int len = strlen(amount);
     int missing = DECIMAL_PLACES - len + 1;
     if (missing > 0) {
-        os_memmove(tx_context.amount + missing, tx_context.amount, len + 1);
-        os_memset(tx_context.amount, '0', missing);
+        os_memmove(amount + missing, amount, len + 1);
+        os_memset(amount, '0', missing);
     }
-    len = strlen(tx_context.amount);
+    len = strlen(amount);
     int dotPos = len - DECIMAL_PLACES;
-    os_memmove(tx_context.amount + dotPos + 1, tx_context.amount + dotPos, DECIMAL_PLACES + 1);
-    tx_context.amount[dotPos] = '.';
-    while (tx_context.amount[strlen(tx_context.amount) - 1] == '0') {
-        tx_context.amount[strlen(tx_context.amount) - 1] = '\0';
+    os_memmove(amount + dotPos + 1, amount + dotPos, DECIMAL_PLACES + 1);
+    amount[dotPos] = '.';
+    while (amount[strlen(amount) - 1] == '0') {
+        amount[strlen(amount) - 1] = '\0';
     }
-    if (tx_context.amount[strlen(tx_context.amount) - 1] == '.') {
-        tx_context.amount[strlen(tx_context.amount) - 1] = '\0';
+    if (amount[strlen(amount) - 1] == '.') {
+        amount[strlen(amount) - 1] = '\0';
     }
     char suffix[5] = " ERD\0";
-    os_memmove(tx_context.amount + strlen(tx_context.amount), suffix, 5);
+    os_memmove(amount + strlen(amount), suffix, 5);
 }
 
 // helper for comparing json keys
@@ -194,25 +176,25 @@ uint16_t parseData() {
                 return ERR_AMOUNT_TOO_LONG;
             os_memmove(tx_context.amount, tx_context.buffer + t[i + 1].start, len);
             tx_context.amount[len] = '\0';
-            makeAmountPretty();
+            makeAmountPretty(tx_context.amount);
             found_args++;
         }
         if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
-            if (len >= MAX_AMOUNT_LEN)
+            if (len >= MAX_UINT64_LEN)
                 return ERR_AMOUNT_TOO_LONG;
-            char gas_limit[MAX_AMOUNT_LEN];
-            os_memmove(gas_limit, tx_context.buffer + t[i + 1].start, len);
-            gas_limit[len] = '\0';
-            tx_context.gas_limit = char2ULL(gas_limit);
+            char limit[MAX_UINT64_LEN+1];
+            os_memmove(limit, tx_context.buffer + t[i + 1].start, len);
+            limit[len] = '\0';
+            tx_context.gas_limit = char2ULL(limit);
             found_args++;
         }
         if (jsoneq(tx_context.buffer, &t[i], "gasPrice") == 0) {
-            if (len >= MAX_AMOUNT_LEN)
+            if (len >= MAX_UINT64_LEN)
                 return ERR_AMOUNT_TOO_LONG;
-            char gas_price[MAX_AMOUNT_LEN];
-            os_memmove(gas_price, tx_context.buffer + t[i + 1].start, len);
-            gas_price[len] = '\0';
-            tx_context.gas_price = char2ULL(gas_price);
+            char price[MAX_UINT64_LEN+1];
+            os_memmove(price, tx_context.buffer + t[i + 1].start, len);
+            price[len] = '\0';
+            tx_context.gas_price = char2ULL(price);
             found_args++;
         }
         if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
@@ -235,8 +217,7 @@ uint16_t parseData() {
     // check if the data field is not empty and contract data is not enabled from the menu
     if (hasDataField && N_storage.setting_contract_data == 0)
         return ERR_CONTRACT_DATA_DISABLED;
-    unsigned long long fee = tx_context.gas_limit * tx_context.gas_price;
-    makeFeePretty(fee);
+    makeFeePretty();
     return MSG_OK;
 }
 
