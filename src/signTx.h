@@ -9,5 +9,6 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
 
 #define MAX_AMOUNT_LEN 32
 #define MAX_BUFFER_LEN 1024
+#define MAX_UINT32_LEN 10
 
 #endif

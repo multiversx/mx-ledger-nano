@@ -216,9 +216,9 @@ uint16_t parseData() {
             found_args++;
         }
         if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
-            if (len >= 10)
+            if (len >= MAX_UINT32_LEN)
                 return ERR_INVALID_MESSAGE;
-            char version[11]; // enough to store a uint32 + \0
+            char version[MAX_UINT32_LEN+1]; // enough to store a uint32 + \0
             os_memmove(version, tx_context.buffer + t[i + 1].start, len);
             version[len] = '\0';
             if (char2ULL(version) != TX_VERSION)
@@ -235,7 +235,6 @@ uint16_t parseData() {
     // check if the data field is not empty and contract data is not enabled from the menu
     if (hasDataField && N_storage.setting_contract_data == 0)
         return ERR_CONTRACT_DATA_DISABLED;
-    // TODO: define the fee as float64 and calculate it as price / denomination * limit
     unsigned long long fee = tx_context.gas_limit * tx_context.gas_price;
     makeFeePretty(fee);
     return MSG_OK;
