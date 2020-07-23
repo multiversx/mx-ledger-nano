@@ -102,8 +102,9 @@ void makeFeePretty() {
 unsigned long long char2ULL(char *str) {
     unsigned long long result = 0; // Initialize result
     // Iterate through all characters of input string and update result
-    for (int i = 0; str[i] != '\0'; ++i)
-        result = result*10 + str[i] - '0';
+    if (str != NULL)
+        for (int i = 0; str[i] != '\0'; ++i)
+            result = result*10 + str[i] - '0';
     return result;
 }
 
