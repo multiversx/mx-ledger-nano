@@ -190,6 +190,17 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 	return nil
 }
 
+// trim removes the trailing crlf characters from the end of a string
+func trim(s string) string {
+	if strings.HasSuffix(s, "\n") {
+		s = strings.TrimSuffix(s, "\n")
+	}
+	if strings.HasSuffix(s, "\r") {
+		s = strings.TrimSuffix(s, "\r")
+	}
+	return s
+}
+
 // getTxDataFromUser retrieves tx fields from user
 func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	var err error
@@ -201,9 +212,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		log.Println(errEmptyAddress)
 		return "", nil, "", err
 	}
-	if strings.HasSuffix(strReceiverAddress, "\n") {
-		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
-	}
+	strReceiverAddress = trim(strReceiverAddress)
 	_, _, err = bech32.Decode(strReceiverAddress)
 	if err != nil {
 		log.Println(errInvalidAddress)
@@ -213,9 +222,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	// read amount
 	fmt.Print("Amount of ERD to send: ")
 	strAmount, _ := reader.ReadString('\n')
-	if strings.HasSuffix(strAmount, "\n") {
-		strAmount = strings.TrimSuffix(strAmount, "\n")
-	}
+	strAmount = trim(strAmount)
 	amount, err := strconv.ParseFloat(strAmount, 64)
 	if err != nil {
 		log.Println(errInvalidAmount)
@@ -230,9 +237,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		// read data field
 		fmt.Print("Data field: ")
 		data, _ = reader.ReadString('\n')
-		if strings.HasSuffix(data, "\n") {
-			data = strings.TrimSuffix(data, "\n")
-		}
+		data = trim(data)
 	}
 	return strReceiverAddress, bigIntAmount, data, nil
 }
@@ -275,6 +280,12 @@ func broadcastTransaction(tx transaction) error {
 	return nil
 }
 
+func waitInputAndExit() {
+	fmt.Println("Press enter to continue...")
+	fmt.Scanln()
+	os.Exit(1)
+}
+
 // main function
 func main() {
 	log.SetFlags(0)
@@ -283,18 +294,21 @@ func main() {
 	var nanos *ledger.NanoS
 	nanos, err := ledger.OpenNanoS()
 	if err != nil {
-		log.Fatalln(errOpenDevice, err)
+		log.Println(errOpenDevice, err)
+		waitInputAndExit()
 	}
 	err = getDeviceInfo(nanos)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
 	fmt.Printf("Network: %s ; Contract data: %s\n\r", network[nanos.Network], status[nanos.ContractData])
 
 	netConfig, err := getNetworkConfig()
 	if err != nil {
-		log.Fatalln(errGetNetworkConfig, err)
+		log.Println(errGetNetworkConfig, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Chain ID: %s\n\rTx version: %v\n\r",
 		netConfig.Data.Config.ChainID, netConfig.Data.Config.MinTransactionVersion)
@@ -302,7 +316,8 @@ func main() {
 	fmt.Println("Retrieving address. Please confirm on your Ledger")
 	senderAddress, err := nanos.GetAddress(uint32(nanos.Account), uint32(nanos.AddressIndex))
 	if err != nil {
-		log.Fatalln(errGetAddress, err)
+		log.Println(errGetAddress, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Address: %s\n\r", senderAddress)
 
@@ -310,24 +325,28 @@ func main() {
 	denomination = big.NewFloat(math.Pow10(netConfig.Data.Config.Denomination))
 	balance, nonce, err := getSenderInfo(string(senderAddress))
 	if err != nil || balance == nil {
-		log.Fatalln(errGetBalanceAndNonce, err)
+		log.Println(errGetBalanceAndNonce, err)
+		waitInputAndExit()
 	}
 	bigFloatBalance, _ := big.NewFloat(0).SetString(balance.String())
 	bigFloatBalance.Quo(bigFloatBalance, denomination)
 	strBalance := bigFloatBalance.String()
 	strSenderShard, err := getAddressShard(string(senderAddress), netConfig.Data.Config.NumShardsWithoutMeta)
 	if err != nil {
-		log.Fatalln(errGetAddressShard, err)
+		log.Println(errGetAddressShard, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Sender shard: %v\n\rBalance: %v ERD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
 
 	strReceiverAddress, bigIntAmount, data, err := getTxDataFromUser(nanos.ContractData)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
 	strReceiverShard, err := getAddressShard(strReceiverAddress, netConfig.Data.Config.NumShardsWithoutMeta)
 	if err != nil {
-		log.Fatalln(errGetAddressShard, err)
+		log.Println(errGetAddressShard, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
@@ -345,10 +364,12 @@ func main() {
 
 	err = signTransaction(&tx, nanos)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
 	err = broadcastTransaction(tx)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
+	waitInputAndExit()
 }
