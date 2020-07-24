@@ -16,7 +16,7 @@ matrix:
         - ls
       deploy:
         provider: releases
-        api_key: $GITHUB_OAUTH_TOKEN
+        api_key: $GITHUB_OAUTH_TOKEN_SECONDARY
         file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
         skip_cleanup: true
         draft: true
