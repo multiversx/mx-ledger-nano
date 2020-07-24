@@ -204,6 +204,12 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	if strings.HasSuffix(strReceiverAddress, "\n") {
 		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
 	}
+	if strings.HasSuffix(strReceiverAddress, "\r") {
+		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\r")
+	}
+	if strings.HasSuffix(strReceiverAddress, "\n") {
+		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
+	}
 	_, _, err = bech32.Decode(strReceiverAddress)
 	if err != nil {
 		log.Println(errInvalidAddress)
