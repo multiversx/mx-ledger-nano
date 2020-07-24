@@ -130,7 +130,7 @@ include $(BOLOS_SDK)/Makefile.glyphs
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
 APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
-APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/jsmn/src
+APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/jsmn/src deps/uint256
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
