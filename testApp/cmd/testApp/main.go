@@ -190,6 +190,16 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 	return nil
 }
 
+func trim(s string) string {
+	if strings.HasSuffix(s, "\n") {
+		s = strings.TrimSuffix(s, "\n")
+	}
+	if strings.HasSuffix(s, "\r") {
+		s = strings.TrimSuffix(s, "\r")
+	}
+	return s
+}
+
 // getTxDataFromUser retrieves tx fields from user
 func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	var err error
@@ -201,15 +211,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		log.Println(errEmptyAddress)
 		return "", nil, "", err
 	}
-	if strings.HasSuffix(strReceiverAddress, "\n") {
-		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
-	}
-	if strings.HasSuffix(strReceiverAddress, "\r") {
-		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\r")
-	}
-	if strings.HasSuffix(strReceiverAddress, "\n") {
-		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
-	}
+	strReceiverAddress = trim(strReceiverAddress)
 	_, _, err = bech32.Decode(strReceiverAddress)
 	if err != nil {
 		log.Println(errInvalidAddress)
@@ -219,9 +221,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	// read amount
 	fmt.Print("Amount of ERD to send: ")
 	strAmount, _ := reader.ReadString('\n')
-	if strings.HasSuffix(strAmount, "\n") {
-		strAmount = strings.TrimSuffix(strAmount, "\n")
-	}
+	strAmount = trim(strAmount)
 	amount, err := strconv.ParseFloat(strAmount, 64)
 	if err != nil {
 		log.Println(errInvalidAmount)
@@ -236,9 +236,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		// read data field
 		fmt.Print("Data field: ")
 		data, _ = reader.ReadString('\n')
-		if strings.HasSuffix(data, "\n") {
-			data = strings.TrimSuffix(data, "\n")
-		}
+		data = trim(data)
 	}
 	return strReceiverAddress, bigIntAmount, data, nil
 }
