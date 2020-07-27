@@ -75,7 +75,7 @@ type transaction struct {
 	SndAddr   string `json:"sender"`
 	GasPrice  uint64 `json:"gasPrice,omitempty"`
 	GasLimit  uint64 `json:"gasLimit,omitempty"`
-	Data      string `json:"data,omitempty"`
+	Data      []byte `json:"data,omitempty"`
 	Signature string `json:"signature,omitempty"`
 	ChainID   string `json:"chainID"`
 	Version   uint32 `json:"version"`
@@ -192,12 +192,7 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 
 // trim removes the trailing crlf characters from the end of a string
 func trim(s string) string {
-	if strings.HasSuffix(s, "\n") {
-		s = strings.TrimSuffix(s, "\n")
-	}
-	if strings.HasSuffix(s, "\r") {
-		s = strings.TrimSuffix(s, "\r")
-	}
+	s = strings.TrimRight(s, "\n\r")
 	return s
 }
 
@@ -357,7 +352,7 @@ func main() {
 	tx.Value = bigIntAmount.String()
 	tx.Nonce = nonce
 	tx.GasPrice = netConfig.Data.Config.MinGasPrice
-	tx.Data = data
+	tx.Data = []byte(data)
 	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
 	tx.ChainID = netConfig.Data.Config.ChainID
 	tx.Version = netConfig.Data.Config.MinTransactionVersion
