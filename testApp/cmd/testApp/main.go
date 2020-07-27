@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,27 +19,23 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const observerHost string = "https://api.elrond.com"
-const isProxy bool = true // if true, send "data" field as string, else send as base64
+const proxyHost string = "https://api.elrond.com"
 
 const (
-	noOfShards      = uint32(5)
-	strDenomination = "1000000000000000000"
-	gasPrice        = uint64(100000000000000)
-	gasLimit        = uint64(100000)
-	gasPerDataByte  = uint64(1500)
-	hrpMainnet      = "erd"
-	hrpTestnet      = "xerd"
+	hrpMainnet = "erd"
+	hrpTestnet = "xerd"
 )
 
 var network = [...]string{"Mainnet", "Testnet"}
 var status = [...]string{"Disabled", "Enabled"}
+var denomination *big.Float
 
 const (
 	errOpenDevice           = "couldn't open device"
 	errGetAppVersion        = "couldn't get app version"
 	errGetConfig            = "couldn't get configuration"
 	errGetAddress           = "couldn't get address"
+	errGetNetworkConfig     = "couldn't get network config"
 	errGetBalanceAndNonce   = "couldn't get address balance and nonce"
 	errEmptyAddress         = "empty address"
 	errInvalidAddress       = "invalid receiver address"
@@ -52,6 +47,27 @@ const (
 	errGetAddressShard      = "getAddressShard error"
 )
 
+type networkConfig struct {
+	Data struct {
+		Config struct {
+			ChainID                  string `json:"erd_chain_id"`
+			Denomination             int    `json:"erd_denomination"`
+			GasPerDataByte           uint64 `json:"erd_gas_per_data_byte"`
+			LatestTagSoftwareVersion string `json:"erd_latest_tag_software_version"`
+			MetaConsensusGroupSize   uint32 `json:"erd_meta_consensus_group_size"`
+			MinGasLimit              uint64 `json:"erd_min_gas_limit"`
+			MinGasPrice              uint64 `json:"erd_min_gas_price"`
+			MinTransactionVersion    uint32 `json:"erd_min_transaction_version"`
+			NumMetachainNodes        uint32 `json:"erd_num_metachain_nodes"`
+			NumNodesInShard          uint32 `json:"erd_num_nodes_in_shard"`
+			NumShardsWithoutMeta     uint32 `json:"erd_num_shards_without_meta"`
+			RoundDuration            uint32 `json:"erd_round_duration"`
+			ShardConsensusGroupSize  uint32 `json:"erd_shard_consensus_group_size"`
+			StartTime                uint32 `json:"erd_start_time"`
+		} `json:"config"`
+	} `json:"data"`
+}
+
 type transaction struct {
 	Nonce     uint64 `json:"nonce"`
 	Value     string `json:"value"`
@@ -59,24 +75,26 @@ type transaction struct {
 	SndAddr   string `json:"sender"`
 	GasPrice  uint64 `json:"gasPrice,omitempty"`
 	GasLimit  uint64 `json:"gasLimit,omitempty"`
-	Data      string `json:"data,omitempty"`
+	Data      []byte `json:"data,omitempty"`
 	Signature string `json:"signature,omitempty"`
+	ChainID   string `json:"chainID"`
+	Version   uint32 `json:"version"`
 }
 
-type accountType struct {
-	Address string `json:"address"`
-	Nonce   uint64 `json:"nonce"`
-	Balance string `json:"balance"`
-}
-
-type accountMessage struct {
-	Account accountType `json:"account"`
+type getAccountResponse struct {
+	Data struct {
+		Account struct {
+			Address string `json:"address"`
+			Nonce   uint64 `json:"nonce"`
+			Balance string `json:"balance"`
+		} `json:"account"`
+	} `json:"data"`
 }
 
 // getSenderInfo returns the balance and nonce of an address
 func getSenderInfo(address string) (*big.Int, uint64, error) {
 	req, err := http.NewRequest(http.MethodGet,
-		fmt.Sprintf("%s/address/%s", observerHost, address), nil)
+		fmt.Sprintf("%s/address/%s", proxyHost, address), nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -90,17 +108,17 @@ func getSenderInfo(address string) (*big.Int, uint64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	var balanceMsg accountMessage
-	err = json.Unmarshal(body, &balanceMsg)
+	var accInfo getAccountResponse
+	err = json.Unmarshal(body, &accInfo)
 	if err != nil {
 		return nil, 0, err
 	}
-	balance, ok := big.NewInt(0).SetString(balanceMsg.Account.Balance, 10)
+	balance, ok := big.NewInt(0).SetString(accInfo.Data.Account.Balance, 10)
 	if !ok {
 		return nil, 0, errors.New(errInvalidBalanceString)
 	}
 
-	return balance, balanceMsg.Account.Nonce, nil
+	return balance, accInfo.Data.Account.Nonce, nil
 }
 
 // getAddressShard returns the assigned shard of an address
@@ -133,6 +151,30 @@ func getAddressShard(bech32Address string, noOfShards uint32) (uint32, error) {
 	return shard, nil
 }
 
+// getNetworkConfig reads the network config from the proxy and returns a networkConfig object
+func getNetworkConfig() (*networkConfig, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/network/config", proxyHost), nil)
+	if err != nil {
+		return nil, err
+	}
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	netConfig := &networkConfig{}
+	err = json.Unmarshal(body, netConfig)
+	if err != nil {
+		return nil, err
+	}
+	return netConfig, nil
+}
+
 // getDeviceInfo retrieves various informations from Ledger
 func getDeviceInfo(nanos *ledger.NanoS) error {
 	err := nanos.GetVersion()
@@ -148,6 +190,12 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 	return nil
 }
 
+// trim removes the trailing crlf characters from the end of a string
+func trim(s string) string {
+	s = strings.TrimRight(s, "\n\r")
+	return s
+}
+
 // getTxDataFromUser retrieves tx fields from user
 func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	var err error
@@ -159,9 +207,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		log.Println(errEmptyAddress)
 		return "", nil, "", err
 	}
-	if strings.HasSuffix(strReceiverAddress, "\n") {
-		strReceiverAddress = strings.TrimSuffix(strReceiverAddress, "\n")
-	}
+	strReceiverAddress = trim(strReceiverAddress)
 	_, _, err = bech32.Decode(strReceiverAddress)
 	if err != nil {
 		log.Println(errInvalidAddress)
@@ -171,16 +217,13 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	// read amount
 	fmt.Print("Amount of ERD to send: ")
 	strAmount, _ := reader.ReadString('\n')
-	if strings.HasSuffix(strAmount, "\n") {
-		strAmount = strings.TrimSuffix(strAmount, "\n")
-	}
+	strAmount = trim(strAmount)
 	amount, err := strconv.ParseFloat(strAmount, 64)
 	if err != nil {
 		log.Println(errInvalidAmount)
 		return "", nil, "", err
 	}
 	bigFloatAmount := big.NewFloat(0).SetFloat64(amount)
-	denomination, _ := big.NewFloat(0).SetString(strDenomination)
 	bigFloatAmount.Mul(bigFloatAmount, denomination)
 	bigIntAmount := new(big.Int)
 	bigFloatAmount.Int(bigIntAmount)
@@ -189,9 +232,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		// read data field
 		fmt.Print("Data field: ")
 		data, _ = reader.ReadString('\n')
-		if strings.HasSuffix(data, "\n") {
-			data = strings.TrimSuffix(data, "\n")
-		}
+		data = trim(data)
 	}
 	return strReceiverAddress, bigIntAmount, data, nil
 }
@@ -210,9 +251,6 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 	}
 
 	sigHex := hex.EncodeToString(signature)
-	if !isProxy {
-		tx.Data = base64.StdEncoding.EncodeToString([]byte(tx.Data))
-	}
 	tx.Signature = sigHex
 	return nil
 }
@@ -220,7 +258,7 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 // broadcastTransaction broadcasts the transaction in the network
 func broadcastTransaction(tx transaction) error {
 	jsonTx, _ := json.Marshal(&tx)
-	resp, err := http.Post(fmt.Sprintf("%s/transaction/send", observerHost), "",
+	resp, err := http.Post(fmt.Sprintf("%s/transaction/send", proxyHost), "",
 		strings.NewReader(string(jsonTx)))
 	if err != nil {
 		log.Println(errSendingTx)
@@ -237,6 +275,12 @@ func broadcastTransaction(tx transaction) error {
 	return nil
 }
 
+func waitInputAndExit() {
+	fmt.Println("Press enter to continue...")
+	fmt.Scanln()
+	os.Exit(1)
+}
+
 // main function
 func main() {
 	log.SetFlags(0)
@@ -245,44 +289,59 @@ func main() {
 	var nanos *ledger.NanoS
 	nanos, err := ledger.OpenNanoS()
 	if err != nil {
-		log.Fatalln(errOpenDevice, err)
+		log.Println(errOpenDevice, err)
+		waitInputAndExit()
 	}
 	err = getDeviceInfo(nanos)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
 	fmt.Printf("Network: %s ; Contract data: %s\n\r", network[nanos.Network], status[nanos.ContractData])
 
+	netConfig, err := getNetworkConfig()
+	if err != nil {
+		log.Println(errGetNetworkConfig, err)
+		waitInputAndExit()
+	}
+	fmt.Printf("Chain ID: %s\n\rTx version: %v\n\r",
+		netConfig.Data.Config.ChainID, netConfig.Data.Config.MinTransactionVersion)
+
 	fmt.Println("Retrieving address. Please confirm on your Ledger")
 	senderAddress, err := nanos.GetAddress(uint32(nanos.Account), uint32(nanos.AddressIndex))
 	if err != nil {
-		log.Fatalln(errGetAddress, err)
+		log.Println(errGetAddress, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Address: %s\n\r", senderAddress)
 
 	// retrieve sender's nonce and balance
-	denomination, _ := big.NewFloat(0).SetString(strDenomination)
+	denomination = big.NewFloat(math.Pow10(netConfig.Data.Config.Denomination))
 	balance, nonce, err := getSenderInfo(string(senderAddress))
 	if err != nil || balance == nil {
-		log.Fatalln(errGetBalanceAndNonce, err)
+		log.Println(errGetBalanceAndNonce, err)
+		waitInputAndExit()
 	}
 	bigFloatBalance, _ := big.NewFloat(0).SetString(balance.String())
 	bigFloatBalance.Quo(bigFloatBalance, denomination)
 	strBalance := bigFloatBalance.String()
-	strSenderShard, err := getAddressShard(string(senderAddress), noOfShards)
+	strSenderShard, err := getAddressShard(string(senderAddress), netConfig.Data.Config.NumShardsWithoutMeta)
 	if err != nil {
-		log.Fatalln(errGetAddressShard, err)
+		log.Println(errGetAddressShard, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Sender shard: %v\n\rBalance: %v ERD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
 
 	strReceiverAddress, bigIntAmount, data, err := getTxDataFromUser(nanos.ContractData)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
-	strReceiverShard, err := getAddressShard(strReceiverAddress, noOfShards)
+	strReceiverShard, err := getAddressShard(strReceiverAddress, netConfig.Data.Config.NumShardsWithoutMeta)
 	if err != nil {
-		log.Fatalln(errGetAddressShard, err)
+		log.Println(errGetAddressShard, err)
+		waitInputAndExit()
 	}
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
@@ -292,16 +351,20 @@ func main() {
 	tx.RcvAddr = strReceiverAddress
 	tx.Value = bigIntAmount.String()
 	tx.Nonce = nonce
-	tx.GasPrice = gasPrice
-	tx.Data = data
-	tx.GasLimit = gasLimit + uint64(len(data))*gasPerDataByte
+	tx.GasPrice = netConfig.Data.Config.MinGasPrice
+	tx.Data = []byte(data)
+	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
+	tx.ChainID = netConfig.Data.Config.ChainID
+	tx.Version = netConfig.Data.Config.MinTransactionVersion
 
 	err = signTransaction(&tx, nanos)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+		waitInputAndExit()
 	}
 	err = broadcastTransaction(tx)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
+	waitInputAndExit()
 }

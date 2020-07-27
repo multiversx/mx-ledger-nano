@@ -14,8 +14,8 @@ elif [[ $1 != "blue" ]] && [[ $1 != "s" ]] && [[ $1 != "x" ]]; then
     return
 fi
 
-sudo apt install python-pip python3-pip python3-venv gcc-multilib g++-multilib libudev-dev libusb-1.0-0-dev -y
-pip install ledgerblue
+sudo apt install python3-pip python3-venv gcc-multilib g++-multilib libudev-dev libusb-1.0-0-dev libncurses5 -y
+pip3 install hidapi==0.7.99.post14
 pip3 install ledgerblue --user
 sudo cp 20-hw1.rules /etc/udev/rules.d/
 

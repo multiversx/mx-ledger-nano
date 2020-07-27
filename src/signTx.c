@@ -3,6 +3,7 @@
 #include "ux.h"
 #include "utils.h"
 #include <jsmn.h>
+#include <uint256.h>
 
 typedef struct {
     char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
@@ -10,13 +11,18 @@ typedef struct {
 
     char receiver[FULL_ADDRESS_LENGTH];
     char amount[MAX_AMOUNT_LEN];
+    uint64_t gas_limit;
+    uint64_t gas_price;
+    char fee[MAX_AMOUNT_LEN];
     char signature[64];
 } tx_context_t;
 
 static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
+unsigned long long char2ULL(char *str);
 void makeAmountPretty();
+void makeFeePretty();
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
@@ -37,8 +43,15 @@ UX_STEP_NOCB(
       .title = "Amount",
       .text = tx_context.amount,
     });
+UX_STEP_NOCB(
+    ux_sign_tx_flow_10_step,
+    bnnn_paging,
+    {
+      .title = "Fee",
+      .text = tx_context.fee,
+    });
 UX_STEP_VALID(
-    ux_sign_tx_flow_10_step, 
+    ux_sign_tx_flow_11_step, 
     pb, 
     sendResponse(setResultSignature(), true),
     {
@@ -46,7 +59,7 @@ UX_STEP_VALID(
       "Sign transaction",
     });
 UX_STEP_VALID(
-    ux_sign_tx_flow_11_step, 
+    ux_sign_tx_flow_12_step, 
     pb,
     sendResponse(0, false),
     {
@@ -58,7 +71,8 @@ UX_FLOW(ux_sign_tx_flow,
   &ux_sign_tx_flow_8_step,
   &ux_sign_tx_flow_9_step,
   &ux_sign_tx_flow_10_step,
-  &ux_sign_tx_flow_11_step
+  &ux_sign_tx_flow_11_step,
+  &ux_sign_tx_flow_12_step
 );
 
 static uint8_t setResultSignature() {
@@ -70,26 +84,50 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
+// make the ERD fee look pretty. Add decimals and decimal point
+void makeFeePretty() {
+    uint128_t limit, price, fee;
+    limit.elements[0] = 0;
+    limit.elements[1] = tx_context.gas_limit;
+    price.elements[0] = 0;
+    price.elements[1] = tx_context.gas_price;
+    mul128(&limit, &price, &fee);
+    char str_fee[MAX_UINT128_LEN+1];
+    bool ok = tostring128(&fee, 10, str_fee, MAX_UINT128_LEN);
+    os_memmove(tx_context.fee, str_fee, strlen(str_fee)+1);
+    makeAmountPretty(tx_context.fee);
+}
+
+// convert a string to a unsigned long long
+unsigned long long char2ULL(char *str) {
+    unsigned long long result = 0; // Initialize result
+    // Iterate through all characters of input string and update result
+    if (str != NULL)
+        for (int i = 0; str[i] != '\0'; ++i)
+            result = result*10 + str[i] - '0';
+    return result;
+}
+
 // make the ERD amount look pretty. Add decimals and decimal point
-void makeAmountPretty() {
-    int len = strlen(tx_context.amount);
+void makeAmountPretty(char *amount) {
+    int len = strlen(amount);
     int missing = DECIMAL_PLACES - len + 1;
     if (missing > 0) {
-        os_memmove(tx_context.amount + missing, tx_context.amount, len + 1);
-        os_memset(tx_context.amount, '0', missing);
+        os_memmove(amount + missing, amount, len + 1);
+        os_memset(amount, '0', missing);
     }
-    len = strlen(tx_context.amount);
+    len = strlen(amount);
     int dotPos = len - DECIMAL_PLACES;
-    os_memmove(tx_context.amount + dotPos + 1, tx_context.amount + dotPos, DECIMAL_PLACES + 1);
-    tx_context.amount[dotPos] = '.';
-    while (tx_context.amount[strlen(tx_context.amount) - 1] == '0') {
-        tx_context.amount[strlen(tx_context.amount) - 1] = '\0';
+    os_memmove(amount + dotPos + 1, amount + dotPos, DECIMAL_PLACES + 1);
+    amount[dotPos] = '.';
+    while (amount[strlen(amount) - 1] == '0') {
+        amount[strlen(amount) - 1] = '\0';
     }
-    if (tx_context.amount[strlen(tx_context.amount) - 1] == '.') {
-        tx_context.amount[strlen(tx_context.amount) - 1] = '\0';
+    if (amount[strlen(amount) - 1] == '.') {
+        amount[strlen(amount) - 1] = '\0';
     }
     char suffix[5] = " ERD\0";
-    os_memmove(tx_context.amount + strlen(tx_context.amount), suffix, 5);
+    os_memmove(amount + strlen(amount), suffix, 5);
 }
 
 // helper for comparing json keys
@@ -114,50 +152,77 @@ uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
 // parseData parses the received tx data
 uint16_t parseData() {
     int i, r;
-
     jsmn_parser p;
     jsmntok_t t[20]; // We expect no more than 20 tokens
 
     jsmn_init(&p);
     r = jsmn_parse(&p, tx_context.buffer, tx_context.bufLen, t, sizeof(t)/sizeof(t[0]));
     if (r < 1 || t[0].type != JSMN_OBJECT) {
-        // unable to parse. maybe we did not receive the entire tx so we return 'ok'
-        return MSG_OK;
+        return ERR_MESSAGE_INCOMPLETE;
     }
     int found_args = 0;
     bool hasDataField = false;
     // iterate all json keys
 	for (i = 1; i < r; i++) {
         int len = t[i + 1].end - t[i + 1].start;
-		if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
+        if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
             if (len >= FULL_ADDRESS_LENGTH)
                 return ERR_RECEIVER_TOO_LONG;
             os_memmove(tx_context.receiver, tx_context.buffer + t[i + 1].start, len);
             tx_context.receiver[len] = '\0';
             found_args++;
         }
-		if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
+        if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
             if (len >= MAX_AMOUNT_LEN)
                 return ERR_AMOUNT_TOO_LONG;
             os_memmove(tx_context.amount, tx_context.buffer + t[i + 1].start, len);
             tx_context.amount[len] = '\0';
-            makeAmountPretty();
+            makeAmountPretty(tx_context.amount);
+            found_args++;
+        }
+        if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
+            if (len >= MAX_UINT64_LEN)
+                return ERR_AMOUNT_TOO_LONG;
+            char limit[MAX_UINT64_LEN+1];
+            os_memmove(limit, tx_context.buffer + t[i + 1].start, len);
+            limit[len] = '\0';
+            tx_context.gas_limit = char2ULL(limit);
+            found_args++;
+        }
+        if (jsoneq(tx_context.buffer, &t[i], "gasPrice") == 0) {
+            if (len >= MAX_UINT64_LEN)
+                return ERR_AMOUNT_TOO_LONG;
+            char price[MAX_UINT64_LEN+1];
+            os_memmove(price, tx_context.buffer + t[i + 1].start, len);
+            price[len] = '\0';
+            tx_context.gas_price = char2ULL(price);
+            found_args++;
+        }
+        if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
+            if (len >= MAX_UINT32_LEN)
+                return ERR_INVALID_MESSAGE;
+            char version[MAX_UINT32_LEN+1]; // enough to store a uint32 + \0
+            os_memmove(version, tx_context.buffer + t[i + 1].start, len);
+            version[len] = '\0';
+            if (char2ULL(version) != TX_VERSION)
+                return ERR_WRONG_TX_VERSION;
             found_args++;
         }
 		if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
             hasDataField = true;
         }
     }
-    // found_args should be 2 if we identified both receiver and amount
-    if (found_args != 2) 
+    // found_args should be 5 if we identified the receiver, amount, gasLimit, gasPrice and version
+    if (found_args != 5)
         return ERR_INVALID_MESSAGE;
     // check if the data field is not empty and contract data is not enabled from the menu
     if (hasDataField && N_storage.setting_contract_data == 0)
         return ERR_CONTRACT_DATA_DISABLED;
+    makeFeePretty();
     return MSG_OK;
 }
 
-// signTx performs the actual tx signing after the full tx data has beed received
+// signTx performs the actual tx signing after the full tx data has been received
 void signTx() {
     cx_ecfp_private_key_t privateKey;
     BEGIN_TRY {
@@ -196,6 +261,12 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
     }
 
     retCode = parseData();
+
+    if (retCode == ERR_MESSAGE_INCOMPLETE) {
+        THROW(MSG_OK);
+        return;
+    }
+
     if (retCode != MSG_OK) {
         THROW(retCode);
         return;
