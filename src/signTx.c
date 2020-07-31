@@ -84,7 +84,7 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-// make the ERD fee look pretty. Add decimals and decimal point
+// make the eGLD fee look pretty. Add decimals and decimal point
 void makeFeePretty() {
     uint128_t limit, price, fee;
     limit.elements[0] = 0;
@@ -108,7 +108,7 @@ unsigned long long char2ULL(char *str) {
     return result;
 }
 
-// make the ERD amount look pretty. Add decimals and decimal point
+// make the eGLD amount look pretty. Add decimals and decimal point
 void makeAmountPretty(char *amount) {
     int len = strlen(amount);
     int missing = DECIMAL_PLACES - len + 1;
@@ -126,8 +126,8 @@ void makeAmountPretty(char *amount) {
     if (amount[strlen(amount) - 1] == '.') {
         amount[strlen(amount) - 1] = '\0';
     }
-    char suffix[5] = " ERD\0";
-    os_memmove(amount + strlen(amount), suffix, 5);
+    char suffix[6] = " eGLD\0";
+    os_memmove(amount + strlen(amount), suffix, 6);
 }
 
 // helper for comparing json keys
