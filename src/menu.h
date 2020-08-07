@@ -4,7 +4,6 @@
 #ifndef _MENU_H_
 #define _MENU_H_
 
-extern volatile uint8_t setting_network;
 extern volatile uint8_t setting_contract_data;
 
 void ui_idle(void);

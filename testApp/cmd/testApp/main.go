@@ -26,7 +26,6 @@ const (
 	hrpTestnet = "xerd"
 )
 
-var network = [...]string{"Mainnet", "Testnet"}
 var status = [...]string{"Disabled", "Enabled"}
 var denomination *big.Float
 
@@ -292,7 +291,7 @@ func main() {
 		waitInputAndExit()
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
-	fmt.Printf("Network: %s ; Contract data: %s\n\r", network[nanos.Network], status[nanos.ContractData])
+	fmt.Printf("Contract data: %s\n\r", status[nanos.ContractData])
 
 	netConfig, err := getNetworkConfig()
 	if err != nil {

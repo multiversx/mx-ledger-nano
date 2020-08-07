@@ -4,11 +4,6 @@
 #include "viewAppVersion.h"
 #include "selectAccount.h"
 
-const char* const setting_network_getter_values[] = {
-    "Mainnet",
-    "Testnet",
-    "Back"
-};
 const char* const setting_contract_data_getter_values[] = {
     "No",
     "Yes",
@@ -16,7 +11,6 @@ const char* const setting_contract_data_getter_values[] = {
 };
 const char* const settings_submenu_getter_values[] = {
     "Select account",
-    "Select network",
     "Contract data",
     "Back",
 };
@@ -26,12 +20,8 @@ const char* const info_submenu_getter_values[] = {
     "Back",
 };
 
-volatile uint8_t setting_network;
 volatile uint8_t setting_contract_data;
 
-void setting_network_change(unsigned int network);
-const char* setting_network_getter(unsigned int idx);
-void setting_network_selector(unsigned int idx);
 void setting_contract_data_change(unsigned int contract_data);
 const char* setting_contract_data_getter(unsigned int idx);
 void setting_contract_data_selector(unsigned int idx);
@@ -80,32 +70,6 @@ UX_FLOW(ux_idle_flow,
     FLOW_LOOP
 );
 
-// Network submenu:
-void setting_network_change(unsigned int network) {
-    nvm_write((void *)&N_storage.setting_network, &network, 1);
-    ui_idle();
-}
-
-const char* setting_network_getter(unsigned int idx) {
-    if (idx < ARRAYLEN(setting_network_getter_values))
-        return setting_network_getter_values[idx];
-    return NULL;
-}
-
-void setting_network_selector(unsigned int idx) {
-    switch(idx) {
-    case NETWORK_MAINNET:
-        setting_network_change(NETWORK_MAINNET);
-        break;
-    case NETWORK_TESTNET:
-        setting_network_change(NETWORK_TESTNET);
-        break;
-    default:
-        ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
-        break;
-    }
-}
-
 // Contract data submenu:
 void setting_contract_data_change(unsigned int contract_data) {
     nvm_write((void *)&N_storage.setting_contract_data, &contract_data, 1);
@@ -145,9 +109,6 @@ void settings_submenu_selector(unsigned int idx) {
         selectAccount();
         break;
     case 1:
-        ux_menulist_init_select(0, setting_network_getter, setting_network_selector, N_storage.setting_network);
-        break;
-    case 2:
         ux_menulist_init_select(0, setting_contract_data_getter, setting_contract_data_selector, N_storage.setting_contract_data);
         break;
     default:
