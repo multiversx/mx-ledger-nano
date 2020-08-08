@@ -26,7 +26,6 @@ const (
 	hrpTestnet = "xerd"
 )
 
-var network = [...]string{"Mainnet", "Testnet"}
 var status = [...]string{"Disabled", "Enabled"}
 var denomination *big.Float
 
@@ -39,7 +38,7 @@ const (
 	errGetBalanceAndNonce   = "couldn't get address balance and nonce"
 	errEmptyAddress         = "empty address"
 	errInvalidAddress       = "invalid receiver address"
-	errInvalidAmount        = "invalid ERD amount"
+	errInvalidAmount        = "invalid eGLD amount"
 	errSigningTx            = "signing error"
 	errSendingTx            = "error sending tx"
 	errInvalidBalanceString = "invalid balance string"
@@ -190,12 +189,6 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 	return nil
 }
 
-// trim removes the trailing crlf characters from the end of a string
-func trim(s string) string {
-	s = strings.TrimRight(s, "\n\r")
-	return s
-}
-
 // getTxDataFromUser retrieves tx fields from user
 func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	var err error
@@ -207,7 +200,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		log.Println(errEmptyAddress)
 		return "", nil, "", err
 	}
-	strReceiverAddress = trim(strReceiverAddress)
+	strReceiverAddress = strings.TrimSpace(strReceiverAddress)
 	_, _, err = bech32.Decode(strReceiverAddress)
 	if err != nil {
 		log.Println(errInvalidAddress)
@@ -215,9 +208,9 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	}
 
 	// read amount
-	fmt.Print("Amount of ERD to send: ")
+	fmt.Print("Amount of eGLD to send: ")
 	strAmount, _ := reader.ReadString('\n')
-	strAmount = trim(strAmount)
+	strAmount = strings.TrimSpace(strAmount)
 	amount, err := strconv.ParseFloat(strAmount, 64)
 	if err != nil {
 		log.Println(errInvalidAmount)
@@ -232,7 +225,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 		// read data field
 		fmt.Print("Data field: ")
 		data, _ = reader.ReadString('\n')
-		data = trim(data)
+		data = strings.TrimSpace(data)
 	}
 	return strReceiverAddress, bigIntAmount, data, nil
 }
@@ -298,7 +291,7 @@ func main() {
 		waitInputAndExit()
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
-	fmt.Printf("Network: %s ; Contract data: %s\n\r", network[nanos.Network], status[nanos.ContractData])
+	fmt.Printf("Contract data: %s\n\r", status[nanos.ContractData])
 
 	netConfig, err := getNetworkConfig()
 	if err != nil {
@@ -331,7 +324,7 @@ func main() {
 		log.Println(errGetAddressShard, err)
 		waitInputAndExit()
 	}
-	fmt.Printf("Sender shard: %v\n\rBalance: %v ERD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
+	fmt.Printf("Sender shard: %v\n\rBalance: %v eGLD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
 
 	strReceiverAddress, bigIntAmount, data, err := getTxDataFromUser(nanos.ContractData)
 	if err != nil {
