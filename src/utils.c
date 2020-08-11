@@ -10,7 +10,7 @@
 static const uint32_t HARDENED_OFFSET = 0x80000000;
 static const uint32_t derivePath[BIP32_PATH] = {
   44 | HARDENED_OFFSET,
-  COIN_TYPE_ERD | HARDENED_OFFSET,
+  COIN_TYPE_eGLD | HARDENED_OFFSET,
   0 | HARDENED_OFFSET,
   0 | HARDENED_OFFSET,
   0 | HARDENED_OFFSET
@@ -38,10 +38,7 @@ void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
 
     os_memmove(buffer, publicKey, 32);
     buffer[32] = '\0';
-    if (N_storage.setting_network == NETWORK_MAINNET)
-        hrp = HRP;
-    else
-        hrp = HRP_TEST;
+    hrp = HRP;
     bech32EncodeFromBytes(address, hrp, buffer, 33);
 }
 

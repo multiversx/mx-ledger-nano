@@ -63,14 +63,13 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_GET_APP_CONFIGURATION:
-                    G_io_apdu_buffer[0] = (N_storage.setting_network ? 0x01 : 0x00);
-                    G_io_apdu_buffer[1] = (N_storage.setting_contract_data ? 0x01 : 0x00);
-                    G_io_apdu_buffer[2] = N_storage.setting_account;
-                    G_io_apdu_buffer[3] = N_storage.setting_address_index;
-                    G_io_apdu_buffer[4] = LEDGER_MAJOR_VERSION;
-                    G_io_apdu_buffer[5] = LEDGER_MINOR_VERSION;
-                    G_io_apdu_buffer[6] = LEDGER_PATCH_VERSION;
-                    *tx = 7;
+                    G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
+                    G_io_apdu_buffer[1] = N_storage.setting_account;
+                    G_io_apdu_buffer[2] = N_storage.setting_address_index;
+                    G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
+                    G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
+                    G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
+                    *tx = 6;
                     THROW(MSG_OK);
                     break;
 
@@ -278,14 +277,12 @@ void app_exit(void) {
 void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
         internalStorage_t storage;
-        storage.setting_network = DEFAULT_NETWORK;
         storage.setting_contract_data = DEFAULT_CONTRACT_DATA;
         storage.setting_account = 0;
         storage.setting_address_index = 0;
         storage.initialized = 0x01;
         nvm_write((internalStorage_t*)&N_storage, (void*)&storage, sizeof(internalStorage_t));
     }
-    setting_network = N_storage.setting_network;
     setting_contract_data = N_storage.setting_contract_data;
 }
 

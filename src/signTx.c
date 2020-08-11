@@ -21,8 +21,8 @@ static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
 unsigned long long char2ULL(char *str);
-void makeAmountPretty();
-void makeFeePretty();
+void makeAmountPretty(char *amount, network_t network);
+void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
@@ -84,8 +84,8 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-// make the ERD fee look pretty. Add decimals and decimal point
-void makeFeePretty() {
+// make the eGLD fee look pretty. Add decimals and decimal point
+void makeFeePretty(network_t network) {
     uint128_t limit, price, fee;
     limit.elements[0] = 0;
     limit.elements[1] = tx_context.gas_limit;
@@ -94,8 +94,10 @@ void makeFeePretty() {
     mul128(&limit, &price, &fee);
     char str_fee[MAX_UINT128_LEN+1];
     bool ok = tostring128(&fee, 10, str_fee, MAX_UINT128_LEN);
+    if (!ok)
+        THROW(ERR_INVALID_MESSAGE);
     os_memmove(tx_context.fee, str_fee, strlen(str_fee)+1);
-    makeAmountPretty(tx_context.fee);
+    makeAmountPretty(tx_context.fee, network);
 }
 
 // convert a string to a unsigned long long
@@ -108,8 +110,8 @@ unsigned long long char2ULL(char *str) {
     return result;
 }
 
-// make the ERD amount look pretty. Add decimals and decimal point
-void makeAmountPretty(char *amount) {
+// make the eGLD amount look pretty. Add decimals and decimal point
+void makeAmountPretty(char *amount, network_t network) {
     int len = strlen(amount);
     int missing = DECIMAL_PLACES - len + 1;
     if (missing > 0) {
@@ -126,8 +128,12 @@ void makeAmountPretty(char *amount) {
     if (amount[strlen(amount) - 1] == '.') {
         amount[strlen(amount) - 1] = '\0';
     }
-    char suffix[5] = " ERD\0";
-    os_memmove(amount + strlen(amount), suffix, 5);
+    char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
+    os_memmove(suffix + 1, TICKER_MAINNET, strlen(TICKER_MAINNET)+1);
+    if (network == NETWORK_TESTNET) {
+        os_memmove(suffix + 1, TICKER_TESTNET, strlen(TICKER_TESTNET)+1);
+    }
+    os_memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
 }
 
 // helper for comparing json keys
@@ -162,6 +168,7 @@ uint16_t parseData() {
     }
     int found_args = 0;
     bool hasDataField = false;
+    network_t network = NETWORK_TESTNET;
     // iterate all json keys
 	for (i = 1; i < r; i++) {
         int len = t[i + 1].end - t[i + 1].start;
@@ -177,7 +184,6 @@ uint16_t parseData() {
                 return ERR_AMOUNT_TOO_LONG;
             os_memmove(tx_context.amount, tx_context.buffer + t[i + 1].start, len);
             tx_context.amount[len] = '\0';
-            makeAmountPretty(tx_context.amount);
             found_args++;
         }
         if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
@@ -208,17 +214,31 @@ uint16_t parseData() {
                 return ERR_WRONG_TX_VERSION;
             found_args++;
         }
+        if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {
+            if (len >= MAX_CHAINID_LEN)
+                return ERR_INVALID_MESSAGE;
+            char chain_id[MAX_CHAINID_LEN+1];
+            os_memmove(chain_id, tx_context.buffer + t[i + 1].start, len);
+            chain_id[len] = '\0';
+            if (strncmp(chain_id, MAINNET_CHAIN_ID, len) == 0) {
+                network = NETWORK_MAINNET;
+            } else {
+                network = NETWORK_TESTNET;
+            }
+            found_args++;
+        }
 		if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
             hasDataField = true;
         }
     }
-    // found_args should be 5 if we identified the receiver, amount, gasLimit, gasPrice and version
-    if (found_args != 5)
+    // found_args should be 6 if we identified the receiver, amount, gasLimit, gasPrice, version and chainID
+    if (found_args != 6)
         return ERR_INVALID_MESSAGE;
     // check if the data field is not empty and contract data is not enabled from the menu
     if (hasDataField && N_storage.setting_contract_data == 0)
         return ERR_CONTRACT_DATA_DISABLED;
-    makeFeePretty();
+    makeAmountPretty(tx_context.amount, network);
+    makeFeePretty(network);
     return MSG_OK;
 }
 

@@ -61,7 +61,6 @@ var (
 )
 
 type NanoS struct {
-	Network       uint8
 	ContractData  uint8
 	Account       uint8
 	AddressIndex  uint8
@@ -134,14 +133,13 @@ func (n *NanoS) GetConfiguration() error {
 	if err != nil {
 		return err
 	}
-	if len(resp) != 7 {
+	if len(resp) != 6 {
 		return errors.New(errBadConfigResponse)
 	}
-	n.Network = resp[0]
-	n.ContractData = resp[1]
-	n.Account = resp[2]
-	n.AddressIndex = resp[3]
-	n.LedgerVersion = fmt.Sprintf("%v.%v.%v", resp[4], resp[5], resp[6])
+	n.ContractData = resp[0]
+	n.Account = resp[1]
+	n.AddressIndex = resp[2]
+	n.LedgerVersion = fmt.Sprintf("%v.%v.%v", resp[3], resp[4], resp[5])
 	return nil
 }
 
