@@ -5,6 +5,27 @@
 #include <jsmn.h>
 #include <uint256.h>
 
+#define NONCE_FIELD     0x001
+#define VALUE_FIELD     0x002
+#define RECEIVER_FIELD  0x004
+#define SENDER_FIELD    0x008
+#define GAS_PRICE_FIELD 0x010
+#define GAS_LIMIT_FIELD 0x020
+#define DATA_FIELD      0x040
+#define CHAIN_ID_FIELD  0x080
+#define VERSION_FIELD   0x100
+
+#define MANDATORY_FIELDS (    \
+        NONCE_FIELD |         \
+        VALUE_FIELD |         \
+        RECEIVER_FIELD |      \
+        SENDER_FIELD |        \
+        GAS_PRICE_FIELD |     \
+        GAS_LIMIT_FIELD |     \
+        CHAIN_ID_FIELD |      \
+        VERSION_FIELD         \
+    )
+
 typedef struct {
     char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
     uint16_t bufLen;
@@ -20,7 +41,6 @@ typedef struct {
 static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
-unsigned long long char2ULL(char *str);
 void makeAmountPretty(char *amount, network_t network);
 void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
@@ -100,14 +120,37 @@ void makeFeePretty(network_t network) {
     makeAmountPretty(tx_context.fee, network);
 }
 
-// convert a string to a unsigned long long
-unsigned long long char2ULL(char *str) {
-    unsigned long long result = 0; // Initialize result
-    // Iterate through all characters of input string and update result
-    if (str != NULL)
-        for (int i = 0; str[i] != '\0'; ++i)
-            result = result*10 + str[i] - '0';
-    return result;
+static bool isdigit(char c) {
+  return c >= '0' && c <= '9';
+}
+
+static bool parse_int(char *str, size_t size, uint64_t *result) {
+    uint64_t min = 0, n = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        if (!isdigit(str[i])) {
+            return false;
+        }
+        n = n * 10 + str[i] - '0';
+        /* ensure there is no integer overflow */
+        if (n < min) {
+            return false;
+        }
+        min = n;
+    }
+
+    *result = n;
+
+    return true;
+}
+
+static bool valid_amount(char *amount, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+      if (!isdigit(amount[i])) {
+            return false;
+      }
+  }
+  return true;
 }
 
 // make the eGLD amount look pretty. Add decimals and decimal point
@@ -129,9 +172,9 @@ void makeAmountPretty(char *amount, network_t network) {
         amount[strlen(amount) - 1] = '\0';
     }
     char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
-    os_memmove(suffix + 1, TICKER_MAINNET, strlen(TICKER_MAINNET)+1);
+    os_memmove(suffix + 1, TICKER_MAINNET, sizeof(TICKER_MAINNET));
     if (network == NETWORK_TESTNET) {
-        os_memmove(suffix + 1, TICKER_TESTNET, strlen(TICKER_TESTNET)+1);
+        os_memmove(suffix + 1, TICKER_TESTNET, sizeof(TICKER_TESTNET));
     }
     os_memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
 }
@@ -155,6 +198,17 @@ uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
     return MSG_OK;
 }
 
+static bool set_bit(uint64_t *bitmap, uint64_t bit) {
+  /* ensure that this field isn't already set and in the right order */
+  if (*bitmap >= bit) {
+      return false;
+  }
+
+  *bitmap |= bit;
+
+  return true;
+}
+
 // parseData parses the received tx data
 uint16_t parseData() {
     int i, r;
@@ -166,77 +220,136 @@ uint16_t parseData() {
     if (r < 1 || t[0].type != JSMN_OBJECT) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    int found_args = 0;
-    bool hasDataField = false;
+    uint64_t fields_bitmap = 0;
     network_t network = NETWORK_TESTNET;
     // iterate all json keys
-	for (i = 1; i < r; i++) {
+    for (i = 1; i < r; i += 2) {
         int len = t[i + 1].end - t[i + 1].start;
-        if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
-            if (len >= FULL_ADDRESS_LENGTH)
-                return ERR_RECEIVER_TOO_LONG;
-            os_memmove(tx_context.receiver, tx_context.buffer + t[i + 1].start, len);
-            tx_context.receiver[len] = '\0';
-            found_args++;
+        jsmntype_t type = t[i + 1].type;
+        char *str = tx_context.buffer + t[i + 1].start;
+        if (jsoneq(tx_context.buffer, &t[i], "nonce") == 0) {
+            if (type != JSMN_PRIMITIVE) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= MAX_UINT64_LEN)
+                return ERR_NONCE_TOO_LONG;
+            if (!set_bit(&fields_bitmap, NONCE_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            uint64_t nonce;
+            if (!parse_int(str, len, &nonce)) {
+                return ERR_INVALID_MESSAGE;
+            }
         }
-        if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
+        else if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
+            if (type != JSMN_STRING) {
+                return ERR_INVALID_MESSAGE;
+            }
             if (len >= MAX_AMOUNT_LEN)
                 return ERR_AMOUNT_TOO_LONG;
-            os_memmove(tx_context.amount, tx_context.buffer + t[i + 1].start, len);
-            tx_context.amount[len] = '\0';
-            found_args++;
-        }
-        if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
-            if (len >= MAX_UINT64_LEN)
-                return ERR_AMOUNT_TOO_LONG;
-            char limit[MAX_UINT64_LEN+1];
-            os_memmove(limit, tx_context.buffer + t[i + 1].start, len);
-            limit[len] = '\0';
-            tx_context.gas_limit = char2ULL(limit);
-            found_args++;
-        }
-        if (jsoneq(tx_context.buffer, &t[i], "gasPrice") == 0) {
-            if (len >= MAX_UINT64_LEN)
-                return ERR_AMOUNT_TOO_LONG;
-            char price[MAX_UINT64_LEN+1];
-            os_memmove(price, tx_context.buffer + t[i + 1].start, len);
-            price[len] = '\0';
-            tx_context.gas_price = char2ULL(price);
-            found_args++;
-        }
-        if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
-            if (len >= MAX_UINT32_LEN)
+            if (!set_bit(&fields_bitmap, VALUE_FIELD)) {
                 return ERR_INVALID_MESSAGE;
-            char version[MAX_UINT32_LEN+1]; // enough to store a uint32 + \0
-            os_memmove(version, tx_context.buffer + t[i + 1].start, len);
-            version[len] = '\0';
-            if (char2ULL(version) != TX_VERSION)
-                return ERR_WRONG_TX_VERSION;
-            found_args++;
+            }
+            if (!valid_amount(str, len)) {
+                return ERR_INVALID_AMOUNT;
+            }
+            os_memmove(tx_context.amount, str, len);
+            tx_context.amount[len] = '\0';
         }
-        if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {
+        else if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
+            if (type != JSMN_STRING) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= FULL_ADDRESS_LENGTH)
+                return ERR_RECEIVER_TOO_LONG;
+            if (!set_bit(&fields_bitmap, RECEIVER_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            os_memmove(tx_context.receiver, str, len);
+            tx_context.receiver[len] = '\0';
+        }
+        else if (jsoneq(tx_context.buffer, &t[i], "sender") == 0) {
+            if (type != JSMN_STRING) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= FULL_ADDRESS_LENGTH)
+                return ERR_RECEIVER_TOO_LONG;
+            if (!set_bit(&fields_bitmap, SENDER_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+        }
+        else if (jsoneq(tx_context.buffer, &t[i], "gasPrice") == 0) {
+            if (type != JSMN_PRIMITIVE) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= MAX_UINT64_LEN)
+                return ERR_AMOUNT_TOO_LONG;
+            if (!set_bit(&fields_bitmap, GAS_PRICE_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (!parse_int(str, len, &tx_context.gas_price)) {
+                return ERR_INVALID_MESSAGE;
+            }
+        }
+        else if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
+            if (type != JSMN_PRIMITIVE) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= MAX_UINT64_LEN)
+                return ERR_AMOUNT_TOO_LONG;
+            if (!set_bit(&fields_bitmap, GAS_LIMIT_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (!parse_int(str, len, &tx_context.gas_limit)) {
+                return ERR_INVALID_MESSAGE;
+            }
+        }
+        else if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
+            if (!set_bit(&fields_bitmap, DATA_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            // check if contract data is not enabled from the menu
+            if (N_storage.setting_contract_data == 0) {
+              return ERR_CONTRACT_DATA_DISABLED;
+            }
+        }
+        else if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {
+            if (type != JSMN_STRING) {
+                return ERR_INVALID_MESSAGE;
+            }
             if (len >= MAX_CHAINID_LEN)
                 return ERR_INVALID_MESSAGE;
-            char chain_id[MAX_CHAINID_LEN+1];
-            os_memmove(chain_id, tx_context.buffer + t[i + 1].start, len);
-            chain_id[len] = '\0';
-            if (strncmp(chain_id, MAINNET_CHAIN_ID, len) == 0) {
-                network = NETWORK_MAINNET;
-            } else {
-                network = NETWORK_TESTNET;
+            if (!set_bit(&fields_bitmap, CHAIN_ID_FIELD)) {
+                return ERR_INVALID_MESSAGE;
             }
-            found_args++;
+            if (strncmp(str, MAINNET_CHAIN_ID, len) == 0) {
+                network = NETWORK_MAINNET;
+            }
         }
-		if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
-            hasDataField = true;
+        else if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
+            if (type != JSMN_PRIMITIVE) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (len >= MAX_UINT32_LEN)
+                return ERR_INVALID_MESSAGE;
+            if (!set_bit(&fields_bitmap, VERSION_FIELD)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            uint64_t version;
+            if (!parse_int(str, len, &version)) {
+                return ERR_INVALID_MESSAGE;
+            }
+            if (version != TX_VERSION) {
+                return ERR_WRONG_TX_VERSION;
+            }
+        }
+        else {
+            return ERR_INVALID_MESSAGE;
         }
     }
-    // found_args should be 6 if we identified the receiver, amount, gasLimit, gasPrice, version and chainID
-    if (found_args != 6)
+    // check if we identified the mandatory fields
+    if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
-    // check if the data field is not empty and contract data is not enabled from the menu
-    if (hasDataField && N_storage.setting_contract_data == 0)
-        return ERR_CONTRACT_DATA_DISABLED;
     makeAmountPretty(tx_context.amount, network);
     makeFeePretty(network);
     return MSG_OK;
