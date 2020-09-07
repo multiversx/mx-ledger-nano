@@ -42,14 +42,19 @@ void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
     bech32EncodeFromBytes(address, hrp, buffer, 33);
 }
 
-void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray) {
+/* return false in case of error, true otherwise */
+bool getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray) {
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
+    bool error = false;
 
     BEGIN_TRY {
         TRY {
             getPrivateKey(accountNumber, index, &privateKey);
             cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
+        }
+        CATCH_ALL {
+            error = true;
         }
         FINALLY {
             os_memset(&privateKey, 0, sizeof(privateKey));
@@ -57,12 +62,18 @@ void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArra
     }
     END_TRY;
 
+    if (error) {
+        return false;
+    }
+
     for (int i = 0; i < 32; i++) {
         publicKeyArray[i] = publicKey.W[64 - i];
     }
     if ((publicKey.W[32] & 1) != 0) {
         publicKeyArray[31] |= 0x80;
     }
+
+    return true;
 }
 
 void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey) {
