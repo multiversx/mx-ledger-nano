@@ -46,7 +46,7 @@ void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
-void signTx();
+bool signTx(void);
 
 // UI for confirming the receiver and amount of a transaction on screen
 UX_STEP_NOCB(
@@ -356,18 +356,28 @@ uint16_t parseData() {
 }
 
 // signTx performs the actual tx signing after the full tx data has been received
-void signTx() {
+bool signTx(void) {
     cx_ecfp_private_key_t privateKey;
+    bool success = true;
+
+    if (!getPrivateKey(0, 0, &privateKey)) {
+        return false;
+    }
+
     BEGIN_TRY {
         TRY {
-            getPrivateKey(0, 0, &privateKey);
             cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_context.buffer, tx_context.bufLen, NULL, 0, tx_context.signature, 64, NULL);
+        }
+        CATCH_ALL {
+            success = false;
         }
         FINALLY {
             os_memset(&privateKey, 0, sizeof(privateKey));
         }
     }
     END_TRY;
+
+    return success;
 }
 
 // handleSignTx handles tx data receiving, parsing and signing. in the end it calls the user confirmation UI
@@ -405,7 +415,10 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
         return;
     }
 
-    signTx();
+    if (!signTx()) {
+        THROW(ERR_SIGNATURE_FAILED);
+        return;
+    }
 
     ux_flow_init(0, ux_sign_tx_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;

@@ -36,6 +36,7 @@ typedef enum {
 #define ERR_USER_DENIED            0x6985
 #define ERR_UNKNOWN_INSTRUCTION    0x6D00 // unknown INS
 #define ERR_WRONG_CLA              0x6E00
+#define ERR_SIGNATURE_FAILED       0x6E10
 #define ERR_INVALID_ARGUMENTS      0x6E01
 #define ERR_INVALID_MESSAGE        0x6E02 // signTx
 #define ERR_INVALID_P1             0x6E03 // signTx

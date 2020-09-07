@@ -12,7 +12,7 @@ bool getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArra
 
 uint32_t readUint32BE(uint8_t *buffer);
 
-void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey);
+bool getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey);
 
 void sendResponse(uint8_t tx, bool approve);
 
