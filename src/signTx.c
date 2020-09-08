@@ -237,7 +237,7 @@ uint16_t parseData() {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len >= MAX_UINT64_LEN)
+            if (len > MAX_UINT64_LEN)
                 return ERR_NONCE_TOO_LONG;
             if (!set_bit(&fields_bitmap, NONCE_FIELD)) {
                 return ERR_INVALID_MESSAGE;
@@ -288,7 +288,7 @@ uint16_t parseData() {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len >= MAX_UINT64_LEN)
+            if (len > MAX_UINT64_LEN)
                 return ERR_AMOUNT_TOO_LONG;
             if (!set_bit(&fields_bitmap, GAS_PRICE_FIELD)) {
                 return ERR_INVALID_MESSAGE;
@@ -301,7 +301,7 @@ uint16_t parseData() {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len >= MAX_UINT64_LEN)
+            if (len > MAX_UINT64_LEN)
                 return ERR_AMOUNT_TOO_LONG;
             if (!set_bit(&fields_bitmap, GAS_LIMIT_FIELD)) {
                 return ERR_INVALID_MESSAGE;
@@ -328,7 +328,7 @@ uint16_t parseData() {
             if (!set_bit(&fields_bitmap, CHAIN_ID_FIELD)) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (strncmp(str, MAINNET_CHAIN_ID, len) == 0) {
+            if (len == strlen(chainID) && strncmp(str, MAINNET_CHAIN_ID, len) == 0) {
                 network = NETWORK_MAINNET;
             }
         }
@@ -336,7 +336,7 @@ uint16_t parseData() {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len >= MAX_UINT32_LEN)
+            if (len > MAX_UINT32_LEN)
                 return ERR_INVALID_MESSAGE;
             if (!set_bit(&fields_bitmap, VERSION_FIELD)) {
                 return ERR_INVALID_MESSAGE;
