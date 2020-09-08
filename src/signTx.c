@@ -26,22 +26,24 @@
         VERSION_FIELD         \
     )
 
+// additional space for "0." and " eGLD"
+#define PRETTY_SIZE (2 + MAX_TICKER_LEN)
+
 typedef struct {
     char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
     uint16_t bufLen;
 
     char receiver[FULL_ADDRESS_LENGTH];
-    char amount[MAX_AMOUNT_LEN];
+    char amount[MAX_AMOUNT_LEN + PRETTY_SIZE];
     uint64_t gas_limit;
     uint64_t gas_price;
-    char fee[MAX_AMOUNT_LEN];
+    char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
     char signature[64];
 } tx_context_t;
 
 static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
-void makeAmountPretty(char *amount, network_t network);
 void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
@@ -152,9 +154,12 @@ static bool valid_amount(char *amount, size_t size) {
   return true;
 }
 
-// make the eGLD amount look pretty. Add decimals and decimal point
-void makeAmountPretty(char *amount, network_t network) {
+// make the eGLD amount look pretty. Add decimals, decimal point and ticker name
+static bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
     int len = strlen(amount);
+    if ((size_t)len + PRETTY_SIZE >= max_size) {
+        return false;
+    }
     int missing = DECIMAL_PLACES - len + 1;
     if (missing > 0) {
         os_memmove(amount + missing, amount, len + 1);
@@ -176,6 +181,8 @@ void makeAmountPretty(char *amount, network_t network) {
         os_memmove(suffix + 1, TICKER_TESTNET, sizeof(TICKER_TESTNET));
     }
     os_memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
+
+    return true;
 }
 
 // helper for comparing json keys
@@ -244,7 +251,7 @@ uint16_t parseData() {
             if (type != JSMN_STRING) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len >= MAX_AMOUNT_LEN)
+            if ((size_t)len >= sizeof(tx_context.amount) - PRETTY_SIZE)
                 return ERR_AMOUNT_TOO_LONG;
             if (!set_bit(&fields_bitmap, VALUE_FIELD)) {
                 return ERR_INVALID_MESSAGE;
@@ -350,12 +357,14 @@ uint16_t parseData() {
     if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
 
-    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee))) {
+    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE)) {
         return ERR_INVALID_FEE;
     }
 
-    makeAmountPretty(tx_context.amount, network);
-    makeAmountPretty(tx_context.fee, network);
+    if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
+        !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network)) {
+        return ERR_PRETTY_FAILED;
+    }
 
     return MSG_OK;
 }
