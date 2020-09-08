@@ -104,20 +104,19 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-// make the eGLD fee look pretty. Add decimals and decimal point
-void makeFeePretty(network_t network) {
-    uint128_t limit, price, fee;
-    limit.elements[0] = 0;
-    limit.elements[1] = tx_context.gas_limit;
-    price.elements[0] = 0;
-    price.elements[1] = tx_context.gas_price;
-    mul128(&limit, &price, &fee);
-    char str_fee[MAX_UINT128_LEN+1];
-    bool ok = tostring128(&fee, 10, str_fee, MAX_UINT128_LEN);
-    if (!ok)
-        THROW(ERR_INVALID_MESSAGE);
-    os_memmove(tx_context.fee, str_fee, strlen(str_fee)+1);
-    makeAmountPretty(tx_context.fee, network);
+static bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
+    uint128_t limit = { 0, gas_limit };
+    uint128_t price = { 0, gas_price };
+    uint128_t fee128;
+
+    mul128(&limit, &price, &fee128);
+
+    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
+    if (!tostring128(&fee128, 10, fee, size-1)) {
+        return false;
+    }
+
+    return true;
 }
 
 static bool isdigit(char c) {
@@ -350,8 +349,14 @@ uint16_t parseData() {
     // check if we identified the mandatory fields
     if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
+
+    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee))) {
+        return ERR_INVALID_FEE;
+    }
+
     makeAmountPretty(tx_context.amount, network);
-    makeFeePretty(network);
+    makeAmountPretty(tx_context.fee, network);
+
     return MSG_OK;
 }
 

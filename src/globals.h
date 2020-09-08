@@ -48,6 +48,7 @@ typedef enum {
 #define ERR_WRONG_TX_VERSION       0x6E09 // signTx
 #define ERR_NONCE_TOO_LONG         0x6E0A // signTx
 #define ERR_INVALID_AMOUNT         0x6E0B // signTx
+#define ERR_INVALID_FEE            0x6E0C // signTx
 
 extern ux_state_t ux;
 // display stepped screens
