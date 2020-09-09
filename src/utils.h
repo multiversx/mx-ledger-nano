@@ -8,11 +8,11 @@
 void getAddressBech32FromBinary(uint8_t *publicKey, char *address);
 void getAddressHexFromBinary(uint8_t *publicKey, char *address);
 
-void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray);
+bool getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray);
 
 uint32_t readUint32BE(uint8_t *buffer);
 
-void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey);
+bool getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey);
 
 void sendResponse(uint8_t tx, bool approve);
 

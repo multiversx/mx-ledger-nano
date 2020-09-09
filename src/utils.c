@@ -42,14 +42,22 @@ void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
     bech32EncodeFromBytes(address, hrp, buffer, 33);
 }
 
-void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray) {
+/* return false in case of error, true otherwise */
+bool getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArray) {
     cx_ecfp_private_key_t privateKey;
     cx_ecfp_public_key_t publicKey;
+    bool error = false;
+
+    if (!getPrivateKey(accountNumber, index, &privateKey)) {
+        return false;
+    }
 
     BEGIN_TRY {
         TRY {
-            getPrivateKey(accountNumber, index, &privateKey);
             cx_ecfp_generate_pair(CX_CURVE_Ed25519, &publicKey, &privateKey, 1);
+        }
+        CATCH_ALL {
+            error = true;
         }
         FINALLY {
             os_memset(&privateKey, 0, sizeof(privateKey));
@@ -57,17 +65,24 @@ void getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArra
     }
     END_TRY;
 
+    if (error) {
+        return false;
+    }
+
     for (int i = 0; i < 32; i++) {
         publicKeyArray[i] = publicKey.W[64 - i];
     }
     if ((publicKey.W[32] & 1) != 0) {
         publicKeyArray[31] |= 0x80;
     }
+
+    return true;
 }
 
-void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey) {
+bool getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey) {
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
+    bool success = true;
 
     os_memmove(bip32Path, derivePath, sizeof(derivePath));
 
@@ -79,11 +94,16 @@ void getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t
             os_perso_derive_node_bip32_seed_key(HDW_ED25519_SLIP10, CX_CURVE_Ed25519, bip32Path, BIP32_PATH, privateKeyData, NULL, NULL, 0);
             cx_ecfp_init_private_key(CX_CURVE_Ed25519, privateKeyData, 32, privateKey);
         }
+        CATCH_ALL {
+            success = false;
+        }
         FINALLY {
             os_memset(privateKeyData, 0, sizeof(privateKeyData));
         }
     }
     END_TRY;
+
+    return success;
 }
 
 void sendResponse(uint8_t tx, bool approve) {
