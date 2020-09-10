@@ -2,7 +2,7 @@
 #include "os.h"
 #include "ux.h"
 #include "utils.h"
-#include <jsmn.h>
+#include "../deps/jsmn.h"
 #include <uint256.h>
 
 #define NONCE_FIELD     0x001
