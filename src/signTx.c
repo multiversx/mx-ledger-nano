@@ -2,7 +2,7 @@
 #include "os.h"
 #include "ux.h"
 #include "utils.h"
-#include <jsmn.h>
+#include "../deps/jsmn/jsmn.h"
 #include <uint256.h>
 
 #define NONCE_FIELD     0x001
@@ -328,7 +328,7 @@ uint16_t parseData() {
             if (!set_bit(&fields_bitmap, CHAIN_ID_FIELD)) {
                 return ERR_INVALID_MESSAGE;
             }
-            if (len == strlen(chainID) && strncmp(str, MAINNET_CHAIN_ID, len) == 0) {
+            if (len == strlen(MAINNET_CHAIN_ID) && strncmp(str, MAINNET_CHAIN_ID, len) == 0) {
                 network = NETWORK_MAINNET;
             }
         }

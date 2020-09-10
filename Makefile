@@ -24,7 +24,7 @@ APP_LOAD_PARAMS= --curve ed25519 --path "44'/508'" --appFlags 0x240 $(COMMON_LOA
 
 APPVERSION_M:=$(if $(APPVERSION_M),$(APPVERSION_M),1)
 APPVERSION_N:=$(if $(APPVERSION_N),$(APPVERSION_N),0)
-APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),4)
+APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),5)
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 APPNAME = "Elrond"
 
@@ -130,7 +130,7 @@ include $(BOLOS_SDK)/Makefile.glyphs
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
 APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
-APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/jsmn/src deps/uint256
+APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/uint256
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
