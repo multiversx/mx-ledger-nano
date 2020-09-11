@@ -38,6 +38,7 @@ typedef struct {
     uint64_t gas_limit;
     uint64_t gas_price;
     char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
+    char data[MAX_DATA_SIZE / 4 * 3]; // 4 base64 chars occupy 3 decoded chars
     char signature[64];
 } tx_context_t;
 
@@ -72,8 +73,15 @@ UX_STEP_NOCB(
       .title = "Fee",
       .text = tx_context.fee,
     });
+UX_STEP_NOCB(
+    ux_sign_tx_flow_11_step,
+    bnnn_paging,
+    {
+      .title = "Data",
+      .text = tx_context.data,
+    });
 UX_STEP_VALID(
-    ux_sign_tx_flow_11_step, 
+    ux_sign_tx_flow_12_step, 
     pb, 
     sendResponse(setResultSignature(), true),
     {
@@ -81,7 +89,7 @@ UX_STEP_VALID(
       "Sign transaction",
     });
 UX_STEP_VALID(
-    ux_sign_tx_flow_12_step, 
+    ux_sign_tx_flow_13_step, 
     pb,
     sendResponse(0, false),
     {
@@ -94,7 +102,8 @@ UX_FLOW(ux_sign_tx_flow,
   &ux_sign_tx_flow_9_step,
   &ux_sign_tx_flow_10_step,
   &ux_sign_tx_flow_11_step,
-  &ux_sign_tx_flow_12_step
+  &ux_sign_tx_flow_12_step,
+  &ux_sign_tx_flow_13_step
 );
 
 static uint8_t setResultSignature() {
@@ -125,6 +134,10 @@ static bool isdigit(char c) {
   return c >= '0' && c <= '9';
 }
 
+static bool isBase64Char(char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '+') || (c == '/') || (c == '=') || isdigit(c);
+}
+
 static bool parse_int(char *str, size_t size, uint64_t *result) {
     uint64_t min = 0, n = 0;
 
@@ -152,6 +165,49 @@ static bool valid_amount(char *amount, size_t size) {
       }
   }
   return true;
+}
+
+// decode base64 byte
+static char base64decode_byte(char c) {
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A';
+    }
+    if (c >= 'a' && c <= 'z') {
+        return c - 'a' + 26;
+    }
+    if (c >= '0' && c <= '9') {
+        return c - '0' + 52;
+    }
+    if (c == '+') {
+        return 62;
+    }
+    if (c == '/') {
+        return 63;
+    }
+    return 0;
+}
+
+// decode base64 data
+static bool base64decode(char *decoded, char *source, size_t len) {
+    for (int i = 0; i < len / 4; i++) {
+        uint32_t data = 0;
+        for (int j = 0; j < 4; j++) {
+            char c = source[i * 4 + j];
+            if (!isBase64Char(c)) {
+                return false;
+            }
+            if (c == '=') {
+                c = '\0';
+            }
+            data <<= 6;
+            data |= base64decode_byte(c);
+        }
+        decoded[i * 3] = data >> 16;
+        decoded[i * 3 + 1] = (data >> 8) & 0xFF;
+        decoded[i * 3 + 2] = data & 0xFF;
+    }
+    decoded[len / 4 * 3] = '\0';
+    return true;
 }
 
 // make the eGLD amount look pretty. Add decimals, decimal point and ticker name
@@ -194,7 +250,7 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 	return -1;
 }
 
-// txDataReceive is called when a signTx APDU is received. it appends the received data to the buffer
+// txDataReceived is called when a signTx APDU is received. it appends the received data to the buffer
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
     if (tx_context.bufLen + dataLength >= MAX_BUFFER_LEN)
         return ERR_MESSAGE_TOO_LONG;
@@ -228,6 +284,7 @@ uint16_t parseData() {
     }
     uint64_t fields_bitmap = 0;
     network_t network = NETWORK_TESTNET;
+    tx_context.data[0] = '\0';
     // iterate all json keys
     for (i = 1; i < r; i += 2) {
         int len = t[i + 1].end - t[i + 1].start;
@@ -316,7 +373,24 @@ uint16_t parseData() {
             }
             // check if contract data is not enabled from the menu
             if (N_storage.setting_contract_data == 0) {
-              return ERR_CONTRACT_DATA_DISABLED;
+                return ERR_CONTRACT_DATA_DISABLED;
+            }
+//            if (len % 4 != 0) {
+//                return ERR_INVALID_MESSAGE;
+//            }
+            if (len > MAX_DATA_SIZE) {
+                return ERR_DATA_TOO_LONG;
+            }
+            if (len > MAX_DISPLAY_DATA_SIZE) {
+                len = MAX_DISPLAY_DATA_SIZE;
+                // add "..." at the end to show that the data field is actually longer 
+                str[MAX_DISPLAY_DATA_SIZE - 4] = 'L';
+                str[MAX_DISPLAY_DATA_SIZE - 3] = 'i';
+                str[MAX_DISPLAY_DATA_SIZE - 2] = '4';
+                str[MAX_DISPLAY_DATA_SIZE - 1] = 'u';
+            }
+            if (!base64decode(tx_context.data, str, len)) {
+                return ERR_INVALID_MESSAGE;
             }
         }
         else if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {

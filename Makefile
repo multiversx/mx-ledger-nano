@@ -166,4 +166,4 @@ dep/%.d: %.c Makefile
 
 
 listvariants:
-	@echo VARIANTS COIN ERD
+	@echo VARIANTS COIN eGLD
