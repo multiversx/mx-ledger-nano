@@ -1,3 +1,8 @@
+/*
+This implementation is based on the documentation found at
+https://en.wikipedia.org/wiki/Base64
+*/
+
 static bool isBase64Char(char c);
 static bool base64decode(char *decoded, char *source, size_t len);
 static bool base64decode(char *decoded, char *source, size_t len);

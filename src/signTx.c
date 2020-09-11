@@ -238,6 +238,7 @@ uint16_t parseData() {
     }
     uint64_t fields_bitmap = 0;
     network_t network = NETWORK_TESTNET;
+    // initialize data with an empty string in case the tx doesn't contain the data field
     tx_context.data[0] = '\0';
     // iterate all json keys
     for (i = 1; i < r; i += 2) {
