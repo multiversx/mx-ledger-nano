@@ -123,11 +123,11 @@ func getSenderInfo(address string) (*big.Int, uint64, error) {
 // getAddressShard returns the assigned shard of an address
 func getAddressShard(bech32Address string, noOfShards uint32) (uint32, error) {
 	// convert sender from bech32 to hex pubkey
-	hrp, pubkeyBech32, err := bech32.Decode(bech32Address)
+	h, pubkeyBech32, err := bech32.Decode(bech32Address)
 	if err != nil {
 		return 0, err
 	}
-	if hrp != hrp {
+	if h != hrp {
 		return 0, errors.New(errInvalidHRP)
 	}
 	pubkey, err := bech32.ConvertBits(pubkeyBech32, 5, 8, false)
@@ -218,7 +218,6 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	}
 	bigFloatAmount.Mul(bigFloatAmount, denomination)
 	bigIntAmount := new(big.Int)
-	bigFloatAmount.SetMode(big.ToNearestAway)
 	bigFloatAmount.Int(bigIntAmount)
 	var data string
 	if contractData == 1 {
