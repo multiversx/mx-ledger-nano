@@ -39,7 +39,8 @@ typedef struct {
     uint64_t gas_limit;
     uint64_t gas_price;
     char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    char data[MAX_DATA_SIZE / 4 * 3]; // 4 base64 chars occupy 3 decoded chars
+    char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
+    uint16_t data_size;
     char signature[64];
 } tx_context_t;
 
@@ -225,6 +226,24 @@ static bool set_bit(uint64_t *bitmap, uint64_t bit) {
   return true;
 }
 
+static void computeDataSize(char *base64, int b64len) {
+    tx_context.data_size = b64len / 4 * 3; // we need the size in ASCII
+    if (b64len > 1) {
+        if (base64[b64len - 1] == '=')
+            tx_context.data_size--;
+        if (base64[b64len - 2] == '=')
+            tx_context.data_size--;
+    }
+    int len = sizeof(tx_context.data);
+    char str_size[DATA_SIZE_LEN] = "[  Size: 000  ] ";
+    str_size[9] = tx_context.data_size / 100 + 48;
+    str_size[10] = (tx_context.data_size / 10) % 10 + 48;
+    str_size[11] = tx_context.data_size % 10 + 48;
+    int size_len = strlen(str_size);
+    os_memmove(tx_context.data + size_len, tx_context.data, len);
+    os_memmove(tx_context.data, str_size, size_len);
+}
+
 // parseData parses the received tx data
 uint16_t parseData() {
     int i, r;
@@ -240,6 +259,7 @@ uint16_t parseData() {
     network_t network = NETWORK_TESTNET;
     // initialize data with an empty string in case the tx doesn't contain the data field
     tx_context.data[0] = '\0';
+    computeDataSize(tx_context.data, 0);
     // iterate all json keys
     for (i = 1; i < r; i += 2) {
         int len = t[i + 1].end - t[i + 1].start;
@@ -336,17 +356,21 @@ uint16_t parseData() {
             if (len > MAX_DATA_SIZE) {
                 return ERR_DATA_TOO_LONG;
             }
-            if (len > MAX_DISPLAY_DATA_SIZE) {
-                len = MAX_DISPLAY_DATA_SIZE;
+            char encoded[MAX_DISPLAY_DATA_SIZE];
+            os_memmove(encoded, str, MAX_DISPLAY_DATA_SIZE);
+            int ascii_len = len;
+            if (ascii_len > MAX_DISPLAY_DATA_SIZE) {
+                ascii_len = MAX_DISPLAY_DATA_SIZE;
                 // add "..." at the end to show that the data field is actually longer 
-                str[MAX_DISPLAY_DATA_SIZE - 4] = 'L';
-                str[MAX_DISPLAY_DATA_SIZE - 3] = 'i';
-                str[MAX_DISPLAY_DATA_SIZE - 2] = '4';
-                str[MAX_DISPLAY_DATA_SIZE - 1] = 'u';
+                encoded[MAX_DISPLAY_DATA_SIZE - 4] = 'L';
+                encoded[MAX_DISPLAY_DATA_SIZE - 3] = 'i';
+                encoded[MAX_DISPLAY_DATA_SIZE - 2] = '4';
+                encoded[MAX_DISPLAY_DATA_SIZE - 1] = 'u';
             }
-            if (!base64decode(tx_context.data, str, len)) {
+            if (!base64decode(tx_context.data, encoded, ascii_len)) {
                 return ERR_INVALID_MESSAGE;
             }
+            computeDataSize(str, len);
         }
         else if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {
             if (type != JSMN_STRING) {
