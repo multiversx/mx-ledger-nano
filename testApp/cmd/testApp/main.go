@@ -18,7 +18,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const proxyHost string = "https://api-testnet.elrond.com" // https://api-testnet.elrond.com for testnet
+const proxyHost string = "https://api.elrond.com" // https://api-testnet.elrond.com for testnet
 
 const (
 	hrp       = "erd"
@@ -250,7 +250,6 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 // broadcastTransaction broadcasts the transaction in the network
 func broadcastTransaction(tx transaction) error {
 	jsonTx, _ := json.Marshal(&tx)
-	fmt.Println(string(jsonTx))
 	resp, err := http.Post(fmt.Sprintf("%s/transaction/send", proxyHost), "",
 		strings.NewReader(string(jsonTx)))
 	if err != nil {

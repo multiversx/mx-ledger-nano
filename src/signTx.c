@@ -227,7 +227,9 @@ static bool set_bit(uint64_t *bitmap, uint64_t bit) {
 }
 
 static void computeDataSize(char *base64, int b64len) {
-    tx_context.data_size = b64len / 4 * 3; // we need the size in ASCII
+    // calculate the ASCII size of the data field
+    tx_context.data_size = b64len / 4 * 3;
+    // take padding bytes into consideration
     if (b64len > 1) {
         if (base64[b64len - 1] == '=')
             tx_context.data_size--;
@@ -235,12 +237,16 @@ static void computeDataSize(char *base64, int b64len) {
             tx_context.data_size--;
     }
     int len = sizeof(tx_context.data);
+    // prepare the first display page, which contains the data field size
     char str_size[DATA_SIZE_LEN] = "[  Size: 000  ] ";
-    str_size[9] = tx_context.data_size / 100 + 48;
-    str_size[10] = (tx_context.data_size / 10) % 10 + 48;
-    str_size[11] = tx_context.data_size % 10 + 48;
+    // sprintf equivalent workaround
+    str_size[9] = '0' + tx_context.data_size / 100;
+    str_size[10] = '0' + (tx_context.data_size / 10) % 10;
+    str_size[11] = '0' + tx_context.data_size % 10;
     int size_len = strlen(str_size);
+    // shift the actual data field to the right in order to make room for inserting the size in the first page
     os_memmove(tx_context.data + size_len, tx_context.data, len);
+    // insert the data size in front of the actual data field
     os_memmove(tx_context.data, str_size, size_len);
 }
 
@@ -362,10 +368,9 @@ uint16_t parseData() {
             if (ascii_len > MAX_DISPLAY_DATA_SIZE) {
                 ascii_len = MAX_DISPLAY_DATA_SIZE;
                 // add "..." at the end to show that the data field is actually longer 
-                encoded[MAX_DISPLAY_DATA_SIZE - 4] = 'L';
-                encoded[MAX_DISPLAY_DATA_SIZE - 3] = 'i';
-                encoded[MAX_DISPLAY_DATA_SIZE - 2] = '4';
-                encoded[MAX_DISPLAY_DATA_SIZE - 1] = 'u';
+                char ellipsis[4] = "Li4u"; // "..." base64 encoded
+                int ellipsisLen = strlen(ellipsis);
+                memmove(encoded + MAX_DISPLAY_DATA_SIZE - ellipsisLen, ellipsis, ellipsisLen);
             }
             if (!base64decode(tx_context.data, encoded, ascii_len)) {
                 return ERR_INVALID_MESSAGE;
