@@ -211,7 +211,7 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	fmt.Printf("Amount of %s to send: ", ticker)
 	strAmount, _ := reader.ReadString('\n')
 	strAmount = strings.TrimSpace(strAmount)
-	bigFloatAmount, ok := big.NewFloat(0).SetString(strAmount)
+	bigFloatAmount, ok := big.NewFloat(0).SetPrec(0).SetString(strAmount)
 	if !ok {
 		log.Println(errInvalidAmount)
 		return "", nil, "", err

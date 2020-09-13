@@ -37,6 +37,11 @@ const (
 	codeContractDataDisabled = 0x6e07
 	codeMessageIncomplete    = 0x6e08
 	codeWrongTxVersion       = 0x6e09
+	codeNonceTooLong         = 0x6e0a
+	codeInvalidAmount        = 0x6e0b
+	codeInvalidFee           = 0x6e0c
+	codePrettyFailed         = 0x6e0d
+	codeDataTooLong          = 0x6e0e
 )
 
 const (
@@ -58,6 +63,11 @@ var (
 	errAmountTooLong        = errors.New("amount string too long")
 	errContractDataDisabled = errors.New("contract data is disabled")
 	errWrongTxVersion       = errors.New("wrong tx version")
+	errNonceTooLong         = errors.New("nonce too long")
+	errInvalidAmount        = errors.New("invalid amount")
+	errInvalidFee           = errors.New("invalid fee")
+	errPrettyFailed         = errors.New("failed to make the amount look pretty")
+	errDataTooLong          = errors.New("data too long")
 )
 
 type NanoS struct {
@@ -111,6 +121,16 @@ func (n *NanoS) Exchange(cmd byte, p1, p2, lc byte, data []byte) (resp []byte, e
 		err = errContractDataDisabled
 	case codeWrongTxVersion:
 		err = errWrongTxVersion
+	case codeNonceTooLong:
+		err = errNonceTooLong
+	case codeInvalidAmount:
+		err = errInvalidAmount
+	case codeInvalidFee:
+		err = errInvalidFee
+	case codePrettyFailed:
+		err = errPrettyFailed
+	case codeDataTooLong:
+		err = errDataTooLong
 	default:
 		err = fmt.Errorf("Error code 0x%x", code)
 	}
