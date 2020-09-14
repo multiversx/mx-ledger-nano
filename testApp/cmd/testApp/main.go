@@ -12,20 +12,20 @@ import (
 	"math/big"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const proxyHost string = "https://api.elrond.com"
+const proxyHost string = "https://api.elrond.com" // https://api-testnet.elrond.com for testnet
 
 const (
-	hrpMainnet = "erd"
-	hrpTestnet = "xerd"
+	hrp       = "erd"
+	mainnetId = "1"
 )
 
+var ticker = "eGLD"
 var status = [...]string{"Disabled", "Enabled"}
 var denomination *big.Float
 
@@ -123,11 +123,11 @@ func getSenderInfo(address string) (*big.Int, uint64, error) {
 // getAddressShard returns the assigned shard of an address
 func getAddressShard(bech32Address string, noOfShards uint32) (uint32, error) {
 	// convert sender from bech32 to hex pubkey
-	hrp, pubkeyBech32, err := bech32.Decode(bech32Address)
+	h, pubkeyBech32, err := bech32.Decode(bech32Address)
 	if err != nil {
 		return 0, err
 	}
-	if hrp != hrpMainnet && hrp != hrpTestnet {
+	if h != hrp {
 		return 0, errors.New(errInvalidHRP)
 	}
 	pubkey, err := bech32.ConvertBits(pubkeyBech32, 5, 8, false)
@@ -208,15 +208,14 @@ func getTxDataFromUser(contractData uint8) (string, *big.Int, string, error) {
 	}
 
 	// read amount
-	fmt.Print("Amount of eGLD to send: ")
+	fmt.Printf("Amount of %s to send: ", ticker)
 	strAmount, _ := reader.ReadString('\n')
 	strAmount = strings.TrimSpace(strAmount)
-	amount, err := strconv.ParseFloat(strAmount, 64)
-	if err != nil {
+	bigFloatAmount, ok := big.NewFloat(0).SetPrec(0).SetString(strAmount)
+	if !ok {
 		log.Println(errInvalidAmount)
 		return "", nil, "", err
 	}
-	bigFloatAmount := big.NewFloat(0).SetFloat64(amount)
 	bigFloatAmount.Mul(bigFloatAmount, denomination)
 	bigIntAmount := new(big.Int)
 	bigFloatAmount.Int(bigIntAmount)
@@ -300,6 +299,9 @@ func main() {
 	}
 	fmt.Printf("Chain ID: %s\n\rTx version: %v\n\r",
 		netConfig.Data.Config.ChainID, netConfig.Data.Config.MinTransactionVersion)
+	if netConfig.Data.Config.ChainID != mainnetId {
+		ticker = "XeGLD"
+	}
 
 	fmt.Println("Retrieving address. Please confirm on your Ledger")
 	senderAddress, err := nanos.GetAddress(uint32(nanos.Account), uint32(nanos.AddressIndex))
@@ -324,7 +326,7 @@ func main() {
 		log.Println(errGetAddressShard, err)
 		waitInputAndExit()
 	}
-	fmt.Printf("Sender shard: %v\n\rBalance: %v eGLD\n\rNonce: %v\n\r", strSenderShard, strBalance, nonce)
+	fmt.Printf("Sender shard: %v\n\rBalance: %v %s\n\rNonce: %v\n\r", strSenderShard, strBalance, ticker, nonce)
 
 	strReceiverAddress, bigIntAmount, data, err := getTxDataFromUser(nanos.ContractData)
 	if err != nil {
