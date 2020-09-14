@@ -4,7 +4,7 @@ https://en.wikipedia.org/wiki/Base64
 */
 
 static bool isBase64Char(char c);
-static bool base64decode(char *decoded, char *source, size_t len);
+static char base64decode_byte(char c);
 static bool base64decode(char *decoded, char *source, size_t len);
 
 // returns true is the char given as parameter is a valid base64 char and false otherwise
@@ -12,7 +12,6 @@ static bool isBase64Char(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '+') || (c == '/') || (c == '=') ||
         (c >= '0' && c <= '9');
 }
-
 
 // decode base64 byte
 static char base64decode_byte(char c) {
@@ -43,9 +42,6 @@ static bool base64decode(char *decoded, char *source, size_t len) {
             if (!isBase64Char(c)) {
                 return false;
             }
-            if (c == '=') {
-                c = '\0';
-            }
             data <<= 6;
             data |= base64decode_byte(c);
         }
@@ -55,7 +51,7 @@ static bool base64decode(char *decoded, char *source, size_t len) {
     }
     decoded[len / 4 * 3] = '\0';
     // replace non-printable characters with '?'
-    for (int i = 0; i < strlen(decoded); i++) {
+    for (int i = 0; i < len / 4 * 3; i++) {
         if (decoded[i] < 32 || decoded[i] > 126) {
             decoded[i] = '?';
         }
