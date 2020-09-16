@@ -36,6 +36,7 @@ typedef enum {
 #define ERR_USER_DENIED            0x6985
 #define ERR_UNKNOWN_INSTRUCTION    0x6D00 // unknown INS
 #define ERR_WRONG_CLA              0x6E00
+#define ERR_SIGNATURE_FAILED       0x6E10
 #define ERR_INVALID_ARGUMENTS      0x6E01
 #define ERR_INVALID_MESSAGE        0x6E02 // signTx
 #define ERR_INVALID_P1             0x6E03 // signTx
@@ -44,7 +45,12 @@ typedef enum {
 #define ERR_AMOUNT_TOO_LONG        0x6E06 // signTx
 #define ERR_CONTRACT_DATA_DISABLED 0x6E07 // signTx
 #define ERR_MESSAGE_INCOMPLETE     0x6E08 // signTx
-#define ERR_WRONG_TX_VERSION       0x6E09 // singTx
+#define ERR_WRONG_TX_VERSION       0x6E09 // signTx
+#define ERR_NONCE_TOO_LONG         0x6E0A // signTx
+#define ERR_INVALID_AMOUNT         0x6E0B // signTx
+#define ERR_INVALID_FEE            0x6E0C // signTx
+#define ERR_PRETTY_FAILED          0x6E0D // signTx
+#define ERR_DATA_TOO_LONG          0x6E0E // singTx
 
 extern ux_state_t ux;
 // display stepped screens

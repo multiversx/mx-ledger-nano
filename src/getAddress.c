@@ -62,7 +62,10 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 
     account = readUint32BE(dataBuffer);
     index = readUint32BE(dataBuffer + sizeof(uint32_t));
-    getPublicKey(account, index, publicKey);
+    if (!getPublicKey(account, index, publicKey)) {
+        THROW(ERR_INVALID_ARGUMENTS);
+    }
+
     switch(p2) {
         case P2_DISPLAY_BECH32:
             getAddressBech32FromBinary(publicKey, address);
