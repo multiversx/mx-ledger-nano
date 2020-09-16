@@ -166,9 +166,9 @@ func (n *NanoS) GetConfiguration() error {
 // GetAddress retrieves from device the address based on account and address index
 func (n *NanoS) GetAddress(account uint32, index uint32) (pubkey []byte, err error) {
 	encAccount := make([]byte, 4)
-	binary.LittleEndian.PutUint32(encAccount, account)
+	binary.BigEndian.PutUint32(encAccount, account)
 	encIndex := make([]byte, 4)
-	binary.LittleEndian.PutUint32(encIndex, index)
+	binary.BigEndian.PutUint32(encIndex, index)
 
 	resp, err := n.Exchange(cmdGetAddress, p1WithConfirmation, p2DisplayBech32, 8, append(encAccount, encIndex...))
 	if err != nil {

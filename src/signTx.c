@@ -432,7 +432,7 @@ bool signTx(void) {
     cx_ecfp_private_key_t privateKey;
     bool success = true;
 
-    if (!getPrivateKey(0, 0, &privateKey)) {
+    if (!getPrivateKey(N_storage.setting_account, N_storage.setting_address_index, &privateKey)) {
         return false;
     }
 
