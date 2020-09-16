@@ -245,9 +245,13 @@ static void computeDataSize(char *base64, int b64len) {
     str_size[11] = '0' + tx_context.data_size % 10;
     int size_len = strlen(str_size);
     // shift the actual data field to the right in order to make room for inserting the size in the first page
-    os_memmove(tx_context.data + size_len, tx_context.data, len);
+    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
     // insert the data size in front of the actual data field
     os_memmove(tx_context.data, str_size, size_len);
+    int data_end = size_len + tx_context.data_size;
+    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
+        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
+    tx_context.data[data_end] = '\0';
 }
 
 // parseData parses the received tx data
@@ -363,12 +367,15 @@ uint16_t parseData() {
                 return ERR_DATA_TOO_LONG;
             }
             char encoded[MAX_DISPLAY_DATA_SIZE];
-            os_memmove(encoded, str, MAX_DISPLAY_DATA_SIZE);
+            int enc_len = len;
+            if (len > MAX_DISPLAY_DATA_SIZE)
+                enc_len = MAX_DISPLAY_DATA_SIZE;
+            os_memmove(encoded, str, enc_len);
             int ascii_len = len;
             if (ascii_len > MAX_DISPLAY_DATA_SIZE) {
                 ascii_len = MAX_DISPLAY_DATA_SIZE;
                 // add "..." at the end to show that the data field is actually longer 
-                char ellipsis[4] = "Li4u"; // "..." base64 encoded
+                char ellipsis[5] = "Li4u"; // "..." base64 encoded
                 int ellipsisLen = strlen(ellipsis);
                 memmove(encoded + MAX_DISPLAY_DATA_SIZE - ellipsisLen, ellipsis, ellipsisLen);
             }
