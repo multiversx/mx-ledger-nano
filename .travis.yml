@@ -102,3 +102,5 @@ matrix:
         file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
         skip_cleanup: true
         draft: true
+        on:
+          branch: master, add-multiple-accounts-support
