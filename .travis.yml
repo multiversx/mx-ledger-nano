@@ -45,6 +45,8 @@ matrix:
         file: $FILE_NAME
         skip_cleanup: true
         draft: true
+        on:
+          branch: master, add-multiple-accounts-support
     
     - language: go
       os: linux
