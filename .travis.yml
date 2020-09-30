@@ -46,7 +46,7 @@ matrix:
         skip_cleanup: true
         draft: true
         on:
-          branch: master, add-multiple-accounts-support
+          all_branches: true
     
     - language: go
       os: linux
@@ -66,6 +66,8 @@ matrix:
         file: $TRAVIS_BUILD_DIR/testApp/cmd/testApp/$FILE_NAME
         skip_cleanup: true
         draft: true
+        on:
+          all_branches: true
 
     - language: go
       os: osx
