@@ -2,7 +2,6 @@
 #include "os.h"
 #include "viewAddress.h"
 #include "viewAppVersion.h"
-#include "selectAccount.h"
 
 const char* const setting_contract_data_getter_values[] = {
     "No",
@@ -106,9 +105,6 @@ const char* settings_submenu_getter(unsigned int idx) {
 void settings_submenu_selector(unsigned int idx) {
     switch(idx) {
     case 0:
-        selectAccount();
-        break;
-    case 1:
         ux_menulist_init_select(0, setting_contract_data_getter, setting_contract_data_selector, N_storage.setting_contract_data);
         break;
     default:
@@ -127,7 +123,7 @@ const char* info_submenu_getter(unsigned int idx) {
 void info_submenu_selector(unsigned int idx) {
     switch(idx) {
     case 0:
-        viewAddressAsBech32(N_storage.setting_account, N_storage.setting_address_index);
+        viewAddressAsBech32(bip32_account, bip32_address_index);
         break;
     case 1:
         viewAppVersion();

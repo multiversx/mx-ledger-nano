@@ -57,10 +57,12 @@ extern ux_state_t ux;
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
 
+// selected account global variables
+extern unsigned char bip32_account;
+extern unsigned char bip32_address_index;
+
 typedef struct internalStorage_t {
     unsigned char setting_contract_data;
-    unsigned char setting_account;
-    unsigned char setting_address_index;
     uint8_t initialized;
 } internalStorage_t;
 
