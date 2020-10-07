@@ -53,7 +53,7 @@ uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
 bool signTx(void);
 
-// UI for confirming the receiver and amount of a transaction on screen
+// UI for confirming the tx details of the transaction on screen
 UX_STEP_NOCB(
     ux_sign_tx_flow_8_step, 
     bnnn_paging, 

@@ -1,6 +1,5 @@
 #include "menu.h"
 #include "os.h"
-#include "viewAddress.h"
 #include "viewAppVersion.h"
 
 const char* const setting_contract_data_getter_values[] = {
@@ -9,12 +8,10 @@ const char* const setting_contract_data_getter_values[] = {
     "Back"
 };
 const char* const settings_submenu_getter_values[] = {
-    "Select account",
     "Contract data",
     "Back",
 };
 const char* const info_submenu_getter_values[] = {
-    "View address",
     "App version",
     "Back",
 };
@@ -123,9 +120,6 @@ const char* info_submenu_getter(unsigned int idx) {
 void info_submenu_selector(unsigned int idx) {
     switch(idx) {
     case 0:
-        viewAddressAsBech32(bip32_account, bip32_address_index);
-        break;
-    case 1:
         viewAppVersion();
         break;
     default:
