@@ -33,6 +33,7 @@ const (
 	errOpenDevice           = "couldn't open device"
 	errGetAppVersion        = "couldn't get app version"
 	errGetConfig            = "couldn't get configuration"
+	errSetAddress           = "couldn't set account and address index"
 	errGetAddress           = "couldn't get address"
 	errGetNetworkConfig     = "couldn't get network config"
 	errGetBalanceAndNonce   = "couldn't get address balance and nonce"
@@ -304,6 +305,11 @@ func main() {
 	}
 
 	fmt.Println("Retrieving address. Please confirm on your Ledger")
+	err = nanos.SetAddress(uint32(nanos.Account), uint32(nanos.AddressIndex))
+	if err != nil {
+		log.Println(errSetAddress, err)
+		waitInputAndExit()
+	}
 	senderAddress, err := nanos.GetAddress(uint32(nanos.Account), uint32(nanos.AddressIndex))
 	if err != nil {
 		log.Println(errGetAddress, err)

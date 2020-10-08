@@ -11,14 +11,14 @@
 #define P1_MORE        0x80
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
-#define BIP32_PATH 5
-#define COIN_TYPE_eGLD 508UL
-#define TICKER_MAINNET "eGLD"
-#define TICKER_TESTNET "XeGLD"
-#define HRP      "erd"
-#define DECIMAL_PLACES 18
-#define MAINNET_CHAIN_ID "1"
-#define TX_VERSION 1
+#define BIP32_PATH          5
+#define COIN_TYPE_eGLD      508UL
+#define TICKER_MAINNET      "eGLD"
+#define TICKER_TESTNET      "XeGLD"
+#define HRP                 "erd"
+#define DECIMAL_PLACES      18
+#define MAINNET_CHAIN_ID    "1"
+#define TX_VERSION          1
 
 typedef enum {
     NETWORK_MAINNET = 0,
