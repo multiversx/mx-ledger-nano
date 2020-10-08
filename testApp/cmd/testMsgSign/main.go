@@ -16,6 +16,8 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+const prepend = "\x17Elrond Signed Message:\n"
+
 const (
 	errOpenDevice    = "couldn't open device"
 	errGetAppVersion = "couldn't get app version"
@@ -41,8 +43,23 @@ func getDeviceInfo(nanos *ledger.NanoS) error {
 
 func waitInputAndExit() {
 	fmt.Println("Press enter to continue...")
-	fmt.Scanln()
+	_, _ = fmt.Scanln()
 	os.Exit(1)
+}
+
+func checkSignature(address string, message string, signature []byte) error {
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write([]byte(fmt.Sprintf("%s%v%s", prepend, len(message), message)))
+	sha := hash.Sum(nil)
+
+	txSingleSigner := &singlesig.Ed25519Signer{}
+	_suite := ed25519.NewEd25519()
+	keyGen := signing.NewKeyGenerator(_suite)
+
+	_, bytes, _ := bech32.Decode(address)
+	bytes, _ = bech32.ConvertBits(bytes, 5, 8, false)
+	publicKey, _ := keyGen.PublicKeyFromByteArray(bytes)
+	return txSingleSigner.Verify(publicKey, sha, signature)
 }
 
 // main function
@@ -86,18 +103,7 @@ func main() {
 	sigHex := hex.EncodeToString(signature)
 	fmt.Printf("Signature: %s\n\r", sigHex)
 
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write([]byte(fmt.Sprintf("\x17Elrond Signed Message:\n%v%s", len(msg), msg)))
-	sha := hash.Sum(nil)
-
-	txSingleSigner := &singlesig.Ed25519Signer{}
-	_suite := ed25519.NewEd25519()
-	keyGen := signing.NewKeyGenerator(_suite)
-
-	_, bytes, _ := bech32.Decode(string(senderAddress))
-	bytes, _ = bech32.ConvertBits(bytes, 5, 8, false)
-	publicKey, _ := keyGen.PublicKeyFromByteArray(bytes)
-	err = txSingleSigner.Verify(publicKey, sha, signature)
+	err = checkSignature(string(senderAddress), msg, signature)
 	if err != nil {
 		log.Println(errSigningMsg, err)
 		waitInputAndExit()

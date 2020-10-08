@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/karalabe/hid"
 )
@@ -23,6 +24,8 @@ const (
 	p1NoConfirmation   = 0x00
 	p2DisplayBech32    = 0x00
 	p2DisplayHex       = 0x01
+	p1First            = 0x00
+	p1More             = 0x80
 )
 
 const (
@@ -52,6 +55,8 @@ const (
 	errBadSignature       = "Invalid signature received from Ledger"
 	errNotDetected        = "Nano S not detected"
 )
+
+const sigLen = 64
 
 var (
 	errUserRejected         = errors.New("user denied request")
@@ -211,20 +216,20 @@ func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
 
 	var resp []byte = nil
 	for buf.Len() > 0 {
-		var p1 byte = 0x80
+		var p1 byte = p1More
 		if resp == nil {
-			p1 = 0x00
+			p1 = p1First
 		}
-		toSend := buf.Next(255)
+		toSend := buf.Next(math.MaxUint8)
 		resp, err = n.Exchange(cmdSignTxn, p1, 0, byte(len(toSend)), toSend)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(resp) != 65 || resp[0] != 64 {
+	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
 		return nil, errors.New(errBadSignature)
 	}
-	sig = make([]byte, 64)
+	sig = make([]byte, sigLen)
 	copy(sig[:], resp[1:])
 	return
 }
@@ -239,20 +244,20 @@ func (n *NanoS) SignMsg(msg string) (sig []byte, err error) {
 
 	var resp []byte = nil
 	for buf.Len() > 0 {
-		var p1 byte = 0x80
+		var p1 byte = p1More
 		if resp == nil {
-			p1 = 0x00
+			p1 = p1First
 		}
-		toSend := buf.Next(255)
+		toSend := buf.Next(math.MaxUint8)
 		resp, err = n.Exchange(cmdSignMsg, p1, 0, byte(len(toSend)), toSend)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(resp) != 65 || resp[0] != 64 {
+	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
 		return nil, errors.New(errBadSignature)
 	}
-	sig = make([]byte, 64)
+	sig = make([]byte, sigLen)
 	copy(sig[:], resp[1:])
 	return
 }
