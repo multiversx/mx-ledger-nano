@@ -68,14 +68,11 @@ bool sign_message(void) {
 }
 
 void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-    uint8_t hashMessage[32];
     if (p1 == P1_FIRST) {
         char tmp[11];
         uint32_t index;
         uint32_t base = 10;
         uint8_t pos = 0;
-        uint32_t i;
-        cx_sha3_t sha;
         // first 4 bytes from dataBuffer should be the message length (big endian uint32)
         if (dataLength < 4)
             THROW(ERR_INVALID_MESSAGE);
