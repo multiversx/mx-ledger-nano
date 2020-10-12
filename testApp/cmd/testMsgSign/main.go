@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -19,11 +20,12 @@ import (
 const prepend = "\x17Elrond Signed Message:\n"
 
 const (
-	errOpenDevice    = "couldn't open device"
-	errGetAppVersion = "couldn't get app version"
-	errGetConfig     = "couldn't get configuration"
-	errGetAddress    = "couldn't get address"
-	errSigningMsg    = "signing error"
+	errOpenDevice     = "couldn't open device"
+	errGetAppVersion  = "couldn't get app version"
+	errGetConfig      = "couldn't get configuration"
+	errGetAddress     = "couldn't get address"
+	errSigningMsg     = "signing error"
+	errInvalidAddress = "not an eGLD address. it should start with 'erd'"
 )
 
 // getDeviceInfo retrieves various informations from Ledger
@@ -53,12 +55,24 @@ func checkSignature(address string, message string, signature []byte) error {
 	sha := hash.Sum(nil)
 
 	txSingleSigner := &singlesig.Ed25519Signer{}
-	_suite := ed25519.NewEd25519()
-	keyGen := signing.NewKeyGenerator(_suite)
+	suite := ed25519.NewEd25519()
+	keyGen := signing.NewKeyGenerator(suite)
 
-	_, bytes, _ := bech32.Decode(address)
-	bytes, _ = bech32.ConvertBits(bytes, 5, 8, false)
-	publicKey, _ := keyGen.PublicKeyFromByteArray(bytes)
+	hrp, bytes, err := bech32.Decode(address)
+	if err != nil {
+		return err
+	}
+	if hrp != "erd" {
+		return errors.New(errInvalidAddress)
+	}
+	bytes, err = bech32.ConvertBits(bytes, 5, 8, false)
+	if err != nil {
+		return err
+	}
+	publicKey, err := keyGen.PublicKeyFromByteArray(bytes)
+	if err != nil {
+		return err
+	}
 	return txSingleSigner.Verify(publicKey, sha, signature)
 }
 
