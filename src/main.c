@@ -18,7 +18,9 @@
 
 #include "utils.h"
 #include "getAddress.h"
+#include "setAddress.h"
 #include "signTx.h"
+#include "signMsg.h"
 #include "menu.h"
 #include "globals.h"
 
@@ -27,6 +29,8 @@
 #define INS_GET_APP_CONFIGURATION 0x02
 #define INS_GET_ADDR              0x03
 #define INS_SIGN_TX               0x04
+#define INS_SET_ADDR              0x05
+#define INS_SIGN_MSG              0x06
 
 #define OFFSET_CLA   0
 #define OFFSET_INS   1
@@ -64,8 +68,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_GET_APP_CONFIGURATION:
                     G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
-                    G_io_apdu_buffer[1] = N_storage.setting_account;
-                    G_io_apdu_buffer[2] = N_storage.setting_address_index;
+                    G_io_apdu_buffer[1] = bip32_account;
+                    G_io_apdu_buffer[2] = bip32_address_index;
                     G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
                     G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
@@ -77,8 +81,17 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     handleGetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
+                case INS_SET_ADDR:
+                    handleSetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    THROW(MSG_OK);
+                    break;
+
                 case INS_SIGN_TX:
                     handleSignTx(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    break;
+
+                case INS_SIGN_MSG:
+                    handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
                 default:
@@ -118,6 +131,11 @@ void elrond_main(void) {
     volatile unsigned int rx = 0;
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
+
+    bip32_account = 0;
+    bip32_address_index = 0;
+    
+    msg_context.state = APP_STATE_IDLE;
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
@@ -278,8 +296,6 @@ void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
         internalStorage_t storage;
         storage.setting_contract_data = DEFAULT_CONTRACT_DATA;
-        storage.setting_account = 0;
-        storage.setting_address_index = 0;
         storage.initialized = 0x01;
         nvm_write((internalStorage_t*)&N_storage, (void*)&storage, sizeof(internalStorage_t));
     }

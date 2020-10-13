@@ -1,7 +1,4 @@
 #include "signTx.h"
-#include "os.h"
-#include "ux.h"
-#include "utils.h"
 #include "../deps/jsmn/jsmn.h"
 #include <uint256.h>
 #include "base64.h"
@@ -27,25 +24,6 @@
         VERSION_FIELD         \
     )
 
-// additional space for "0." and " eGLD"
-#define PRETTY_SIZE (2 + MAX_TICKER_LEN)
-
-typedef struct {
-    char buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
-    uint16_t bufLen;
-
-    char receiver[FULL_ADDRESS_LENGTH];
-    char amount[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    uint64_t gas_limit;
-    uint64_t gas_price;
-    char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
-    uint16_t data_size;
-    char signature[64];
-} tx_context_t;
-
-static tx_context_t tx_context;
-
 static uint8_t setResultSignature();
 void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
@@ -53,7 +31,7 @@ uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
 bool signTx(void);
 
-// UI for confirming the receiver and amount of a transaction on screen
+// UI for confirming the tx details of the transaction on screen
 UX_STEP_NOCB(
     ux_sign_tx_flow_8_step, 
     bnnn_paging, 
@@ -132,7 +110,7 @@ static bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t
     return true;
 }
 
-static bool isdigit(char c) {
+static bool is_digit(char c) {
   return c >= '0' && c <= '9';
 }
 
@@ -140,7 +118,7 @@ static bool parse_int(char *str, size_t size, uint64_t *result) {
     uint64_t min = 0, n = 0;
 
     for (size_t i = 0; i < size; i++) {
-        if (!isdigit(str[i])) {
+        if (!is_digit(str[i])) {
             return false;
         }
         n = n * 10 + str[i] - '0';
@@ -158,7 +136,7 @@ static bool parse_int(char *str, size_t size, uint64_t *result) {
 
 static bool valid_amount(char *amount, size_t size) {
   for (size_t i = 0; i < size; i++) {
-      if (!isdigit(amount[i])) {
+      if (!is_digit(amount[i])) {
             return false;
       }
   }
@@ -236,6 +214,7 @@ static void computeDataSize(char *base64, int b64len) {
         if (base64[b64len - 2] == '=')
             tx_context.data_size--;
     }
+    tx_context.data[tx_context.data_size] = '\0';
     int len = sizeof(tx_context.data);
     // prepare the first display page, which contains the data field size
     char str_size[DATA_SIZE_LEN] = "[  Size: 000  ] ";
@@ -439,7 +418,7 @@ bool signTx(void) {
     cx_ecfp_private_key_t privateKey;
     bool success = true;
 
-    if (!getPrivateKey(0, 0, &privateKey)) {
+    if (!getPrivateKey(bip32_account, bip32_address_index, &privateKey)) {
         return false;
     }
 

@@ -9,3 +9,7 @@ bolos_ux_params_t G_ux_params;
 unsigned int ux_step;
 unsigned int ux_step_count;
 const internalStorage_t N_storage_real;
+
+// selected account global variables
+unsigned char bip32_account;
+unsigned char bip32_address_index;

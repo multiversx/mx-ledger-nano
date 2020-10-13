@@ -10,7 +10,7 @@
 static const uint32_t HARDENED_OFFSET = 0x80000000;
 static const uint32_t derivePath[BIP32_PATH] = {
   44 | HARDENED_OFFSET,
-  COIN_TYPE_eGLD | HARDENED_OFFSET,
+  COIN_TYPE_EGLD | HARDENED_OFFSET,
   0 | HARDENED_OFFSET,
   0 | HARDENED_OFFSET,
   0 | HARDENED_OFFSET
@@ -79,15 +79,15 @@ bool getPublicKey(uint32_t accountNumber, uint32_t index, uint8_t *publicKeyArra
     return true;
 }
 
-bool getPrivateKey(uint32_t accountNumber, uint32_t index, cx_ecfp_private_key_t *privateKey) {
+bool getPrivateKey(uint32_t account, uint32_t addressIndex, cx_ecfp_private_key_t *privateKey) {
     uint8_t privateKeyData[32];
     uint32_t bip32Path[BIP32_PATH];
     bool success = true;
 
     os_memmove(bip32Path, derivePath, sizeof(derivePath));
 
-    bip32Path[2] = accountNumber | HARDENED_OFFSET;
-    bip32Path[4] = index | HARDENED_OFFSET;
+    bip32Path[2] = account | HARDENED_OFFSET;
+    bip32Path[4] = addressIndex | HARDENED_OFFSET;
 
     BEGIN_TRY {
         TRY {

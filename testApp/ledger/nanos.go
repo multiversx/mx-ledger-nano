@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 
 	"github.com/karalabe/hid"
 )
@@ -16,11 +17,15 @@ const (
 	cmdGetConfiguration = 0x02
 	cmdGetAddress       = 0x03
 	cmdSignTxn          = 0x04
+	cmdSetAddress       = 0x05
+	cmdSignMsg          = 0x06
 
 	p1WithConfirmation = 0x01
 	p1NoConfirmation   = 0x00
 	p2DisplayBech32    = 0x00
 	p2DisplayHex       = 0x01
+	p1First            = 0x00
+	p1More             = 0x80
 )
 
 const (
@@ -50,6 +55,8 @@ const (
 	errBadSignature       = "Invalid signature received from Ledger"
 	errNotDetected        = "Nano S not detected"
 )
+
+const sigLen = 64
 
 var (
 	errUserRejected         = errors.New("user denied request")
@@ -165,12 +172,22 @@ func (n *NanoS) GetConfiguration() error {
 
 // GetAddress retrieves from device the address based on account and address index
 func (n *NanoS) GetAddress(account uint32, index uint32) (pubkey []byte, err error) {
-	encAccount := make([]byte, 4)
-	binary.LittleEndian.PutUint32(encAccount, account)
-	encIndex := make([]byte, 4)
-	binary.LittleEndian.PutUint32(encIndex, index)
+	return n.getAddress(account, index, p1WithConfirmation)
+}
 
-	resp, err := n.Exchange(cmdGetAddress, p1WithConfirmation, p2DisplayBech32, 8, append(encAccount, encIndex...))
+// GetAddressWithoutConfirmation retrieves from device the address based on account and address index
+// (without confirmation on device)
+func (n *NanoS) GetAddressWithoutConfirmation(account uint32, index uint32) (pubkey []byte, err error) {
+	return n.getAddress(account, index, p1NoConfirmation)
+}
+
+func (n *NanoS) getAddress(account uint32, index uint32, confirmation byte) (pubkey []byte, err error) {
+	encAccount := make([]byte, 4)
+	binary.BigEndian.PutUint32(encAccount, account)
+	encIndex := make([]byte, 4)
+	binary.BigEndian.PutUint32(encIndex, index)
+
+	resp, err := n.Exchange(cmdGetAddress, confirmation, p2DisplayBech32, 8, append(encAccount, encIndex...))
 	if err != nil {
 		return nil, err
 	}
@@ -181,6 +198,17 @@ func (n *NanoS) GetAddress(account uint32, index uint32) (pubkey []byte, err err
 	return pubkey, nil
 }
 
+// SetAddress sets the account and address index
+func (n *NanoS) SetAddress(account uint32, index uint32) error {
+	encAccount := make([]byte, 4)
+	binary.BigEndian.PutUint32(encAccount, account)
+	encIndex := make([]byte, 4)
+	binary.BigEndian.PutUint32(encIndex, index)
+
+	_, err := n.Exchange(cmdSetAddress, 0, 0, 8, append(encAccount, encIndex...))
+	return err
+}
+
 // SignTxn sends a json marshalized transaction to the device and returns the signature
 func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
 	buf := new(bytes.Buffer)
@@ -188,20 +216,48 @@ func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
 
 	var resp []byte = nil
 	for buf.Len() > 0 {
-		var p1 byte = 0x80
+		var p1 byte = p1More
 		if resp == nil {
-			p1 = 0x00
+			p1 = p1First
 		}
-		toSend := buf.Next(255)
+		toSend := buf.Next(math.MaxUint8)
 		resp, err = n.Exchange(cmdSignTxn, p1, 0, byte(len(toSend)), toSend)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if len(resp) != 65 || resp[0] != 64 {
+	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
 		return nil, errors.New(errBadSignature)
 	}
-	sig = make([]byte, 64)
+	sig = make([]byte, sigLen)
+	copy(sig[:], resp[1:])
+	return
+}
+
+// SignMsg sends a message to the device and returns the signature
+func (n *NanoS) SignMsg(msg string) (sig []byte, err error) {
+	buf := new(bytes.Buffer)
+	encLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(encLen, uint32(len(msg)))
+	buf.Write(encLen)
+	buf.Write([]byte(msg))
+
+	var resp []byte = nil
+	for buf.Len() > 0 {
+		var p1 byte = p1More
+		if resp == nil {
+			p1 = p1First
+		}
+		toSend := buf.Next(math.MaxUint8)
+		resp, err = n.Exchange(cmdSignMsg, p1, 0, byte(len(toSend)), toSend)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
+		return nil, errors.New(errBadSignature)
+	}
+	sig = make([]byte, sigLen)
 	copy(sig[:], resp[1:])
 	return
 }
