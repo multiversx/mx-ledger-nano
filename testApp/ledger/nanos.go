@@ -19,6 +19,7 @@ const (
 	cmdSignTxn          = 0x04
 	cmdSetAddress       = 0x05
 	cmdSignMsg          = 0x06
+	cmdSignTxnHash      = 0x07
 
 	p1WithConfirmation = 0x01
 	p1NoConfirmation   = 0x00
@@ -253,6 +254,20 @@ func (n *NanoS) SignMsg(msg string) (sig []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
+		return nil, errors.New(errBadSignature)
+	}
+	sig = make([]byte, sigLen)
+	copy(sig[:], resp[1:])
+	return
+}
+
+// SignTxHash sends a transaction hash to the device and returns the signature
+func (n *NanoS) SignTxHash(txHash []byte) (sig []byte, err error) {
+	resp, err := n.Exchange(cmdSignTxnHash, 0, 0, 32, txHash)
+	if err != nil {
+		return nil, err
 	}
 	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
 		return nil, errors.New(errBadSignature)

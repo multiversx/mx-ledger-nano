@@ -21,6 +21,7 @@
 #include "setAddress.h"
 #include "signTx.h"
 #include "signMsg.h"
+#include "signTxHash.h"
 #include "menu.h"
 #include "globals.h"
 
@@ -31,6 +32,7 @@
 #define INS_SIGN_TX               0x04
 #define INS_SET_ADDR              0x05
 #define INS_SIGN_MSG              0x06
+#define INS_SIGN_TX_HASH          0x07
 
 #define OFFSET_CLA   0
 #define OFFSET_INS   1
@@ -92,6 +94,10 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_SIGN_MSG:
                     handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    break;
+
+                case INS_SIGN_TX_HASH:
+                    handleSignTxHash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
                 default:
