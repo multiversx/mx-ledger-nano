@@ -18,11 +18,6 @@ void handleSetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
     account = readUint32BE(dataBuffer);
     address_index = readUint32BE(dataBuffer + sizeof(uint32_t));
 
-    if ((account > __UINT8_MAX__) || (address_index > __UINT8_MAX__)) {
-        THROW(ERR_INVALID_ARGUMENTS);
-        return;
-    }
-
     bip32_account = account;
     bip32_address_index = address_index;
 }

@@ -20,6 +20,7 @@
 #include "getAddress.h"
 #include "setAddress.h"
 #include "signTx.h"
+#include "signTxHash.h"
 #include "signMsg.h"
 #include "menu.h"
 #include "globals.h"
@@ -31,6 +32,7 @@
 #define INS_SIGN_TX               0x04
 #define INS_SET_ADDR              0x05
 #define INS_SIGN_MSG              0x06
+#define INS_SIGN_TX_HASH          0x07
 
 #define OFFSET_CLA   0
 #define OFFSET_INS   1
@@ -68,8 +70,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_GET_APP_CONFIGURATION:
                     G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
-                    G_io_apdu_buffer[1] = bip32_account;
-                    G_io_apdu_buffer[2] = bip32_address_index;
+                    // G_io_apdu_buffer[1] = bip32_account;
+                    // G_io_apdu_buffer[2] = bip32_address_index;
                     G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
                     G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
@@ -92,6 +94,10 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_SIGN_MSG:
                     handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    break;
+
+                case INS_SIGN_TX_HASH:
+                    handleSignTxHash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
                 default:

@@ -5,6 +5,13 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+bool makeAmountPretty(char *amount, size_t max_size, network_t network);
+void computeDataSize(char *base64, uint32_t b64len);
+bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size);
+bool is_digit(char c);
+bool parse_int(char *str, size_t size, uint64_t *result);
+bool valid_amount(char *amount, size_t size);
+
 void getAddressBech32FromBinary(uint8_t *publicKey, char *address);
 void getAddressHexFromBinary(uint8_t *publicKey, char *address);
 
