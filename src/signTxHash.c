@@ -107,44 +107,54 @@ void init_context() {
     cx_keccak_init(&msg_context.sha3, 256);
 }
 
-// verifies if the field and value are valid and stores them
-uint16_t process_field(void) {
-    if (tx_hash_context.current_field_len == 0 || tx_hash_context.current_value_len == 0)
-        return ERR_INVALID_MESSAGE;
-    bool valid_field = false;
-    if (tx_hash_context.current_value_len < MAX_VALUE_LEN)
-        tx_hash_context.current_value[tx_hash_context.current_value_len++] = '\0';
-    // verify "value" field
+// verify "value" field
+uint16_t verify_value(bool *valid) {
     if (strncmp(tx_hash_context.current_field, VALUE_FIELD, strlen(VALUE_FIELD)) == 0) {
         if (tx_hash_context.current_value_len >= sizeof(tx_context.amount))
             return ERR_AMOUNT_TOO_LONG;
         if (!valid_amount(tx_hash_context.current_value, strlen(tx_hash_context.current_value)))
             return ERR_INVALID_AMOUNT;
         os_memmove(tx_context.amount, tx_hash_context.current_value, tx_hash_context.current_value_len);
-        valid_field = true;
+        *valid = true;
     }
-    // verify "receiver" field
+    return MSG_OK;
+}
+
+// verify "receiver" field
+uint16_t verify_receiver(bool *valid) {
     if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0) {
         if (tx_hash_context.current_value_len >= sizeof(tx_context.receiver))
             return ERR_RECEIVER_TOO_LONG;
         os_memmove(tx_context.receiver, tx_hash_context.current_value, tx_hash_context.current_value_len);
-        valid_field = true;
+        *valid = true;
     }
-    // verify "gasPrice" field
+    return MSG_OK;
+}
+
+// verify "gasPrice" field
+uint16_t verify_gasprice(bool *valid) {
     if (strncmp(tx_hash_context.current_field, GASPRICE_FIELD, strlen(GASPRICE_FIELD)) == 0) {
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_price))
             return ERR_INVALID_FEE;
-        valid_field = true;
+        *valid = true;
     }
-    // verify "gasLimit" field
+    return MSG_OK;
+}
+
+// verify "gasLimit" field
+uint16_t verify_gaslimit(bool *valid) {
     if (strncmp(tx_hash_context.current_field, GASLIMIT_FIELD, strlen(GASLIMIT_FIELD)) == 0) {
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_limit))
             return ERR_INVALID_FEE;
         if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
             return ERR_INVALID_FEE;
-        valid_field = true;
+        *valid = true;
     }
-    // verify "data" field
+    return MSG_OK;
+}
+
+// verify "data" field
+uint16_t verify_data(bool *valid) {
     if (strncmp(tx_hash_context.current_field, DATA_FIELD, strlen(DATA_FIELD)) == 0) {
         if (N_storage.setting_contract_data == 0)
             return ERR_CONTRACT_DATA_DISABLED;
@@ -166,9 +176,13 @@ uint16_t process_field(void) {
             return ERR_INVALID_MESSAGE;
         }
         computeDataSize(tx_hash_context.current_value, tx_hash_context.current_value_len);
-        valid_field = true;
+        *valid = true;
     }
-    // verify "chainID" field
+    return MSG_OK;
+}
+
+// verify "chainID" field
+uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
         network_t network = NETWORK_TESTNET;
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0)
@@ -176,24 +190,59 @@ uint16_t process_field(void) {
         if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
             !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network))
             return ERR_PRETTY_FAILED;
-        valid_field = true;
+        *valid = true;
     }
-    // verify "version" field
+    return MSG_OK;
+}
+
+// verify "version" field
+uint16_t verify_version(bool *valid) {
     if (strncmp(tx_hash_context.current_field, VERSION_FIELD, strlen(VERSION_FIELD)) == 0) {
         uint64_t version;
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &version))
             return ERR_INVALID_MESSAGE;
         if (version != TX_HASH_VERSION)
             return ERR_WRONG_TX_VERSION;
-        valid_field = true;
+        *valid = true;
     }
+    return MSG_OK;
+}
+
+// verifies if the field and value are valid and stores them
+uint16_t process_field(void) {
+    if (tx_hash_context.current_field_len == 0 || tx_hash_context.current_value_len == 0)
+        return ERR_INVALID_MESSAGE;
+    if (tx_hash_context.current_value_len < MAX_VALUE_LEN)
+        tx_hash_context.current_value[tx_hash_context.current_value_len++] = '\0';
+
+    bool valid_field = false;
+    uint16_t err;
+    err = verify_value(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_receiver(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_gasprice(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_gaslimit(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_data(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_chainid(&valid_field);
+    if (err != MSG_OK)
+        return err;
+    err = verify_version(&valid_field);
+    if (err != MSG_OK)
+        return err;
+
     // verify the rest of the fields that are not displayed
-    if (strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0)
-        valid_field = true;
-    if (strncmp(tx_hash_context.current_field, SENDER_FIELD, strlen(SENDER_FIELD)) == 0)
-        valid_field = true;
-    if (strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0)
-        valid_field = true;
+    valid_field |= strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, SENDER_FIELD, strlen(SENDER_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0;
 
     if (valid_field)
         return MSG_OK;
