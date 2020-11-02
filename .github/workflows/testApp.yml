@@ -79,9 +79,9 @@ jobs:
       
     - name: Build
       run: | 
-        cd ${GITHUB_WORKSPACE}/testApp/cmd/testApp
+        cd %GITHUB_WORKSPACE%/testApp/cmd/testApp
         go build -v .
-        cd ${GITHUB_WORKSPACE}/testApp/cmd/testMsgSign
+        cd %GITHUB_WORKSPACE%/testApp/cmd/testMsgSign
         go build -v .
         
     - name: Upload Release Asset - TestApp
