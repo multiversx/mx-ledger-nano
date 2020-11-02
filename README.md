@@ -38,7 +38,7 @@ Download the latest `*.hex` file from our [releases page](https://github.com/Elr
 ```
 export APP_VERSION=1.0.8
 
-wget https://github.com/ElrondNetwork/ledger-elrond/releases/latest/download/elrond-ledger-app-v${APP_VERSION}.hex
+wget https://github.com/ElrondNetwork/ledger-elrond/releases/download/v${APP_VERSION}/elrond-ledger-app-v${APP_VERSION}.hex
 ```
 
 Now that you've downloaded the app and `ledgerblue` package is available, let's load the app on the device:
