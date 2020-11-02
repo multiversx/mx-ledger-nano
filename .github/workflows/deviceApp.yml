@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install system dependencies
         run: |
           sudo apt install gcc-multilib g++-multilib -y
