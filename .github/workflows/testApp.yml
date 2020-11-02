@@ -1,0 +1,65 @@
+name: Build Test App
+
+on:
+  workflow_dispatch:
+    inputs:
+      GithubReleaseUrl:
+        description: 'GithubReleaseUrl'     
+        required: true
+        default: 'https://uploads.github.com/repos/ElrondNetwork/ledger-elrond/releases/42/assets{?name,label}'
+      Version:
+        description: "Version"
+        required: true
+        default: "v1.0.0"
+
+jobs:
+  build-linux-and-mac:
+    strategy:
+      matrix:
+        runs-on: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.runs-on }}
+    name: Build
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Get dependencies
+      run: |
+        go get -v -t -d ./...
+        if [ -f Gopkg.toml ]; then
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+        fi
+
+    - name: Build
+      run: | 
+        cd ${GITHUB_WORKSPACE}/testApp/cmd/testApp
+        go build -v .
+        cd ${GITHUB_WORKSPACE}/testApp/cmd/testMsgSign
+        go build -v .
+      
+    - name: Upload Release Asset - TestApp
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.inputs.GithubReleaseUrl }}
+        asset_path: ./testApp/cmd/testApp/testApp
+        asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Release Asset - TestMsgSign
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.inputs.GithubReleaseUrl }}
+        asset_path: ./testApp/cmd/testMsgSign/testMsgSign
+        asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_content_type: application/octet-stream
