@@ -192,8 +192,9 @@ jobs:
     - name: Get Release File Name & Upload URL
       id: get_release_info
       run: |
-        set /p upload_url=<release_url/release_url.txt
+        $upload_url = Get-Content release_url/release_url.txt -Raw
         echo "::set-output name=upload_url::$upload_url"
+      shell: powershell
         
     - name: Upload Release Asset - TestApp
       uses: actions/upload-release-asset@v1
