@@ -11,5 +11,5 @@ unsigned int ux_step_count;
 const internalStorage_t N_storage_real;
 
 // selected account global variables
-unsigned char bip32_account;
-unsigned char bip32_address_index;
+uint32_t bip32_account;
+uint32_t bip32_address_index;
