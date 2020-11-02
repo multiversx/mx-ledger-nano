@@ -14,6 +14,7 @@ on:
 
 jobs:
   build-linux-and-mac:
+    if: "false"
     strategy:
       matrix:
         runs-on: [ubuntu-latest, macos-latest]
@@ -63,3 +64,41 @@ jobs:
         asset_path: ./testApp/cmd/testMsgSign/testMsgSign
         asset_name: ElrondTestMsgSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
         asset_content_type: application/octet-stream
+  
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+      id: go
+      
+    - name: Build
+      run: | 
+        cd ${GITHUB_WORKSPACE}/testApp/cmd/testApp
+        go build -v .
+        cd ${GITHUB_WORKSPACE}/testApp/cmd/testMsgSign
+        go build -v .
+        
+    - name: Upload Release Asset - TestApp
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.inputs.GithubReleaseUrl }}
+        asset_path: ./testApp/cmd/testApp/testApp.exe
+        asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}.exe
+        asset_content_type: application/octet-stream
+        
+    - name: Upload Release Asset - TestMsgSign
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.inputs.GithubReleaseUrl }}
+        asset_path: ./testApp/cmd/testMsgSign/testMsgSign.exe
+        asset_name: ElrondTestMsgSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}.exe
+        asset_content_type: application/octet-stream
+      
+    
