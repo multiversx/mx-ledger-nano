@@ -193,14 +193,14 @@ jobs:
       id: get_release_info
       run: |
         set /p release_url=<release_url/release_url.txt
-        echo "::set-output name=upload_url::$upload_url" 
+        echo "::set-output name=upload_url::%upload_url%"
         
     - name: Upload Release Asset - TestApp
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.inputs.GithubReleaseUrl }}
+        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testApp/testApp.exe
         asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}.exe
         asset_content_type: application/octet-stream
