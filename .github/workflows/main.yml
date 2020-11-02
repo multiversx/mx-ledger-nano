@@ -192,7 +192,7 @@ jobs:
     - name: Get Release File Name & Upload URL
       id: get_release_info
       run: |
-        upload_url=`cat release_url/release_url.txt`
+        upload_url=`type release_url/release_url.txt`
         echo "::set-output name=upload_url::$upload_url" 
         
     - name: Upload Release Asset - TestApp
