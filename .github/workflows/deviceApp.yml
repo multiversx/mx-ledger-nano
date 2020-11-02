@@ -59,7 +59,6 @@ jobs:
       - name: Build project
         run: |
           BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk APPVERSION_M=${APPVERSION_M} APPVERSION_N=${APPVERSION_N} APPVERSION_P=${APPVERSION_P} make
-          cp bin/app.hex elrond-ledger-app-${{ github.event.inputs.Version }}
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -79,6 +78,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: elrond-ledger-app-${{ github.event.inputs.Version }}
+          asset_path: bin/app.hex
           asset_name: elrond-ledger-app-${{ github.event.inputs.Version }}
+          asset_content_type: application/octet-stream 
 
