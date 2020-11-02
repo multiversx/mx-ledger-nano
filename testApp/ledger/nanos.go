@@ -79,8 +79,8 @@ var (
 
 type NanoS struct {
 	ContractData  uint8
-	Account       uint8
-	AddressIndex  uint8
+	Account       uint32
+	AddressIndex  uint32
 	AppVersion    string
 	LedgerVersion string
 	device        *apduFramer
@@ -164,8 +164,12 @@ func (n *NanoS) GetConfiguration() error {
 		return errors.New(errBadConfigResponse)
 	}
 	n.ContractData = resp[0]
-	n.Account = resp[1]
-	n.AddressIndex = resp[2]
+	// To emphasize that these fields are not to be taken into account anymore
+	// since now those variables are 32 bit long, but we still expect 6 bytes
+	// transmitted to maintain compatibility with the web wallet. The respective
+	// values (account and address_index) should now be read with the help of the getAddress function.
+	//n.Account = resp[1]
+	//n.AddressIndex = resp[2]
 	n.LedgerVersion = fmt.Sprintf("%v.%v.%v", resp[3], resp[4], resp[5])
 	return nil
 }

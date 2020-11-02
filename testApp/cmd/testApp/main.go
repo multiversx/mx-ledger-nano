@@ -12,6 +12,7 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
@@ -30,21 +31,22 @@ var status = [...]string{"Disabled", "Enabled"}
 var denomination *big.Float
 
 const (
-	errOpenDevice           = "couldn't open device"
-	errGetAppVersion        = "couldn't get app version"
-	errGetConfig            = "couldn't get configuration"
-	errSetAddress           = "couldn't set account and address index"
-	errGetAddress           = "couldn't get address"
-	errGetNetworkConfig     = "couldn't get network config"
-	errGetBalanceAndNonce   = "couldn't get address balance and nonce"
-	errEmptyAddress         = "empty address"
-	errInvalidAddress       = "invalid receiver address"
-	errInvalidAmount        = "invalid eGLD amount"
-	errSigningTx            = "signing error"
-	errSendingTx            = "error sending tx"
-	errInvalidBalanceString = "invalid balance string"
-	errInvalidHRP           = "invalid bech32 hrp"
-	errGetAddressShard      = "getAddressShard error"
+	errOpenDevice                        = "couldn't open device"
+	errGetAppVersion                     = "couldn't get app version"
+	errGetConfig                         = "couldn't get configuration"
+	errSetAddress                        = "couldn't set account and address index"
+	errGetAddress                        = "couldn't get address"
+	errGetNetworkConfig                  = "couldn't get network config"
+	errGetBalanceAndNonce                = "couldn't get address balance and nonce"
+	errEmptyAddress                      = "empty address"
+	errInvalidAddress                    = "invalid receiver address"
+	errInvalidAmount                     = "invalid eGLD amount"
+	errSigningTx                         = "signing error"
+	errSendingTx                         = "error sending tx"
+	errInvalidBalanceString              = "invalid balance string"
+	errInvalidHRP                        = "invalid bech32 hrp"
+	errGetAddressShard                   = "getAddressShard error"
+	errGetAccountAndAddressIndexFromUser = "invalid account or address index provided by user"
 )
 
 type networkConfig struct {
@@ -268,6 +270,26 @@ func broadcastTransaction(tx transaction) error {
 	return nil
 }
 
+// getAccountAndAddressIndexFromUser retrieves the account and address index from user
+func getAccountAndAddressIndexFromUser() (uint32, uint32, error) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Account: ")
+	strAccount, _ := reader.ReadString('\n')
+	strAccount = strings.TrimSpace(strAccount)
+	account, err := strconv.ParseUint(strAccount, 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+	fmt.Print("Address index: ")
+	strAddressIndex, _ := reader.ReadString('\n')
+	strAddressIndex = strings.TrimSpace(strAddressIndex)
+	addressIndex, err := strconv.ParseUint(strAddressIndex, 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+	return uint32(account), uint32(addressIndex), nil
+}
+
 func waitInputAndExit() {
 	fmt.Println("Press enter to continue...")
 	fmt.Scanln()
@@ -302,6 +324,12 @@ func main() {
 		netConfig.Data.Config.ChainID, netConfig.Data.Config.MinTransactionVersion)
 	if netConfig.Data.Config.ChainID != mainnetId {
 		ticker = "XeGLD"
+	}
+
+	nanos.Account, nanos.AddressIndex, err = getAccountAndAddressIndexFromUser()
+	if err != nil {
+		log.Println(errGetAccountAndAddressIndexFromUser, err)
+		waitInputAndExit()
 	}
 
 	fmt.Println("Retrieving address. Please confirm on your Ledger")

@@ -6,8 +6,8 @@
 #define _SIGN_TX_H_
 
 #define MAX_AMOUNT_LEN        32
-#define MAX_BUFFER_LEN        700
-#define MAX_DATA_SIZE         600   // 600 in base64 = 450 in ASCII
+#define MAX_BUFFER_LEN        500
+#define MAX_DATA_SIZE         400   // 400 in base64 = 300 in ASCII
 #define MAX_DISPLAY_DATA_SIZE 64    // must be multiple of 4
 #define DATA_SIZE_LEN         17
 #define MAX_CHAINID_LEN       32
