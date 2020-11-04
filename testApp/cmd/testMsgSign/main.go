@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/ElrondNetwork/elrond-go/crypto/signing"
@@ -20,12 +21,14 @@ import (
 const prepend = "\x17Elrond Signed Message:\n"
 
 const (
-	errOpenDevice     = "couldn't open device"
-	errGetAppVersion  = "couldn't get app version"
-	errGetConfig      = "couldn't get configuration"
-	errGetAddress     = "couldn't get address"
-	errSigningMsg     = "signing error"
-	errInvalidAddress = "not an eGLD address. it should start with 'erd'"
+	errOpenDevice                        = "couldn't open device"
+	errGetAppVersion                     = "couldn't get app version"
+	errGetConfig                         = "couldn't get configuration"
+	errSetAddress                        = "couldn't set account and address index"
+	errGetAddress                        = "couldn't get address"
+	errSigningMsg                        = "signing error"
+	errInvalidAddress                    = "not an eGLD address. it should start with 'erd'"
+	errGetAccountAndAddressIndexFromUser = "invalid account or address index provided by user"
 )
 
 // getDeviceInfo retrieves various informations from Ledger
@@ -47,6 +50,26 @@ func waitInputAndExit() {
 	fmt.Println("Press enter to continue...")
 	_, _ = fmt.Scanln()
 	os.Exit(1)
+}
+
+// getAccountAndAddressIndexFromUser retrieves the account and address index from user
+func getAccountAndAddressIndexFromUser() (uint32, uint32, error) {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Account: ")
+	strAccount, _ := reader.ReadString('\n')
+	strAccount = strings.TrimSpace(strAccount)
+	account, err := strconv.ParseUint(strAccount, 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+	fmt.Print("Address index: ")
+	strAddressIndex, _ := reader.ReadString('\n')
+	strAddressIndex = strings.TrimSpace(strAddressIndex)
+	addressIndex, err := strconv.ParseUint(strAddressIndex, 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+	return uint32(account), uint32(addressIndex), nil
 }
 
 func checkSignature(address string, message string, signature []byte) error {
@@ -94,7 +117,19 @@ func main() {
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
 
-	senderAddress, err := nanos.GetAddressWithoutConfirmation(uint32(nanos.Account), uint32(nanos.AddressIndex))
+	nanos.Account, nanos.AddressIndex, err = getAccountAndAddressIndexFromUser()
+	if err != nil {
+		log.Println(errGetAccountAndAddressIndexFromUser, err)
+		waitInputAndExit()
+	}
+
+	err = nanos.SetAddress(nanos.Account, nanos.AddressIndex)
+	if err != nil {
+		log.Println(errSetAddress, err)
+		waitInputAndExit()
+	}
+
+	senderAddress, err := nanos.GetAddressWithoutConfirmation(nanos.Account, nanos.AddressIndex)
 	if err != nil {
 		log.Println(errGetAddress, err)
 		waitInputAndExit()

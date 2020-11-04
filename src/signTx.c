@@ -2,6 +2,9 @@
 #include "../deps/jsmn/jsmn.h"
 #include <uint256.h>
 #include "base64.h"
+#include "utils.h"
+
+tx_context_t tx_context;
 
 #define NONCE_FIELD     0x001
 #define VALUE_FIELD     0x002
@@ -24,8 +27,10 @@
         VERSION_FIELD         \
     )
 
+uint8_t buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
+uint16_t bufLen;
+
 static uint8_t setResultSignature();
-void makeFeePretty(network_t network);
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s);
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength);
 uint16_t parseData();
@@ -95,85 +100,6 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-static bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
-    uint128_t limit = { 0, gas_limit };
-    uint128_t price = { 0, gas_price };
-    uint128_t fee128;
-
-    mul128(&limit, &price, &fee128);
-
-    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
-    if (!tostring128(&fee128, 10, fee, size-1)) {
-        return false;
-    }
-
-    return true;
-}
-
-static bool is_digit(char c) {
-  return c >= '0' && c <= '9';
-}
-
-static bool parse_int(char *str, size_t size, uint64_t *result) {
-    uint64_t min = 0, n = 0;
-
-    for (size_t i = 0; i < size; i++) {
-        if (!is_digit(str[i])) {
-            return false;
-        }
-        n = n * 10 + str[i] - '0';
-        /* ensure there is no integer overflow */
-        if (n < min) {
-            return false;
-        }
-        min = n;
-    }
-
-    *result = n;
-
-    return true;
-}
-
-static bool valid_amount(char *amount, size_t size) {
-  for (size_t i = 0; i < size; i++) {
-      if (!is_digit(amount[i])) {
-            return false;
-      }
-  }
-  return true;
-}
-
-// make the eGLD amount look pretty. Add decimals, decimal point and ticker name
-static bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
-    int len = strlen(amount);
-    if ((size_t)len + PRETTY_SIZE >= max_size) {
-        return false;
-    }
-    int missing = DECIMAL_PLACES - len + 1;
-    if (missing > 0) {
-        os_memmove(amount + missing, amount, len + 1);
-        os_memset(amount, '0', missing);
-    }
-    len = strlen(amount);
-    int dotPos = len - DECIMAL_PLACES;
-    os_memmove(amount + dotPos + 1, amount + dotPos, DECIMAL_PLACES + 1);
-    amount[dotPos] = '.';
-    while (amount[strlen(amount) - 1] == '0') {
-        amount[strlen(amount) - 1] = '\0';
-    }
-    if (amount[strlen(amount) - 1] == '.') {
-        amount[strlen(amount) - 1] = '\0';
-    }
-    char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
-    os_memmove(suffix + 1, TICKER_MAINNET, sizeof(TICKER_MAINNET));
-    if (network == NETWORK_TESTNET) {
-        os_memmove(suffix + 1, TICKER_TESTNET, sizeof(TICKER_TESTNET));
-    }
-    os_memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
-
-    return true;
-}
-
 // helper for comparing json keys
 static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 	short int tokLen = tok->end - tok->start;
@@ -185,52 +111,20 @@ static int jsoneq(const char *json, jsmntok_t *tok, const char *s) {
 
 // txDataReceived is called when a signTx APDU is received. it appends the received data to the buffer
 uint16_t txDataReceived(uint8_t *dataBuffer, uint16_t dataLength) {
-    if (tx_context.bufLen + dataLength >= MAX_BUFFER_LEN)
+    if (bufLen + dataLength >= MAX_BUFFER_LEN)
         return ERR_MESSAGE_TOO_LONG;
-    os_memmove(tx_context.buffer + tx_context.bufLen, dataBuffer, dataLength);
-    tx_context.bufLen += dataLength;
-    tx_context.buffer[tx_context.bufLen] = '\0';
+    os_memmove(buffer + bufLen, dataBuffer, dataLength);
+    bufLen += dataLength;
+    buffer[bufLen] = '\0';
     return MSG_OK;
 }
 
 static bool set_bit(uint64_t *bitmap, uint64_t bit) {
   /* ensure that this field isn't already set and in the right order */
-  if (*bitmap >= bit) {
+  if (*bitmap >= bit)
       return false;
-  }
-
   *bitmap |= bit;
-
   return true;
-}
-
-static void computeDataSize(char *base64, int b64len) {
-    // calculate the ASCII size of the data field
-    tx_context.data_size = b64len / 4 * 3;
-    // take padding bytes into consideration
-    if (b64len > 1) {
-        if (base64[b64len - 1] == '=')
-            tx_context.data_size--;
-        if (base64[b64len - 2] == '=')
-            tx_context.data_size--;
-    }
-    tx_context.data[tx_context.data_size] = '\0';
-    int len = sizeof(tx_context.data);
-    // prepare the first display page, which contains the data field size
-    char str_size[DATA_SIZE_LEN] = "[  Size: 000  ] ";
-    // sprintf equivalent workaround
-    str_size[9] = '0' + tx_context.data_size / 100;
-    str_size[10] = '0' + (tx_context.data_size / 10) % 10;
-    str_size[11] = '0' + tx_context.data_size % 10;
-    int size_len = strlen(str_size);
-    // shift the actual data field to the right in order to make room for inserting the size in the first page
-    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
-    // insert the data size in front of the actual data field
-    os_memmove(tx_context.data, str_size, size_len);
-    int data_end = size_len + tx_context.data_size;
-    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
-        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
-    tx_context.data[data_end] = '\0';
 }
 
 // parseData parses the received tx data
@@ -240,7 +134,7 @@ uint16_t parseData() {
     jsmntok_t t[20]; // We expect no more than 20 tokens
 
     jsmn_init(&p);
-    r = jsmn_parse(&p, tx_context.buffer, tx_context.bufLen, t, sizeof(t)/sizeof(t[0]));
+    r = jsmn_parse(&p, buffer, bufLen, t, sizeof(t)/sizeof(t[0]));
     if (r < 1 || t[0].type != JSMN_OBJECT) {
         return ERR_MESSAGE_INCOMPLETE;
     }
@@ -253,8 +147,8 @@ uint16_t parseData() {
     for (i = 1; i < r; i += 2) {
         int len = t[i + 1].end - t[i + 1].start;
         jsmntype_t type = t[i + 1].type;
-        char *str = tx_context.buffer + t[i + 1].start;
-        if (jsoneq(tx_context.buffer, &t[i], "nonce") == 0) {
+        char *str = buffer + t[i + 1].start;
+        if (jsoneq(buffer, &t[i], "nonce") == 0) {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -268,7 +162,7 @@ uint16_t parseData() {
                 return ERR_INVALID_MESSAGE;
             }
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "value") == 0) {
+        else if (jsoneq(buffer, &t[i], "value") == 0) {
             if (type != JSMN_STRING) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -283,7 +177,7 @@ uint16_t parseData() {
             os_memmove(tx_context.amount, str, len);
             tx_context.amount[len] = '\0';
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "receiver") == 0) {
+        else if (jsoneq(buffer, &t[i], "receiver") == 0) {
             if (type != JSMN_STRING) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -295,7 +189,7 @@ uint16_t parseData() {
             os_memmove(tx_context.receiver, str, len);
             tx_context.receiver[len] = '\0';
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "sender") == 0) {
+        else if (jsoneq(buffer, &t[i], "sender") == 0) {
             if (type != JSMN_STRING) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -305,7 +199,7 @@ uint16_t parseData() {
                 return ERR_INVALID_MESSAGE;
             }
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "gasPrice") == 0) {
+        else if (jsoneq(buffer, &t[i], "gasPrice") == 0) {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -318,7 +212,7 @@ uint16_t parseData() {
                 return ERR_INVALID_MESSAGE;
             }
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "gasLimit") == 0) {
+        else if (jsoneq(buffer, &t[i], "gasLimit") == 0) {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -331,7 +225,7 @@ uint16_t parseData() {
                 return ERR_INVALID_MESSAGE;
             }
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "data") == 0) {
+        else if (jsoneq(buffer, &t[i], "data") == 0) {
             if (!set_bit(&fields_bitmap, DATA_FIELD)) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -363,7 +257,7 @@ uint16_t parseData() {
             }
             computeDataSize(str, len);
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "chainID") == 0) {
+        else if (jsoneq(buffer, &t[i], "chainID") == 0) {
             if (type != JSMN_STRING) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -376,7 +270,7 @@ uint16_t parseData() {
                 network = NETWORK_MAINNET;
             }
         }
-        else if (jsoneq(tx_context.buffer, &t[i], "version") == 0) {
+        else if (jsoneq(buffer, &t[i], "version") == 0) {
             if (type != JSMN_PRIMITIVE) {
                 return ERR_INVALID_MESSAGE;
             }
@@ -401,14 +295,12 @@ uint16_t parseData() {
     if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
 
-    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE)) {
+    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
         return ERR_INVALID_FEE;
-    }
 
     if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
-        !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network)) {
+        !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network))
         return ERR_PRETTY_FAILED;
-    }
 
     return MSG_OK;
 }
@@ -424,7 +316,7 @@ bool signTx(void) {
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_context.buffer, tx_context.bufLen, NULL, 0, tx_context.signature, 64, NULL);
+            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, buffer, bufLen, NULL, 0, tx_context.signature, 64, NULL);
         }
         CATCH_ALL {
             success = false;
@@ -444,7 +336,7 @@ void handleSignTx(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLeng
     switch(p1) {
     // first packet
     case P1_FIRST:
-        tx_context.bufLen = 0;
+        bufLen = 0;
         retCode = txDataReceived(dataBuffer, dataLength);
         break;
     // consequent packets if the tx is larger than 255 bytes
