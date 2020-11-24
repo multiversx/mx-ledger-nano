@@ -11,14 +11,14 @@
 #define P1_MORE        0x80
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
-#define BIP32_PATH 5
-#define COIN_TYPE_eGLD 508UL
-#define TICKER_MAINNET "eGLD"
-#define TICKER_TESTNET "XeGLD"
-#define HRP      "erd"
-#define DECIMAL_PLACES 18
-#define MAINNET_CHAIN_ID "1"
-#define TX_VERSION 1
+#define BIP32_PATH          5
+#define COIN_TYPE_EGLD      508UL
+#define TICKER_MAINNET      "eGLD"
+#define TICKER_TESTNET      "XeGLD"
+#define HRP                 "erd"
+#define DECIMAL_PLACES      18
+#define MAINNET_CHAIN_ID    "1"
+#define TX_VERSION          1
 
 typedef enum {
     NETWORK_MAINNET = 0,
@@ -57,10 +57,12 @@ extern ux_state_t ux;
 extern unsigned int ux_step;
 extern unsigned int ux_step_count;
 
+// selected account global variables
+extern uint32_t bip32_account;
+extern uint32_t bip32_address_index;
+
 typedef struct internalStorage_t {
     unsigned char setting_contract_data;
-    unsigned char setting_account;
-    unsigned char setting_address_index;
     uint8_t initialized;
 } internalStorage_t;
 
