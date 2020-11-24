@@ -2,6 +2,7 @@
 #include "os.h"
 #include "ux.h"
 #include "utils.h"
+#include "menu.h"
 
 static unsigned int app_version_ui_button(unsigned int button_mask, unsigned int button_mask_counter);
 
