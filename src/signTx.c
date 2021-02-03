@@ -95,12 +95,37 @@ static uint8_t setResultSignature() {
     return tx;
 }
 
-static bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
+static bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint16_t data_size, char *fee, size_t size) {
     uint128_t limit = { 0, gas_limit };
     uint128_t price = { 0, gas_price };
-    uint128_t fee128;
+    uint128_t gas_per_data_byte_uint128t = { 0, GAS_PER_DATA_BYTE};
+    uint128_t min_gas_limit_uint128t = { 0, MIN_GAS_LIMIT};
+    uint128_t gas_price_divider_uint128t = { 0, GAS_PRICE_DIVIDER};
+    uint128_t data_size_uint128t = { 0, data_size };
 
-    mul128(&limit, &price, &fee128);
+    //  tx fee formula
+    // gasUnitForMoveBalance := (minGasLimit + len(data)*gasPerDataByte)
+    //  txFEE = gasUnitForMoveBalance * GASPRICE + (gasLimit - gasUnitForMoveBalance) * gasPriceModifier * GASPRICE   
+    uint128_t gasForData;
+    mul128(&gas_per_data_byte_uint128t, &data_size_uint128t, &gasForData);
+
+    uint128_t gas_unit_for_move_balance;
+    add128(&min_gas_limit_uint128t, &gasForData, &gas_unit_for_move_balance);
+
+    uint128_t tx_fee0;
+    mul128(&gas_unit_for_move_balance, &price, &tx_fee0); // gasUnitForMoveBalance * GASPRICE
+
+    uint128_t remaining_gas_after_move_balance_gas;
+    minus128(&limit, &gas_unit_for_move_balance, &remaining_gas_after_move_balance_gas); // gasLimit - gasUnitForMoveBalance
+
+    uint128_t tx_fee1;
+    mul128(&remaining_gas_after_move_balance_gas, &gas_price_divider_uint128t, &tx_fee1);
+    
+    uint128_t tx_fee2;
+    mul128(&tx_fee1, &price, &tx_fee2);
+    
+    uint128_t fee128;
+    add128(&tx_fee0, &tx_fee2, &fee128);
 
     /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
     if (!tostring128(&fee128, 10, fee, size-1)) {
@@ -401,7 +426,7 @@ uint16_t parseData() {
     if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
 
-    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE)) {
+    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE)) {
         return ERR_INVALID_FEE;
     }
 

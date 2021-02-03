@@ -6,7 +6,7 @@
 #define _SIGN_TX_H_
 
 #define MAX_AMOUNT_LEN        32
-#define MAX_BUFFER_LEN        500
+#define MAX_BUFFER_LEN        680
 #define MAX_DATA_SIZE         400   // 400 in base64 = 300 in ASCII
 #define MAX_DISPLAY_DATA_SIZE 64    // must be multiple of 4
 #define DATA_SIZE_LEN         17
@@ -16,6 +16,9 @@
 #define MAX_UINT64_LEN        20    // len(f"{0xffffffffffffffff:d}")
 #define MAX_UINT128_LEN       39    // len(f"{0xffffffffffffffffffffffffffffffff:d}")
 #define PRETTY_SIZE (2 + MAX_TICKER_LEN) // additional space for "0." and " eGLD"
+#define GAS_PER_DATA_BYTE     1500
+#define GAS_PRICE_DIVIDER     100
+#define MIN_GAS_LIMIT         50000
 
 typedef struct {
     uint8_t buffer[MAX_BUFFER_LEN]; // buffer to hold large transactions that are composed from multiple APDUs
