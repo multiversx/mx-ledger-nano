@@ -1,4 +1,5 @@
 #include "signMsg.h"
+#include "utils.h"
 
 static uint8_t setResultSignature();
 bool sign_message(void);

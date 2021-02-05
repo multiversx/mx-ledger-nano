@@ -2,6 +2,7 @@
 #include "../deps/jsmn/jsmn.h"
 #include <uint256.h>
 #include "base64.h"
+#include "utils.h"
 
 #define NONCE_FIELD     0x001
 #define VALUE_FIELD     0x002
