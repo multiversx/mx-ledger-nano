@@ -21,6 +21,7 @@ endif
 include $(BOLOS_SDK)/Makefile.defines
 
 APP_LOAD_PARAMS= --curve ed25519 --path "44'/508'" --appFlags 0x240 $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS += --tlvraw 9F:01
 
 APPVERSION_M:=$(if $(APPVERSION_M),$(APPVERSION_M),1)
 APPVERSION_N:=$(if $(APPVERSION_N),$(APPVERSION_N),0)
