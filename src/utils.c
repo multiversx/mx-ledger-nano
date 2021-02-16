@@ -199,18 +199,34 @@ bool is_digit(char c) {
   return c >= '0' && c <= '9';
 }
 
-bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
-    uint128_t limit = { 0, gas_limit };
-    uint128_t price = { 0, gas_price };
-    uint128_t fee128;
+bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint16_t data_size, char *fee, size_t size)
+{
+    uint128_t x = {0, GAS_PER_DATA_BYTE};
+    uint128_t y = {0, data_size};
+    uint128_t z;
+    uint128_t gas_unit_for_move_balance; 
+    // tx fee formula
+    // gasUnitForMoveBalance := (minGasLimit + len(data)*gasPerDataByte)
+    // txFEE = gasUnitForMoveBalance * GASPRICE + (gasLimit - gasUnitForMoveBalance) * gasPriceModifier * GASPRICE
+    mul128(&x, &y, &z);
 
-    mul128(&limit, &price, &fee128);
+    x.elements[1] = MIN_GAS_LIMIT;
+    add128(&x, &z, &gas_unit_for_move_balance);
 
-    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
-    if (!tostring128(&fee128, 10, fee, size-1)) {
+    x.elements[1] = gas_limit;
+    minus128(&x, &gas_unit_for_move_balance, &y);
+
+    x.elements[1] = GAS_PRICE_DIVIDER;
+    divmod128(&y, &x, &z, &y);
+
+    add128(&gas_unit_for_move_balance, &z, &y);
+    
+    x.elements[1] = gas_price;
+    mul128(&x, &y, &z); /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
+    if (!tostring128(&z, 10, fee, size - 1))
+    {
         return false;
     }
-
     return true;
 }
 

@@ -73,16 +73,19 @@ extern const internalStorage_t N_storage_real;
 // common defines and types for sign tx and sign tx hash
 
 #define MAX_AMOUNT_LEN        32
-#define MAX_BUFFER_LEN        500
+#define MAX_BUFFER_LEN        675
 #define MAX_DATA_SIZE         400   // 400 in base64 = 300 in ASCII
 #define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
 #define DATA_SIZE_LEN         17
-#define MAX_CHAINID_LEN       32
+#define MAX_CHAINID_LEN       4
 #define MAX_TICKER_LEN        5
 #define MAX_UINT32_LEN        10    // len(f"{0xffffffff:d}")
 #define MAX_UINT64_LEN        20    // len(f"{0xffffffffffffffff:d}")
 #define MAX_UINT128_LEN       39    // len(f"{0xffffffffffffffffffffffffffffffff:d}")
 #define PRETTY_SIZE (2 + MAX_TICKER_LEN) // additional space for "0." and " eGLD"
+#define GAS_PER_DATA_BYTE     1500
+#define GAS_PRICE_DIVIDER     100
+#define MIN_GAS_LIMIT         50000
 
 typedef struct {
     char receiver[FULL_ADDRESS_LENGTH];

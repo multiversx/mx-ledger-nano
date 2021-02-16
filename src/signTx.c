@@ -295,7 +295,7 @@ uint16_t parseData() {
     if ((fields_bitmap & MANDATORY_FIELDS) != MANDATORY_FIELDS)
         return ERR_INVALID_MESSAGE;
 
-    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
+    if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
         return ERR_INVALID_FEE;
 
     if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||

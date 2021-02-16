@@ -1,4 +1,5 @@
 #include "signMsg.h"
+#include "utils.h"
 
 msg_context_t msg_context;
 

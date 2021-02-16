@@ -146,7 +146,7 @@ uint16_t verify_gaslimit(bool *valid) {
     if (strncmp(tx_hash_context.current_field, GASLIMIT_FIELD, strlen(GASLIMIT_FIELD)) == 0) {
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_limit))
             return ERR_INVALID_FEE;
-        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
+        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
             return ERR_INVALID_FEE;
         *valid = true;
     }
