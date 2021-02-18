@@ -199,7 +199,7 @@ bool is_digit(char c) {
   return c >= '0' && c <= '9';
 }
 
-bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint16_t data_size, char *fee, size_t size)
+bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char *fee, size_t size)
 {
     uint128_t x = {0, GAS_PER_DATA_BYTE};
     uint128_t y = {0, data_size};

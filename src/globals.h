@@ -73,7 +73,7 @@ extern const internalStorage_t N_storage_real;
 // common defines and types for sign tx and sign tx hash
 
 #define MAX_AMOUNT_LEN        32
-#define MAX_BUFFER_LEN        675
+#define MAX_BUFFER_LEN        500
 #define MAX_DATA_SIZE         400   // 400 in base64 = 300 in ASCII
 #define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
 #define DATA_SIZE_LEN         17

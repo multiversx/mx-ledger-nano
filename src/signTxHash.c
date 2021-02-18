@@ -146,8 +146,6 @@ uint16_t verify_gaslimit(bool *valid) {
     if (strncmp(tx_hash_context.current_field, GASLIMIT_FIELD, strlen(GASLIMIT_FIELD)) == 0) {
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_limit))
             return ERR_INVALID_FEE;
-        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
-            return ERR_INVALID_FEE;
         *valid = true;
     }
     return MSG_OK;
@@ -176,6 +174,8 @@ uint16_t verify_data(bool *valid) {
             return ERR_INVALID_MESSAGE;
         }
         computeDataSize(tx_hash_context.current_value, tx_hash_context.current_value_len);
+        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
+            return ERR_INVALID_FEE;
         *valid = true;
     }
     return MSG_OK;
@@ -226,10 +226,10 @@ uint16_t process_field(void) {
     err = verify_gasprice(&valid_field);
     if (err != MSG_OK)
         return err;
-    err = verify_gaslimit(&valid_field);
-    if (err != MSG_OK)
-        return err;
     err = verify_data(&valid_field);
+    if (err != MSG_OK)
+        return err;    
+    err = verify_gaslimit(&valid_field);
     if (err != MSG_OK)
         return err;
     err = verify_chainid(&valid_field);
