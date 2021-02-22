@@ -20,6 +20,7 @@
 #define MAINNET_CHAIN_ID    "1"
 #define TX_VERSION          1
 #define TX_HASH_VERSION     2
+#define TX_HASH_OPTIONS     1
 
 typedef enum {
     NETWORK_MAINNET = 0,
@@ -52,6 +53,7 @@ typedef enum {
 #define ERR_INVALID_FEE            0x6E0C // signTx
 #define ERR_PRETTY_FAILED          0x6E0D // signTx
 #define ERR_DATA_TOO_LONG          0x6E0E // singTx
+#define ERR_WRONG_TX_OPTIONS       0x6E0F // signTx
 
 extern ux_state_t ux;
 // display stepped screens

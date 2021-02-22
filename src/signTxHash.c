@@ -208,6 +208,19 @@ uint16_t verify_version(bool *valid) {
     return MSG_OK;
 }
 
+// verify "version" field
+uint16_t verify_options(bool *valid) {
+    if (strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0) {
+        uint64_t options;
+        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &options))
+            return ERR_INVALID_MESSAGE;
+        if (options != TX_HASH_OPTIONS)
+            return ERR_WRONG_TX_OPTIONS;
+        *valid = true;
+    }
+    return MSG_OK;
+}
+
 // verifies if the field and value are valid and stores them
 uint16_t process_field(void) {
     if (tx_hash_context.current_field_len == 0 || tx_hash_context.current_value_len == 0)
@@ -238,6 +251,9 @@ uint16_t process_field(void) {
     err = verify_version(&valid_field);
     if (err != MSG_OK)
         return err;
+    err = verify_options(&valid_field);
+    if (err != MSG_OK)
+        return err;    
 
     // verify the rest of the fields that are not displayed
     valid_field |= strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0;
