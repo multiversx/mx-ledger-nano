@@ -19,7 +19,6 @@
 #include "utils.h"
 #include "getAddress.h"
 #include "setAddress.h"
-#include "signTx.h"
 #include "signTxHash.h"
 #include "signMsg.h"
 #include "menu.h"
@@ -91,7 +90,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_TX:
-                    handleSignTx(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    // sign tx is deprecated is this version and hash signing should be used
+                    THROW(ERR_SIGN_TX_DEPRECATED);
                     break;
 
                 case INS_SIGN_MSG:

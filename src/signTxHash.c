@@ -3,6 +3,8 @@
 #include "base64.h"
 #include "utils.h"
 
+tx_context_t tx_context;
+
 static uint8_t setResultSignature();
 bool sign_tx_hash(uint8_t *dataBuffer);
 
