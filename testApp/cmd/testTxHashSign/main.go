@@ -19,7 +19,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const proxyHost string = "https://testnet-gateway.elrond.com" // https://api-testnet.elrond.com for testnet
+const proxyHost string = "https://devnet-gateway.elrond.com" // https://testnet-gateway.elrond.com for testnet
 
 const (
 	hrp       = "erd"
