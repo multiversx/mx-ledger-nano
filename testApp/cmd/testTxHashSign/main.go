@@ -74,17 +74,19 @@ type networkConfig struct {
 }
 
 type transaction struct {
-	Nonce     uint64 `json:"nonce"`
-	Value     string `json:"value"`
-	RcvAddr   string `json:"receiver"`
-	SndAddr   string `json:"sender"`
-	GasPrice  uint64 `json:"gasPrice,omitempty"`
-	GasLimit  uint64 `json:"gasLimit,omitempty"`
-	Data      []byte `json:"data,omitempty"`
-	Signature string `json:"signature,omitempty"`
-	ChainID   string `json:"chainID"`
-	Version   uint32 `json:"version"`
-	Options   uint32 `json:"options,omitempty"`
+	Nonce            uint64 `json:"nonce"`
+	Value            string `json:"value"`
+	RcvAddr          string `json:"receiver"`
+	SndAddr          string `json:"sender"`
+	SenderUsername   []byte `json:"senderUsername,omitempty"`
+	ReceiverUsername []byte `json:"receiverUsername,omitempty"`
+	GasPrice         uint64 `json:"gasPrice,omitempty"`
+	GasLimit         uint64 `json:"gasLimit,omitempty"`
+	Data             []byte `json:"data,omitempty"`
+	Signature        string `json:"signature,omitempty"`
+	ChainID          string `json:"chainID"`
+	Version          uint32 `json:"version"`
+	Options          uint32 `json:"options,omitempty"`
 }
 
 type getAccountResponse struct {

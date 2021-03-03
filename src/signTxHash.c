@@ -262,7 +262,8 @@ uint16_t process_field(void) {
     // verify the rest of the fields that are not displayed
     valid_field |= strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0;
     valid_field |= strncmp(tx_hash_context.current_field, SENDER_FIELD, strlen(SENDER_FIELD)) == 0;
-    valid_field |= strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, SENDER_USERNAME_FIELD, strlen(SENDER_USERNAME_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, RECEIVER_USERNAME_FIELD, strlen(RECEIVER_USERNAME_FIELD)) == 0;
 
     if (valid_field)
         return MSG_OK;
