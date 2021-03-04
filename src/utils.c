@@ -153,7 +153,7 @@ bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
 
 void computeDataSize(char *base64, uint32_t b64len) {
     // calculate the ASCII size of the data field
-    tx_context.data_size = b64len / 4 * 3;
+    tx_context.data_size = b64len;
     // take padding bytes into consideration
     if (tx_context.data_size < MAX_DISPLAY_DATA_SIZE)
         if (b64len > 1) {

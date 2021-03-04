@@ -39,6 +39,7 @@ typedef struct {
     uint8_t current_field_len;
     uint8_t current_value[MAX_VALUE_LEN+1];
     uint32_t current_value_len;
+    uint32_t data_field_size;
 } tx_hash_context_t;
 
 static tx_hash_context_t tx_hash_context;
