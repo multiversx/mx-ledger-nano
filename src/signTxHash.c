@@ -158,6 +158,7 @@ uint16_t verify_data(bool *valid) {
     if (strncmp(tx_hash_context.current_field, DATA_FIELD, strlen(DATA_FIELD)) == 0) {
         if (N_storage.setting_contract_data == 0)
             return ERR_CONTRACT_DATA_DISABLED;
+        tx_hash_context.current_value_len = tx_hash_context.current_value_len / 4 * 4;
         char encoded[MAX_DISPLAY_DATA_SIZE];
         uint32_t enc_len = tx_hash_context.current_value_len;
         if (enc_len > MAX_DISPLAY_DATA_SIZE)
@@ -275,8 +276,6 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
     if ((dataLength == 0) && (tx_hash_context.status == JSON_IDLE))
         return ERR_INVALID_MESSAGE;
     uint8_t idx = 0;
-    char penultimate_data_char;
-    char last_data_char;
     for (;;) {
         if (idx >= dataLength)
             break;
@@ -319,26 +318,29 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
                 tx_hash_context.status = JSON_PROCESSING_NUMERIC_VALUE;
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
                 break;
-            case JSON_PROCESSING_STRING_VALUE:
+            case JSON_PROCESSING_STRING_VALUE : {
+                bool isDataField = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
                 if (c == '"') {
-                    tx_hash_context.data_field_size = tx_hash_context.current_value_len / 4 * 4;
-                    tx_hash_context.data_field_size = tx_hash_context.data_field_size / 4 * 3;
-                    if(penultimate_data_char == '=') {
-                        tx_hash_context.data_field_size--;
-                    }
-                    if(last_data_char == '=') {
-                        tx_hash_context.data_field_size--;
+                    if (isDataField) {
+                        uint32_t data_value_len;
+                        data_value_len = tx_hash_context.current_value_len / 4 * 4;
+                        data_value_len = data_value_len / 4 * 3;
+                        //  remove trailing padding chars from count if any
+                        if (tx_hash_context.current_value_len > 2) {
+                            if(dataBuffer[idx-2] == '='){
+                                data_value_len--;
+                            }
+                            if(dataBuffer[idx-3] == '='){
+                                data_value_len--;
+                            }
+                        }
+                        tx_hash_context.data_field_size = data_value_len;
                     }
                     uint16_t err = process_field();
                     if (err != MSG_OK)
                         return err;
                     tx_hash_context.status = JSON_EXPECTING_COMMA;
                     break;
-                }
-                bool isDataField = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
-                if (isDataField) {
-                    penultimate_data_char = tx_hash_context.current_value[tx_hash_context.current_value_len];
-                    last_data_char = c;
                 }
                 if (tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
                     if (isDataField && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
@@ -349,6 +351,7 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
                     }
                 }
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
+            }
                 break;
             case JSON_PROCESSING_NUMERIC_VALUE:
                 if (c == '}') {

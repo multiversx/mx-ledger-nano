@@ -151,17 +151,8 @@ bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
     return true;
 }
 
-void computeDataSize(char *base64, uint32_t b64len) {
-    // calculate the ASCII size of the data field
-    tx_context.data_size = b64len;
-    // take padding bytes into consideration
-    if (tx_context.data_size < MAX_DISPLAY_DATA_SIZE)
-        if (b64len > 1) {
-            if (base64[b64len - 1] == '=')
-                tx_context.data_size--;
-            if (base64[b64len - 2] == '=')
-                tx_context.data_size--;
-        }
+void computeDataSize(char *base64, uint32_t decodedDataLen) {
+    tx_context.data_size = decodedDataLen;
     int len = sizeof(tx_context.data);
     // prepare the first display page, which contains the data field size
     char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
@@ -201,8 +192,8 @@ bool is_digit(char c) {
 
 bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char *fee, size_t size)
 {
-    uint128_t x = {0, GAS_PER_DATA_BYTE};
-    uint128_t y = {0, data_size};
+    uint128_t x = {{0, GAS_PER_DATA_BYTE}};
+    uint128_t y = {{0, data_size}};
     uint128_t z;
     uint128_t gas_unit_for_move_balance;
 
