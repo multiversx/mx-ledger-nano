@@ -244,7 +244,7 @@ uint16_t process_field(void) {
         return err;
     err = verify_gaslimit(&valid_field);
     if (err != MSG_OK)
-        return err;    
+        return err; 
     err = verify_data(&valid_field);
     if (err != MSG_OK)
         return err;

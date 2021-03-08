@@ -204,10 +204,13 @@ bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char
     uint128_t x = {0, GAS_PER_DATA_BYTE};
     uint128_t y = {0, data_size};
     uint128_t z;
-    uint128_t gas_unit_for_move_balance; 
+    uint128_t gas_unit_for_move_balance;
+
     // tx fee formula
-    // gasUnitForMoveBalance := (minGasLimit + len(data)*gasPerDataByte)
-    // txFEE = gasUnitForMoveBalance * GASPRICE + (gasLimit - gasUnitForMoveBalance) * gasPriceModifier * GASPRICE
+    // gas_units_for_move_balance = (min_gas_limit + len(data)*gas_per_data_byte)
+    // tx_fee = gas_units_for_move_balance * gas_price + (gas_limit - gas_unit_for_move_balance) * gas_price_modifier * gas_limit
+    // the difference is that instead of multiplying with gas_price_modifier we divide by 1/gas_price_modifier and the constant is marked as GAS_PRICE_DIVIER
+
     mul128(&x, &y, &z);
 
     x.elements[1] = MIN_GAS_LIMIT;

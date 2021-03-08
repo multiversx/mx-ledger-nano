@@ -90,7 +90,7 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_TX:
-                    // sign tx is deprecated is this version and hash signing should be used
+                    // sign tx is deprecated in this version. Hash signing should be used
                     THROW(ERR_SIGN_TX_DEPRECATED);
                     break;
 
