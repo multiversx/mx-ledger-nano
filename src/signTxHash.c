@@ -323,10 +323,14 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
                 if (c == '"') {
                     if (isDataField) {
                         uint32_t data_value_len;
-                        data_value_len = tx_hash_context.current_value_len / 4 * 4;
-                        data_value_len = data_value_len / 4 * 3;
+                        // remove additional characters and convert to decoded string length
+                        data_value_len = tx_hash_context.current_value_len / 4 * 3;
                         //  remove trailing padding chars from count if any
                         if (tx_hash_context.current_value_len > 2) {
+                            // example: 
+                            // "data": "YQ==",
+                            //               ^
+                            // idx is 2 positions ahead of last 2 chars from data value, so idx-2 and idx-3 will contain them
                             if(dataBuffer[idx-2] == '='){
                                 data_value_len--;
                             }
