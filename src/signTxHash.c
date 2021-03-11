@@ -3,6 +3,8 @@
 #include "base64.h"
 #include "utils.h"
 
+tx_context_t tx_context;
+
 static uint8_t setResultSignature();
 bool sign_tx_hash(uint8_t *dataBuffer);
 
@@ -146,8 +148,6 @@ uint16_t verify_gaslimit(bool *valid) {
     if (strncmp(tx_hash_context.current_field, GASLIMIT_FIELD, strlen(GASLIMIT_FIELD)) == 0) {
         if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_limit))
             return ERR_INVALID_FEE;
-        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
-            return ERR_INVALID_FEE;
         *valid = true;
     }
     return MSG_OK;
@@ -175,7 +175,7 @@ uint16_t verify_data(bool *valid) {
         if (!base64decode(tx_context.data, encoded, ascii_len)) {
             return ERR_INVALID_MESSAGE;
         }
-        computeDataSize(tx_hash_context.current_value, tx_hash_context.current_value_len);
+        computeDataSize(tx_hash_context.current_value, tx_hash_context.data_field_size);
         *valid = true;
     }
     return MSG_OK;
@@ -187,6 +187,10 @@ uint16_t verify_chainid(bool *valid) {
         network_t network = NETWORK_TESTNET;
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0)
             network = NETWORK_MAINNET;
+
+         if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
+            return ERR_INVALID_FEE;
+
         if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
             !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network))
             return ERR_PRETTY_FAILED;
@@ -203,6 +207,19 @@ uint16_t verify_version(bool *valid) {
             return ERR_INVALID_MESSAGE;
         if (version != TX_HASH_VERSION)
             return ERR_WRONG_TX_VERSION;
+        *valid = true;
+    }
+    return MSG_OK;
+}
+
+// verify "version" field
+uint16_t verify_options(bool *valid) {
+    if (strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0) {
+        uint64_t options;
+        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &options))
+            return ERR_INVALID_MESSAGE;
+        if (options != TX_HASH_OPTIONS)
+            return ERR_WRONG_TX_OPTIONS;
         *valid = true;
     }
     return MSG_OK;
@@ -228,7 +245,7 @@ uint16_t process_field(void) {
         return err;
     err = verify_gaslimit(&valid_field);
     if (err != MSG_OK)
-        return err;
+        return err; 
     err = verify_data(&valid_field);
     if (err != MSG_OK)
         return err;
@@ -238,11 +255,15 @@ uint16_t process_field(void) {
     err = verify_version(&valid_field);
     if (err != MSG_OK)
         return err;
+    err = verify_options(&valid_field);
+    if (err != MSG_OK)
+        return err;    
 
     // verify the rest of the fields that are not displayed
     valid_field |= strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0;
     valid_field |= strncmp(tx_hash_context.current_field, SENDER_FIELD, strlen(SENDER_FIELD)) == 0;
-    valid_field |= strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, SENDER_USERNAME_FIELD, strlen(SENDER_USERNAME_FIELD)) == 0;
+    valid_field |= strncmp(tx_hash_context.current_field, RECEIVER_USERNAME_FIELD, strlen(RECEIVER_USERNAME_FIELD)) == 0;
 
     if (valid_field)
         return MSG_OK;
@@ -297,22 +318,44 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
                 tx_hash_context.status = JSON_PROCESSING_NUMERIC_VALUE;
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
                 break;
-            case JSON_PROCESSING_STRING_VALUE:
+            case JSON_PROCESSING_STRING_VALUE : {
+                bool isDataField = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
                 if (c == '"') {
+                    if (isDataField) {
+                        uint32_t data_value_len;
+                        // remove additional characters and convert to decoded string length
+                        data_value_len = tx_hash_context.current_value_len / 4 * 3;
+                        //  remove trailing padding chars from count if any
+                        if (tx_hash_context.current_value_len > 2) {
+                            // example: 
+                            // "data": "YQ==",
+                            //               ^
+                            // idx is 2 positions ahead of last 2 chars from data value, so idx-2 and idx-3 will contain them
+                            if(dataBuffer[idx-2] == '='){
+                                data_value_len--;
+                            }
+                            if(dataBuffer[idx-3] == '='){
+                                data_value_len--;
+                            }
+                        }
+                        tx_hash_context.data_field_size = data_value_len;
+                    }
                     uint16_t err = process_field();
                     if (err != MSG_OK)
                         return err;
                     tx_hash_context.status = JSON_EXPECTING_COMMA;
                     break;
                 }
-                if (tx_hash_context.current_value_len >= MAX_VALUE_LEN)
-                    if (strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0 &&
-                        tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
+                if (tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
+                    if (isDataField && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
                         tx_hash_context.current_value_len++;
                         break;
-                    } else
+                    } else {
                         return ERR_INVALID_MESSAGE;
+                    }
+                }
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
+            }
                 break;
             case JSON_PROCESSING_NUMERIC_VALUE:
                 if (c == '}') {

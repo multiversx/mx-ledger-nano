@@ -151,17 +151,8 @@ bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
     return true;
 }
 
-void computeDataSize(char *base64, uint32_t b64len) {
-    // calculate the ASCII size of the data field
-    tx_context.data_size = b64len / 4 * 3;
-    // take padding bytes into consideration
-    if (tx_context.data_size < MAX_DISPLAY_DATA_SIZE)
-        if (b64len > 1) {
-            if (base64[b64len - 1] == '=')
-                tx_context.data_size--;
-            if (base64[b64len - 2] == '=')
-                tx_context.data_size--;
-        }
+void computeDataSize(char *base64, uint32_t decodedDataLen) {
+    tx_context.data_size = decodedDataLen;
     int len = sizeof(tx_context.data);
     // prepare the first display page, which contains the data field size
     char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
@@ -199,18 +190,37 @@ bool is_digit(char c) {
   return c >= '0' && c <= '9';
 }
 
-bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
-    uint128_t limit = { 0, gas_limit };
-    uint128_t price = { 0, gas_price };
-    uint128_t fee128;
+bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char *fee, size_t size)
+{
+    uint128_t x = {{0, GAS_PER_DATA_BYTE}};
+    uint128_t y = {{0, data_size}};
+    uint128_t z;
+    uint128_t gas_unit_for_move_balance;
 
-    mul128(&limit, &price, &fee128);
+    // tx fee formula
+    // gas_units_for_move_balance = (min_gas_limit + len(data)*gas_per_data_byte)
+    // tx_fee = gas_units_for_move_balance * gas_price + (gas_limit - gas_unit_for_move_balance) * gas_price_modifier * gas_limit
+    // the difference is that instead of multiplying with gas_price_modifier we divide by 1/gas_price_modifier and the constant is marked as GAS_PRICE_DIVIER
 
-    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
-    if (!tostring128(&fee128, 10, fee, size-1)) {
+    mul128(&x, &y, &z);
+
+    x.elements[1] = MIN_GAS_LIMIT;
+    add128(&x, &z, &gas_unit_for_move_balance);
+
+    x.elements[1] = gas_limit;
+    minus128(&x, &gas_unit_for_move_balance, &y);
+
+    x.elements[1] = GAS_PRICE_DIVIDER;
+    divmod128(&y, &x, &z, &y);
+
+    add128(&gas_unit_for_move_balance, &z, &y);
+    
+    x.elements[1] = gas_price;
+    mul128(&x, &y, &z); /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
+    if (!tostring128(&z, 10, fee, size - 1))
+    {
         return false;
     }
-
     return true;
 }
 
