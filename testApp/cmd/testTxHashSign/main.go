@@ -19,13 +19,14 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const proxyHost string = "https://api.elrond.com" // https://api-testnet.elrond.com for testnet
+const proxyHost string = "https://devnet-gateway.elrond.com" // https://testnet-gateway.elrond.com for testnet
 
 const (
 	hrp       = "erd"
 	mainnetId = "1"
 
 	tx_hash_sign_version = 2
+	tx_hash_sign_options = 1
 )
 
 var ticker = "eGLD"
@@ -73,16 +74,19 @@ type networkConfig struct {
 }
 
 type transaction struct {
-	Nonce     uint64 `json:"nonce"`
-	Value     string `json:"value"`
-	RcvAddr   string `json:"receiver"`
-	SndAddr   string `json:"sender"`
-	GasPrice  uint64 `json:"gasPrice,omitempty"`
-	GasLimit  uint64 `json:"gasLimit,omitempty"`
-	Data      []byte `json:"data,omitempty"`
-	Signature string `json:"signature,omitempty"`
-	ChainID   string `json:"chainID"`
-	Version   uint32 `json:"version"`
+	Nonce            uint64 `json:"nonce"`
+	Value            string `json:"value"`
+	RcvAddr          string `json:"receiver"`
+	SndAddr          string `json:"sender"`
+	SenderUsername   []byte `json:"senderUsername,omitempty"`
+	ReceiverUsername []byte `json:"receiverUsername,omitempty"`
+	GasPrice         uint64 `json:"gasPrice,omitempty"`
+	GasLimit         uint64 `json:"gasLimit,omitempty"`
+	Data             []byte `json:"data,omitempty"`
+	Signature        string `json:"signature,omitempty"`
+	ChainID          string `json:"chainID"`
+	Version          uint32 `json:"version"`
+	Options          uint32 `json:"options,omitempty"`
 }
 
 type getAccountResponse struct {
@@ -245,6 +249,7 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 		return err
 	}
 	fmt.Println("Signing transaction. Please confirm on your Ledger")
+	fmt.Println("\nTransaction payload to be signed:")
 	fmt.Println(string(toSign))
 	signature, err := nanos.SignTxHash(toSign)
 	if err != nil {
@@ -254,6 +259,13 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 
 	sigHex := hex.EncodeToString(signature)
 	tx.Signature = sigHex
+
+	fullTx, err := json.Marshal(tx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("\nTransaction that will be sent:")
+	fmt.Println(string(fullTx))
 	return nil
 }
 
@@ -394,6 +406,7 @@ func main() {
 	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
 	tx.ChainID = netConfig.Data.Config.ChainID
 	tx.Version = tx_hash_sign_version
+	tx.Options = tx_hash_sign_options
 
 	err = signTransaction(&tx, nanos)
 	if err != nil {

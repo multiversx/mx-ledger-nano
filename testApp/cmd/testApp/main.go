@@ -19,7 +19,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 )
 
-const proxyHost string = "https://api.elrond.com" // https://api-testnet.elrond.com for testnet
+const proxyHost string = "https://devnet-gateway.elrond.com" // https://testnet-gateway.elrond.com for testnet
 
 const (
 	hrp       = "erd"
@@ -181,7 +181,7 @@ func getNetworkConfig() (*networkConfig, error) {
 	return netConfig, nil
 }
 
-// getDeviceInfo retrieves various informations from Ledger
+// getDeviceInfo retrieves various information from Ledger
 func getDeviceInfo(nanos *ledger.NanoS) error {
 	err := nanos.GetVersion()
 	if err != nil {
@@ -320,6 +320,8 @@ func main() {
 	}
 	fmt.Println("Nano S app version: ", nanos.AppVersion)
 	fmt.Printf("Contract data: %s\n\r", status[nanos.ContractData])
+	fmt.Println("WARNING: regular transaction signing is deprecated since v1.0.11 so this app won't work " +
+		"with applications newer than this.")
 
 	netConfig, err := getNetworkConfig()
 	if err != nil {
