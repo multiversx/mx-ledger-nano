@@ -24,6 +24,8 @@ const proxyHost string = "https://api.elrond.com" // https://api-testnet.elrond.
 const (
 	hrp       = "erd"
 	mainnetId = "1"
+
+	tx_hash_sign_version = 2
 )
 
 var ticker = "eGLD"
@@ -243,7 +245,8 @@ func signTransaction(tx *transaction, nanos *ledger.NanoS) error {
 		return err
 	}
 	fmt.Println("Signing transaction. Please confirm on your Ledger")
-	signature, err := nanos.SignTx(toSign)
+	fmt.Println(string(toSign))
+	signature, err := nanos.SignTxHash(toSign)
 	if err != nil {
 		log.Println(errSigningTx)
 		return err
@@ -390,7 +393,7 @@ func main() {
 	tx.Data = []byte(data)
 	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
 	tx.ChainID = netConfig.Data.Config.ChainID
-	tx.Version = netConfig.Data.Config.MinTransactionVersion
+	tx.Version = tx_hash_sign_version
 
 	err = signTransaction(&tx, nanos)
 	if err != nil {

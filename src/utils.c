@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "bech32.h"
 #include "globals.h"
+#include <uint256.h>
 
 static const uint32_t HARDENED_OFFSET = 0x80000000;
 static const uint32_t derivePath[BIP32_PATH] = {
@@ -117,4 +118,107 @@ void sendResponse(uint8_t tx, bool approve) {
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
     // Display back the original UX
     ui_idle();
+}
+
+// make the eGLD amount look pretty. Add decimals, decimal point and ticker name
+bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
+    int len = strlen(amount);
+    if ((size_t)len + PRETTY_SIZE >= max_size) {
+        return false;
+    }
+    int missing = DECIMAL_PLACES - len + 1;
+    if (missing > 0) {
+        os_memmove(amount + missing, amount, len + 1);
+        os_memset(amount, '0', missing);
+    }
+    len = strlen(amount);
+    int dotPos = len - DECIMAL_PLACES;
+    os_memmove(amount + dotPos + 1, amount + dotPos, DECIMAL_PLACES + 1);
+    amount[dotPos] = '.';
+    while (amount[strlen(amount) - 1] == '0') {
+        amount[strlen(amount) - 1] = '\0';
+    }
+    if (amount[strlen(amount) - 1] == '.') {
+        amount[strlen(amount) - 1] = '\0';
+    }
+    char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
+    os_memmove(suffix + 1, TICKER_MAINNET, sizeof(TICKER_MAINNET));
+    if (network == NETWORK_TESTNET) {
+        os_memmove(suffix + 1, TICKER_TESTNET, sizeof(TICKER_TESTNET));
+    }
+    os_memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
+
+    return true;
+}
+
+void computeDataSize(char *base64, uint32_t b64len) {
+    // calculate the ASCII size of the data field
+    tx_context.data_size = b64len / 4 * 3;
+    // take padding bytes into consideration
+    if (tx_context.data_size < MAX_DISPLAY_DATA_SIZE)
+        if (b64len > 1) {
+            if (base64[b64len - 1] == '=')
+                tx_context.data_size--;
+            if (base64[b64len - 2] == '=')
+                tx_context.data_size--;
+        }
+    int len = sizeof(tx_context.data);
+    // prepare the first display page, which contains the data field size
+    char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
+    // sprintf equivalent workaround
+    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--)
+        str_size[idx] = '0' + ds % 10;
+    int size_len = strlen(str_size);
+    // shift the actual data field to the right in order to make room for inserting the size in the first page
+    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
+    // insert the data size in front of the actual data field
+    os_memmove(tx_context.data, str_size, size_len);
+    int data_end = size_len + tx_context.data_size;
+    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
+        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
+    tx_context.data[data_end] = '\0';
+}
+
+bool parse_int(char *str, size_t size, uint64_t *result) {
+    uint64_t min = 0, n = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        if (!is_digit(str[i]))
+            return false;
+        n = n * 10 + str[i] - '0';
+        /* ensure there is no integer overflow */
+        if (n < min)
+            return false;
+        min = n;
+    }
+    *result = n;
+    return true;
+}
+
+bool is_digit(char c) {
+  return c >= '0' && c <= '9';
+}
+
+bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, char *fee, size_t size) {
+    uint128_t limit = { 0, gas_limit };
+    uint128_t price = { 0, gas_price };
+    uint128_t fee128;
+
+    mul128(&limit, &price, &fee128);
+
+    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
+    if (!tostring128(&fee128, 10, fee, size-1)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool valid_amount(char *amount, size_t size) {
+  for (size_t i = 0; i < size; i++) {
+      if (!is_digit(amount[i])) {
+            return false;
+      }
+  }
+  return true;
 }
