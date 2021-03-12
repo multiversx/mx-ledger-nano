@@ -109,10 +109,10 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     name: Build
     steps:
-    - name: Set up Go 1.x
+    - name: Set up Go 1.15.7
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: 1.15.7
       id: go
 
     - name: Check out code into the Go module directory
@@ -131,6 +131,8 @@ jobs:
         cd ${GITHUB_WORKSPACE}/testApp/cmd/testApp
         go build -v .
         cd ${GITHUB_WORKSPACE}/testApp/cmd/testMsgSign
+        go build -v .
+        cd ${GITHUB_WORKSPACE}/testApp/cmd/testTxHashSign
         go build -v .
       
     - name: Load Release URL File from release job
@@ -162,14 +164,24 @@ jobs:
         asset_path: ./testApp/cmd/testMsgSign/testMsgSign
         asset_name: ElrondTestMsgSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
         asset_content_type: application/octet-stream
+
+    - name: Upload Release Asset - TestTxHashSign
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+        asset_path: ./testApp/cmd/testTxHashSign/testTxHashSign
+        asset_name: ElrondTestTxHashSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_content_type: application/octet-stream
   
   build-testApps-windows:
     runs-on: windows-latest
     steps:
-    - name: Set up Go 1.x
+    - name: Set up Go 1.15.7
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: 1.15.7
       id: go
       
     - name: Check out code into the Go module directory
@@ -183,6 +195,11 @@ jobs:
     - name: Build testMsgSign
       run: | 
         cd ./testApp/cmd/testMsgSign
+        go build -v .
+
+    - name: Build testTxHashSign
+      run: |
+        cd ./testApp/cmd/testTxHashSign
         go build -v .
     
     - name: Load Release URL File from release job
@@ -214,4 +231,14 @@ jobs:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testMsgSign/testMsgSign.exe
         asset_name: ElrondTestMsgSign_windows-latest_${{ github.event.inputs.Version }}.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload Release Asset - TestTxHashSign
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+        asset_path: ./testApp/cmd/testTxHashSign/testTxHashSign.exe
+        asset_name: ElrondTestTxHashSign_windows-latest_${{ github.event.inputs.Version }}.exe
         asset_content_type: application/octet-stream
