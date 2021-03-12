@@ -19,6 +19,7 @@ const (
 	cmdSignTxn          = 0x04
 	cmdSetAddress       = 0x05
 	cmdSignMsg          = 0x06
+	cmdSignTxnHash      = 0x07
 
 	p1WithConfirmation = 0x01
 	p1NoConfirmation   = 0x00
@@ -213,8 +214,12 @@ func (n *NanoS) SetAddress(account uint32, index uint32) error {
 	return err
 }
 
-// SignTxn sends a json marshalized transaction to the device and returns the signature
-func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
+// SignTx sends a json marshalized transaction to the device and returns the signature
+func (n *NanoS) SignTx(txData []byte) (sig []byte, err error) {
+	return n.sign(txData, cmdSignTxn)
+}
+
+func (n *NanoS) sign(txData []byte, cmd byte) (sig []byte, err error) {
 	buf := new(bytes.Buffer)
 	buf.Write(txData)
 
@@ -225,7 +230,7 @@ func (n *NanoS) SignTxn(txData []byte) (sig []byte, err error) {
 			p1 = p1First
 		}
 		toSend := buf.Next(math.MaxUint8)
-		resp, err = n.Exchange(cmdSignTxn, p1, 0, byte(len(toSend)), toSend)
+		resp, err = n.Exchange(cmd, p1, 0, byte(len(toSend)), toSend)
 		if err != nil {
 			return nil, err
 		}
@@ -245,25 +250,12 @@ func (n *NanoS) SignMsg(msg string) (sig []byte, err error) {
 	binary.BigEndian.PutUint32(encLen, uint32(len(msg)))
 	buf.Write(encLen)
 	buf.Write([]byte(msg))
+	return n.sign(buf.Bytes(), cmdSignMsg)
+}
 
-	var resp []byte = nil
-	for buf.Len() > 0 {
-		var p1 byte = p1More
-		if resp == nil {
-			p1 = p1First
-		}
-		toSend := buf.Next(math.MaxUint8)
-		resp, err = n.Exchange(cmdSignMsg, p1, 0, byte(len(toSend)), toSend)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if len(resp) != sigLen+1 || resp[0] != byte(sigLen) {
-		return nil, errors.New(errBadSignature)
-	}
-	sig = make([]byte, sigLen)
-	copy(sig[:], resp[1:])
-	return
+// SignTxHash sends a transaction hash to the device and returns the signature
+func (n *NanoS) SignTxHash(txData []byte) (sig []byte, err error) {
+	return n.sign(txData, cmdSignTxnHash)
 }
 
 // OpenNanoS establishes the connection to the device
