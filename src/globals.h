@@ -98,16 +98,6 @@ typedef enum {
   APP_STATE_SIGNING_MESSAGE
 } app_state_t;
 
-typedef struct {
-    uint32_t len;
-    uint8_t hash[32];
-    char strhash[65];
-    app_state_t state;
-    uint8_t signature[64];
-} msg_context_t;
-
 extern cx_sha3_t sha3_context;
-
-extern msg_context_t msg_context;
 
 #endif

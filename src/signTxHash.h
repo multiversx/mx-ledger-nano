@@ -42,6 +42,7 @@ typedef struct {
     uint32_t data_field_size;
 } tx_hash_context_t;
 
+void init_tx_context(void);
 void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags);
 
 #endif

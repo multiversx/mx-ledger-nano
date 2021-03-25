@@ -1,7 +1,15 @@
 #include "signMsg.h"
 #include "utils.h"
 
-msg_context_t msg_context;
+typedef struct {
+    uint32_t len;
+    uint8_t hash[32];
+    char strhash[65];
+    app_state_t state;
+    uint8_t signature[64];
+} msg_context_t;
+
+static msg_context_t msg_context;
 
 static uint8_t setResultSignature();
 bool sign_message(void);
@@ -36,6 +44,13 @@ UX_FLOW(ux_sign_msg_flow,
   &ux_sign_msg_flow_15_step,
   &ux_sign_msg_flow_16_step
 );
+
+void init_msg_context(void) {
+    bip32_account = 0;
+    bip32_address_index = 0;
+
+    msg_context.state = APP_STATE_IDLE;
+}
 
 static uint8_t setResultSignature() {
     uint8_t tx = 0;

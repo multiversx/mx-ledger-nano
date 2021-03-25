@@ -141,10 +141,8 @@ void elrond_main(void) {
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
 
-    bip32_account = 0;
-    bip32_address_index = 0;
-    
-    msg_context.state = APP_STATE_IDLE;
+    init_msg_context();
+    init_tx_context();
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.

@@ -109,7 +109,7 @@ bool sign_tx_hash(uint8_t *dataBuffer) {
     return success;
 }
 
-void init_context() {
+void init_tx_context() {
     tx_context.amount[0] = 0;
     tx_context.data[0] = 0;
     tx_context.data_size = 0;
@@ -420,7 +420,7 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
 
 void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
-        init_context();
+        init_tx_context();
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
