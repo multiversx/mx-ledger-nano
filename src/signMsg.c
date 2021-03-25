@@ -77,8 +77,9 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
         uint32_t base = 10;
         uint8_t pos = 0;
         // first 4 bytes from dataBuffer should be the message length (big endian uint32)
-        if (dataLength < 4)
+        if (dataLength < 4) {
             THROW(ERR_INVALID_MESSAGE);
+        }
         msg_context.state = APP_STATE_SIGNING_MESSAGE;
         msg_context.len = U4BE(dataBuffer, 0);
         dataBuffer += 4;
@@ -97,33 +98,38 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
         // add the message length to the hash
         cx_hash((cx_hash_t *)&msg_context.sha3, 0, (uint8_t*)tmp, pos, NULL, 0);
     }
-    else if (p1 != P1_MORE) {
-        THROW(ERR_INVALID_P1);
+    else {
+      if (p1 != P1_MORE) {
+          THROW(ERR_INVALID_P1);
+      }
+      if (msg_context.state != APP_STATE_SIGNING_MESSAGE) {
+          THROW(ERR_INVALID_MESSAGE);
+      }
     }
     if (p2 != 0) {
         THROW(ERR_INVALID_ARGUMENTS);
     }
-    if ((p1 == P1_MORE) && (msg_context.state != APP_STATE_SIGNING_MESSAGE)) {
-        THROW(ERR_INVALID_MESSAGE);
-    }
     if (dataLength > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
     }
+
     // add the received message part to the hash and decrease the remaining length
     cx_hash((cx_hash_t *)&msg_context.sha3, 0, dataBuffer, dataLength, NULL, 0);
     msg_context.len -= dataLength;
-    if (msg_context.len == 0) {
-        // finalize hash, compute it and store it in `msg_context.strhash` for display
-        cx_hash((cx_hash_t *)&msg_context.sha3, CX_LAST, dataBuffer, 0, msg_context.hash, 32);
-        snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
-        // sign the hash
-        if (!sign_message()) {
-            THROW(ERR_SIGNATURE_FAILED);
-        }
-        msg_context.state = APP_STATE_IDLE;
-        ux_flow_init(0, ux_sign_msg_flow, NULL);
-        *flags |= IO_ASYNCH_REPLY;
-    } else {
+    if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
+
+    // finalize hash, compute it and store it in `msg_context.strhash` for display
+    cx_hash((cx_hash_t *)&msg_context.sha3, CX_LAST, dataBuffer, 0, msg_context.hash, 32);
+    snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
+
+    // sign the hash
+    if (!sign_message()) {
+      THROW(ERR_SIGNATURE_FAILED);
+    }
+
+    msg_context.state = APP_STATE_IDLE;
+    ux_flow_init(0, ux_sign_msg_flow, NULL);
+    *flags |= IO_ASYNCH_REPLY;
 }
