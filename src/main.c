@@ -306,7 +306,6 @@ void nv_app_state_init() {
         storage.initialized = 0x01;
         nvm_write((internalStorage_t*)&N_storage, (void*)&storage, sizeof(internalStorage_t));
     }
-    setting_contract_data = N_storage.setting_contract_data;
 }
 
 __attribute__((section(".boot"))) int main(void) {

@@ -16,8 +16,6 @@ const char* const info_submenu_getter_values[] = {
     "Back",
 };
 
-volatile uint8_t setting_contract_data;
-
 void setting_contract_data_change(unsigned int contract_data);
 const char* setting_contract_data_getter(unsigned int idx);
 void setting_contract_data_selector(unsigned int idx);
