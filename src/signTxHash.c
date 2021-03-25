@@ -387,22 +387,29 @@ uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
     return MSG_OK;
 }
 
-void handleSignTxHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-    UNUSED(p2);
+void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         init_context();
-    } else
-        if (p1 != P1_MORE)
+    } else {
+        if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
+        }
+    }
+
     cx_hash((cx_hash_t *)&msg_context.sha3, 0, dataBuffer, dataLength, NULL, 0);
     uint16_t err = parse_data(dataBuffer, dataLength);
-    if (err != MSG_OK)
+    if (err != MSG_OK) {
         THROW(err);
-    if (tx_hash_context.status != JSON_IDLE)
+    }
+
+    if (tx_hash_context.status != JSON_IDLE) {
         THROW(MSG_OK);
+    }
+
     // sign the hash
-    if (!sign_tx_hash(dataBuffer))
+    if (!sign_tx_hash(dataBuffer)) {
         THROW(ERR_SIGNATURE_FAILED);
+    }
 
     ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;
