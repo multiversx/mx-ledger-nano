@@ -3,8 +3,19 @@
 #include "base64.h"
 #include "utils.h"
 
+typedef struct {
+    char receiver[FULL_ADDRESS_LENGTH];
+    char amount[MAX_AMOUNT_LEN + PRETTY_SIZE];
+    uint64_t gas_limit;
+    uint64_t gas_price;
+    char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
+    char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
+    uint32_t data_size;
+    uint8_t signature[64];
+} tx_context_t;
+
 static tx_hash_context_t tx_hash_context;
-tx_context_t tx_context;
+static tx_context_t tx_context;
 
 static uint8_t setResultSignature();
 bool sign_tx_hash(uint8_t *dataBuffer);
@@ -108,6 +119,25 @@ void init_context() {
     tx_context.receiver[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&msg_context.sha3, 256);
+}
+
+void computeDataSize(char *base64, uint32_t decodedDataLen) {
+    tx_context.data_size = decodedDataLen;
+    int len = sizeof(tx_context.data);
+    // prepare the first display page, which contains the data field size
+    char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
+    // sprintf equivalent workaround
+    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--)
+        str_size[idx] = '0' + ds % 10;
+    int size_len = strlen(str_size);
+    // shift the actual data field to the right in order to make room for inserting the size in the first page
+    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
+    // insert the data size in front of the actual data field
+    os_memmove(tx_context.data, str_size, size_len);
+    int data_end = size_len + tx_context.data_size;
+    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
+        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
+    tx_context.data[data_end] = '\0';
 }
 
 // verify "value" field

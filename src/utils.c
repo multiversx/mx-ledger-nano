@@ -151,25 +151,6 @@ bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
     return true;
 }
 
-void computeDataSize(char *base64, uint32_t decodedDataLen) {
-    tx_context.data_size = decodedDataLen;
-    int len = sizeof(tx_context.data);
-    // prepare the first display page, which contains the data field size
-    char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
-    // sprintf equivalent workaround
-    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--)
-        str_size[idx] = '0' + ds % 10;
-    int size_len = strlen(str_size);
-    // shift the actual data field to the right in order to make room for inserting the size in the first page
-    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
-    // insert the data size in front of the actual data field
-    os_memmove(tx_context.data, str_size, size_len);
-    int data_end = size_len + tx_context.data_size;
-    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
-        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
-    tx_context.data[data_end] = '\0';
-}
-
 bool parse_int(char *str, size_t size, uint64_t *result) {
     uint64_t min = 0, n = 0;
 

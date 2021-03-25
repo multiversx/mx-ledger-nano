@@ -91,19 +91,6 @@ extern const internalStorage_t N_storage_real;
 #define GAS_PRICE_DIVIDER     100
 #define MIN_GAS_LIMIT         50000
 
-typedef struct {
-    char receiver[FULL_ADDRESS_LENGTH];
-    char amount[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    uint64_t gas_limit;
-    uint64_t gas_price;
-    char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
-    uint32_t data_size;
-    uint8_t signature[64];
-} tx_context_t;
-
-extern tx_context_t tx_context;
-
 // common types for sign message and sign tx hash
 
 typedef enum {

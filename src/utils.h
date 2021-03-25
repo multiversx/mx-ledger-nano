@@ -6,7 +6,6 @@
 #define _UTILS_H_
 
 bool makeAmountPretty(char *amount, size_t max_size, network_t network);
-void computeDataSize(char *base64, uint32_t b64len);
 bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char *fee, size_t size);
 bool is_digit(char c);
 bool parse_int(char *str, size_t size, uint64_t *result);
