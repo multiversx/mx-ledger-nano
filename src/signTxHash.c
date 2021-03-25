@@ -94,7 +94,7 @@ bool sign_tx_hash(uint8_t *dataBuffer) {
 
     BEGIN_TRY {
         TRY {
-            cx_hash((cx_hash_t *)&msg_context.sha3, CX_LAST, dataBuffer, 0, tx_hash_context.hash, 32);
+            cx_hash((cx_hash_t *)&sha3_context, CX_LAST, dataBuffer, 0, tx_hash_context.hash, 32);
             cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_hash_context.hash, 32, NULL, 0, tx_context.signature, 64, NULL);
         }
         CATCH_ALL {
@@ -118,7 +118,7 @@ void init_context() {
     tx_context.gas_price = 0;
     tx_context.receiver[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init(&msg_context.sha3, 256);
+    cx_keccak_init(&sha3_context, 256);
 }
 
 void computeDataSize(char *base64, uint32_t decodedDataLen) {
@@ -427,7 +427,7 @@ void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, vola
         }
     }
 
-    cx_hash((cx_hash_t *)&msg_context.sha3, 0, dataBuffer, dataLength, NULL, 0);
+    cx_hash((cx_hash_t *)&sha3_context, 0, dataBuffer, dataLength, NULL, 0);
     uint16_t err = parse_data(dataBuffer, dataLength);
     if (err != MSG_OK) {
         THROW(err);
