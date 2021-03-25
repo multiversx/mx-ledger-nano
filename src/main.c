@@ -52,6 +52,7 @@ void nv_app_state_init();
 
 void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
+    uint16_t ret;
 
     BEGIN_TRY {
         TRY {
@@ -85,8 +86,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SET_ADDR:
-                    handleSetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
-                    THROW(MSG_OK);
+                    ret = handleSetAddress(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    THROW(ret);
                     break;
 
                 case INS_SIGN_TX:
