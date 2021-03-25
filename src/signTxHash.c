@@ -3,6 +3,7 @@
 #include "base64.h"
 #include "utils.h"
 
+static tx_hash_context_t tx_hash_context;
 tx_context_t tx_context;
 
 static uint8_t setResultSignature();
