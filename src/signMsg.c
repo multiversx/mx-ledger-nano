@@ -70,7 +70,7 @@ bool sign_message(void) {
     return success;
 }
 
-void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         char tmp[11];
         uint32_t index;
