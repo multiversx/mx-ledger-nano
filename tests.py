@@ -108,7 +108,6 @@ class TestSignTx:
             client.apdu_exchange(self.INS, b"", 0, 0)
         assert e.value.sw == Error.SIGN_TX_DEPRECATED
 
-
 class TestSignMsg:
     INS = Ins.SIGN_MSG
 
@@ -192,3 +191,18 @@ class TestSignTxHash:
         with pytest.raises(CommException) as e:
             self._exchange_tx(client, payload)
         assert e.value.sw == Error.INVALID_FEE
+
+class TestState:
+    def test_invalid_state(self, client):
+        """Ensures there is no state confusion between tx and message signatures"""
+
+        tx = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+
+        payload = int(1).to_bytes(4, "big")
+        client.apdu_exchange(Ins.SIGN_MSG, payload, P1.FIRST, 0)
+
+        client.apdu_exchange(Ins.SIGN_TX_HASH, tx[:-1], P1.FIRST, 0)
+
+        with pytest.raises(CommException) as e:
+            client.apdu_exchange(Ins.SIGN_MSG, tx[-1:], P1.MORE, 0)
+        assert e.value.sw == Error.INVALID_MESSAGE
