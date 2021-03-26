@@ -52,6 +52,7 @@ void nv_app_state_init();
 
 void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
+    uint16_t ret;
 
     BEGIN_TRY {
         TRY {
@@ -85,8 +86,8 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SET_ADDR:
-                    handleSetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
-                    THROW(MSG_OK);
+                    ret = handleSetAddress(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    THROW(ret);
                     break;
 
                 case INS_SIGN_TX:
@@ -95,11 +96,11 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_MSG:
-                    handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
                     break;
 
                 case INS_SIGN_TX_HASH:
-                    handleSignTxHash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handleSignTxHash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
                     break;
 
                 default:
@@ -140,10 +141,8 @@ void elrond_main(void) {
     volatile unsigned int tx = 0;
     volatile unsigned int flags = 0;
 
-    bip32_account = 0;
-    bip32_address_index = 0;
-    
-    msg_context.state = APP_STATE_IDLE;
+    init_msg_context();
+    init_tx_context();
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
@@ -307,7 +306,6 @@ void nv_app_state_init() {
         storage.initialized = 0x01;
         nvm_write((internalStorage_t*)&N_storage, (void*)&storage, sizeof(internalStorage_t));
     }
-    setting_contract_data = N_storage.setting_contract_data;
 }
 
 __attribute__((section(".boot"))) int main(void) {

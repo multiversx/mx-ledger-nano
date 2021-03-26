@@ -1,16 +1,10 @@
+#include "globals.h"
 #include "utils.h"
-#include "os.h"
-#include "ux.h"
-#include "setAddress.h"
 
 // set the account and address index for the derivation path
-void handleSetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-    UNUSED(p1);
-    UNUSED(p2);
-
+uint16_t handleSetAddress(uint8_t *dataBuffer, uint16_t dataLength) {
     if (dataLength != sizeof(uint32_t) * 2) {
-        THROW(ERR_INVALID_ARGUMENTS);
-        return;
+        return ERR_INVALID_ARGUMENTS;
     }
 
     uint32_t account, address_index;
@@ -20,4 +14,6 @@ void handleSetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
 
     bip32_account = account;
     bip32_address_index = address_index;
+
+    return MSG_OK;
 }

@@ -27,6 +27,9 @@ class Ins(IntEnum):
     GET_APP_CONFIGURATION = 0x02
     GET_ADDR              = 0x03
     SIGN_TX               = 0x04
+    SET_ADDR              = 0x05
+    SIGN_MSG              = 0x06
+    SIGN_TX_HASH          = 0x07
 
 class P1(IntEnum):
     CONFIRM     = 0x01
@@ -43,6 +46,7 @@ class Error(IntEnum):
     UNKNOWN_INSTRUCTION    = 0x6D00
     WRONG_CLA              = 0x6E00
     SIGNATURE_FAILED       = 0x6E10
+    SIGN_TX_DEPRECATED     = 0x6E11
     INVALID_ARGUMENTS      = 0x6E01
     INVALID_MESSAGE        = 0x6E02
     INVALID_P1             = 0x6E03
@@ -99,6 +103,45 @@ class TestGetAddr:
 class TestSignTx:
     INS = Ins.SIGN_TX
 
+    def test_sign_tx_deprecated(self, client):
+        with pytest.raises(CommException) as e:
+            client.apdu_exchange(self.INS, b"", 0, 0)
+        assert e.value.sw == Error.SIGN_TX_DEPRECATED
+
+class TestSignMsg:
+    INS = Ins.SIGN_MSG
+
+    def _exchange_tx(self, client, payload):
+        max_size = 251
+        p1 = P1.FIRST
+        payload = len(payload).to_bytes(4, "big") + payload
+        while payload:
+            client.apdu_exchange(self.INS, payload[:max_size], p1, 0)
+            payload = payload[max_size:]
+            if p1 == p1.FIRST:
+                p1 = P1.MORE
+
+    def test_sign_msg_invalid_len(self, client):
+        client.apdu_exchange(self.INS, b"\x00\xff\xff\xff", P1.FIRST, 0)
+
+    def test_sign_msg(self, client):
+        payload = b"abcd"
+        self._exchange_tx(client, payload)
+
+    def test_sign_msg_long(self, client):
+        payload = b"a" * 512
+        self._exchange_tx(client, payload)
+
+    def test_sign_msg_too_long(self, client):
+        payload = b"abcd"
+        payload = int(3).to_bytes(4, "big") + payload
+        with pytest.raises(CommException) as e:
+            client.apdu_exchange(self.INS, payload, P1.FIRST, 0)
+        assert e.value.sw == Error.MESSAGE_TOO_LONG
+
+class TestSignTxHash:
+    INS = Ins.SIGN_TX_HASH
+
     def _exchange_tx(self, client, payload):
         max_size = 251
         p1 = P1.FIRST
@@ -109,7 +152,7 @@ class TestSignTx:
                 p1 = P1.MORE
 
     def test_sign_tx_valid(self, client):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         self._exchange_tx(client, payload)
 
     def test_sign_tx_valid_large(self, client):
@@ -119,50 +162,47 @@ class TestSignTx:
         payload += b'r' * 63
         payload += b'","sender":"'
         payload += b's' * 63
-        payload += b'","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload += b'","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         self._exchange_tx(client, payload)
 
     def test_sign_tx_valid_large_nonce(self, client):
         # nonce is a 64-bit unsigned integer
-        payload = b'{"nonce":18446744073709551615,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload = b'{"nonce":18446744073709551615,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         self._exchange_tx(client, payload)
 
     def test_sign_tx_valid_large_amount(self, client):
-        payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         self._exchange_tx(client, payload)
 
-    def test_sign_tx_invalid_order(self, client):
-        payload = b'{"nonce":1234,"value":"5678","sender":"abcd","receiver":"efgh","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
-        with pytest.raises(CommException) as e:
-            self._exchange_tx(client, payload)
-        assert e.value.sw == Error.INVALID_MESSAGE
-
     def test_sign_tx_invalid_nonce(self, client):
-        payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         with pytest.raises(CommException) as e:
             self._exchange_tx(client, payload)
         assert e.value.sw == Error.INVALID_MESSAGE
 
     def test_sign_tx_invalid_amount(self, client):
-        payload = b'{"nonce":1234,"value":"A5678","receiver":"efgh","sender":"abcd","gasPrice":10,"gasLimit":20,"chainID":"1","version":1}'
+        payload = b'{"nonce":1234,"value":"A5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
         with pytest.raises(CommException) as e:
             self._exchange_tx(client, payload)
         assert e.value.sw == Error.INVALID_AMOUNT
 
-    def test_sign_tx_invalid_missing_gas_limit(self, client):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":10,"chainID":"1","version":1}'
-        with pytest.raises(CommException) as e:
-            self._exchange_tx(client, payload)
-        assert e.value.sw == Error.INVALID_MESSAGE
-
-    def test_sign_tx_invalid_too_long(self, client):
-        payload = b'{' + b'a' * 1023
-        with pytest.raises(CommException) as e:
-            self._exchange_tx(client, payload)
-        assert e.value.sw == Error.MESSAGE_TOO_LONG
-
     def test_sign_tx_invalid_fee(self, client):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":20000000000000000,"gasLimit":20000000000000000,"chainID":"1","version":1}'
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":2000000000000000000000,"gasLimit":20000000000000000,"chainID":"1","version":2}'
         with pytest.raises(CommException) as e:
             self._exchange_tx(client, payload)
         assert e.value.sw == Error.INVALID_FEE
+
+class TestState:
+    def test_invalid_state(self, client):
+        """Ensures there is no state confusion between tx and message signatures"""
+
+        tx = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+
+        payload = int(1).to_bytes(4, "big")
+        client.apdu_exchange(Ins.SIGN_MSG, payload, P1.FIRST, 0)
+
+        client.apdu_exchange(Ins.SIGN_TX_HASH, tx[:-1], P1.FIRST, 0)
+
+        with pytest.raises(CommException) as e:
+            client.apdu_exchange(Ins.SIGN_MSG, tx[-1:], P1.MORE, 0)
+        assert e.value.sw == Error.INVALID_MESSAGE

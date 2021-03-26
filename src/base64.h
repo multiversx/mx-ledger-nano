@@ -1,3 +1,9 @@
+#pragma once
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 /*
 This implementation is based on the documentation found at
 https://en.wikipedia.org/wiki/Base64
@@ -35,7 +41,7 @@ static char base64decode_byte(char c) {
 
 // decode base64 data
 static bool base64decode(char *decoded, char *source, size_t len) {
-    for (int i = 0; i < len / 4; i++) {
+    for (size_t i = 0; i < len / 4; i++) {
         uint32_t data = 0;
         for (int j = 0; j < 4; j++) {
             char c = source[i * 4 + j];
@@ -51,7 +57,7 @@ static bool base64decode(char *decoded, char *source, size_t len) {
     }
     decoded[len / 4 * 3] = '\0';
     // replace non-printable characters with '?'
-    for (int i = 0; i < len / 4 * 3; i++) {
+    for (size_t i = 0; i < len / 4 * 3; i++) {
         if (decoded[i] < 32 || decoded[i] > 126) {
             decoded[i] = '?';
         }
