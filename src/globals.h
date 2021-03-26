@@ -35,9 +35,11 @@ extern const internalStorage_t N_storage_real;
 
 typedef enum {
   APP_STATE_IDLE,
-  APP_STATE_SIGNING_MESSAGE
+  APP_STATE_SIGNING_MESSAGE,
+  APP_STATE_SIGNING_TX
 } app_state_t;
 
 extern cx_sha3_t sha3_context;
+extern app_state_t app_state;
 
 #endif

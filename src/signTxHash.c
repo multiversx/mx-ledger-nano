@@ -111,20 +111,27 @@ void init_tx_context() {
     tx_context.receiver[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, 256);
+
+    app_state = APP_STATE_IDLE;
 }
 
 void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         init_tx_context();
+        app_state = APP_STATE_SIGNING_TX;
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
         }
+        if (app_state != APP_STATE_SIGNING_TX) {
+          THROW(ERR_INVALID_MESSAGE);
+      }
     }
 
     cx_hash((cx_hash_t *)&sha3_context, 0, dataBuffer, dataLength, NULL, 0);
     uint16_t err = parse_data(dataBuffer, dataLength);
     if (err != MSG_OK) {
+        init_tx_context();
         THROW(err);
     }
 
@@ -134,9 +141,11 @@ void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, vola
 
     // sign the hash
     if (!sign_tx_hash(dataBuffer)) {
+        init_tx_context();
         THROW(ERR_SIGNATURE_FAILED);
     }
 
+    app_state = APP_STATE_IDLE;
     ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;
 }

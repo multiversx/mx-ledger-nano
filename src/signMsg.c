@@ -6,7 +6,6 @@ typedef struct {
     uint32_t len;
     uint8_t hash[32];
     char strhash[65];
-    app_state_t state;
     uint8_t signature[64];
 } msg_context_t;
 
@@ -50,7 +49,7 @@ void init_msg_context(void) {
     bip32_account = 0;
     bip32_address_index = 0;
 
-    msg_context.state = APP_STATE_IDLE;
+    app_state = APP_STATE_IDLE;
 }
 
 static uint8_t setResultSignature() {
@@ -96,7 +95,7 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
         if (dataLength < 4) {
             THROW(ERR_INVALID_MESSAGE);
         }
-        msg_context.state = APP_STATE_SIGNING_MESSAGE;
+        app_state = APP_STATE_SIGNING_MESSAGE;
         msg_context.len = U4BE(dataBuffer, 0);
         dataBuffer += 4;
         dataLength -= 4;
@@ -118,7 +117,7 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
       if (p1 != P1_MORE) {
           THROW(ERR_INVALID_P1);
       }
-      if (msg_context.state != APP_STATE_SIGNING_MESSAGE) {
+      if (app_state != APP_STATE_SIGNING_MESSAGE) {
           THROW(ERR_INVALID_MESSAGE);
       }
     }
@@ -142,10 +141,11 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
 
     // sign the hash
     if (!sign_message()) {
-      THROW(ERR_SIGNATURE_FAILED);
+        init_msg_context();
+        THROW(ERR_SIGNATURE_FAILED);
     }
 
-    msg_context.state = APP_STATE_IDLE;
+    app_state = APP_STATE_IDLE;
     ux_flow_init(0, ux_sign_msg_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;
 }
