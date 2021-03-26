@@ -1,21 +1,13 @@
+#include "globals.h"
 #include "signTxHash.h"
 #include <uint256.h>
-#include "base64.h"
+#include "parseTx.h"
+#include "getPrivateKey.h"
 #include "utils.h"
+#include "ux.h"
 
-typedef struct {
-    char receiver[FULL_ADDRESS_LENGTH];
-    char amount[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    uint64_t gas_limit;
-    uint64_t gas_price;
-    char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
-    char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
-    uint32_t data_size;
-    uint8_t signature[64];
-} tx_context_t;
-
-static tx_hash_context_t tx_hash_context;
-static tx_context_t tx_context;
+tx_hash_context_t tx_hash_context;
+tx_context_t tx_context;
 
 static uint8_t setResultSignature();
 bool sign_tx_hash(uint8_t *dataBuffer);
@@ -79,7 +71,7 @@ static uint8_t setResultSignature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
     G_io_apdu_buffer[tx++] = sig_size;
-    os_memmove(G_io_apdu_buffer + tx, tx_context.signature, sig_size);
+    memmove(G_io_apdu_buffer + tx, tx_context.signature, sig_size);
     tx += sig_size;
     return tx;
 }
@@ -101,7 +93,7 @@ bool sign_tx_hash(uint8_t *dataBuffer) {
             success = false;
         }
         FINALLY {
-            os_memset(&privateKey, 0, sizeof(privateKey));
+            memset(&privateKey, 0, sizeof(privateKey));
         }
     }
     END_TRY;
@@ -119,303 +111,6 @@ void init_tx_context() {
     tx_context.receiver[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, 256);
-}
-
-void computeDataSize(char *base64, uint32_t decodedDataLen) {
-    tx_context.data_size = decodedDataLen;
-    int len = sizeof(tx_context.data);
-    // prepare the first display page, which contains the data field size
-    char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
-    // sprintf equivalent workaround
-    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--)
-        str_size[idx] = '0' + ds % 10;
-    int size_len = strlen(str_size);
-    // shift the actual data field to the right in order to make room for inserting the size in the first page
-    os_memmove(tx_context.data + size_len, tx_context.data, len - size_len);
-    // insert the data size in front of the actual data field
-    os_memmove(tx_context.data, str_size, size_len);
-    int data_end = size_len + tx_context.data_size;
-    if (tx_context.data_size > MAX_DISPLAY_DATA_SIZE)
-        data_end = size_len + MAX_DISPLAY_DATA_SIZE;
-    tx_context.data[data_end] = '\0';
-}
-
-// verify "value" field
-uint16_t verify_value(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, VALUE_FIELD, strlen(VALUE_FIELD)) == 0) {
-        if (tx_hash_context.current_value_len >= sizeof(tx_context.amount))
-            return ERR_AMOUNT_TOO_LONG;
-        if (!valid_amount(tx_hash_context.current_value, strlen(tx_hash_context.current_value)))
-            return ERR_INVALID_AMOUNT;
-        os_memmove(tx_context.amount, tx_hash_context.current_value, tx_hash_context.current_value_len);
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "receiver" field
-uint16_t verify_receiver(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0) {
-        if (tx_hash_context.current_value_len >= sizeof(tx_context.receiver))
-            return ERR_RECEIVER_TOO_LONG;
-        os_memmove(tx_context.receiver, tx_hash_context.current_value, tx_hash_context.current_value_len);
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "gasPrice" field
-uint16_t verify_gasprice(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, GASPRICE_FIELD, strlen(GASPRICE_FIELD)) == 0) {
-        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_price))
-            return ERR_INVALID_FEE;
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "gasLimit" field
-uint16_t verify_gaslimit(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, GASLIMIT_FIELD, strlen(GASLIMIT_FIELD)) == 0) {
-        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &tx_context.gas_limit))
-            return ERR_INVALID_FEE;
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "data" field
-uint16_t verify_data(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, DATA_FIELD, strlen(DATA_FIELD)) == 0) {
-        if (N_storage.setting_contract_data == 0)
-            return ERR_CONTRACT_DATA_DISABLED;
-        tx_hash_context.current_value_len = tx_hash_context.current_value_len / 4 * 4;
-        char encoded[MAX_DISPLAY_DATA_SIZE];
-        uint32_t enc_len = tx_hash_context.current_value_len;
-        if (enc_len > MAX_DISPLAY_DATA_SIZE)
-            enc_len = MAX_DISPLAY_DATA_SIZE;
-        os_memmove(encoded, tx_hash_context.current_value, enc_len);
-        uint32_t ascii_len = tx_hash_context.current_value_len;
-        if (ascii_len > MAX_DISPLAY_DATA_SIZE) {
-            ascii_len = MAX_DISPLAY_DATA_SIZE;
-            // add "..." at the end to show that the data field is actually longer 
-            char ellipsis[5] = "Li4u"; // "..." base64 encoded
-            int ellipsisLen = strlen(ellipsis);
-            memmove(encoded + MAX_DISPLAY_DATA_SIZE - ellipsisLen, ellipsis, ellipsisLen);
-        }
-        if (!base64decode(tx_context.data, encoded, ascii_len)) {
-            return ERR_INVALID_MESSAGE;
-        }
-        computeDataSize(tx_hash_context.current_value, tx_hash_context.data_field_size);
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "chainID" field
-uint16_t verify_chainid(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
-        network_t network = NETWORK_TESTNET;
-        if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0)
-            network = NETWORK_MAINNET;
-
-         if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
-            return ERR_INVALID_FEE;
-
-        if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
-            !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network))
-            return ERR_PRETTY_FAILED;
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "version" field
-uint16_t verify_version(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, VERSION_FIELD, strlen(VERSION_FIELD)) == 0) {
-        uint64_t version;
-        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &version))
-            return ERR_INVALID_MESSAGE;
-        if (version != TX_HASH_VERSION)
-            return ERR_WRONG_TX_VERSION;
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verify "version" field
-uint16_t verify_options(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0) {
-        uint64_t options;
-        if (!parse_int(tx_hash_context.current_value, strlen(tx_hash_context.current_value), &options))
-            return ERR_INVALID_MESSAGE;
-        if (options != TX_HASH_OPTIONS)
-            return ERR_WRONG_TX_OPTIONS;
-        *valid = true;
-    }
-    return MSG_OK;
-}
-
-// verifies if the field and value are valid and stores them
-uint16_t process_field(void) {
-    if (tx_hash_context.current_field_len == 0 || tx_hash_context.current_value_len == 0)
-        return ERR_INVALID_MESSAGE;
-    if (tx_hash_context.current_value_len < MAX_VALUE_LEN)
-        tx_hash_context.current_value[tx_hash_context.current_value_len++] = '\0';
-
-    bool valid_field = false;
-    uint16_t err;
-    err = verify_value(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_receiver(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_gasprice(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_gaslimit(&valid_field);
-    if (err != MSG_OK)
-        return err; 
-    err = verify_data(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_chainid(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_version(&valid_field);
-    if (err != MSG_OK)
-        return err;
-    err = verify_options(&valid_field);
-    if (err != MSG_OK)
-        return err;    
-
-    // verify the rest of the fields that are not displayed
-    valid_field |= strncmp(tx_hash_context.current_field, NONCE_FIELD, strlen(NONCE_FIELD)) == 0;
-    valid_field |= strncmp(tx_hash_context.current_field, SENDER_FIELD, strlen(SENDER_FIELD)) == 0;
-    valid_field |= strncmp(tx_hash_context.current_field, SENDER_USERNAME_FIELD, strlen(SENDER_USERNAME_FIELD)) == 0;
-    valid_field |= strncmp(tx_hash_context.current_field, RECEIVER_USERNAME_FIELD, strlen(RECEIVER_USERNAME_FIELD)) == 0;
-
-    if (valid_field)
-        return MSG_OK;
-    else
-        return ERR_INVALID_MESSAGE;
-}
-
-// parse_data interprets the json marshalized tx
-uint16_t parse_data(uint8_t *dataBuffer, uint16_t dataLength) {
-    if ((dataLength == 0) && (tx_hash_context.status == JSON_IDLE))
-        return ERR_INVALID_MESSAGE;
-    uint8_t idx = 0;
-    for (;;) {
-        if (idx >= dataLength)
-            break;
-        uint8_t c = dataBuffer[idx];
-        idx++;
-        switch(tx_hash_context.status) {
-            case JSON_IDLE:
-                if (c != '{')
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.status = JSON_EXPECTING_FIELD;
-                break;
-            case JSON_EXPECTING_FIELD:
-                if (c != '"')
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.status = JSON_PROCESSING_FIELD;
-                tx_hash_context.current_field_len = 0;
-                break;
-            case JSON_PROCESSING_FIELD:
-                if (c == '"') {
-                    tx_hash_context.status = JSON_EXPECTING_COLON;
-                    break;
-                }
-                if (tx_hash_context.current_field_len >= MAX_FIELD_LEN)
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.current_field[tx_hash_context.current_field_len++] = c;
-                break;
-            case JSON_EXPECTING_COLON:
-                if (c != ':')
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.status = JSON_EXPECTING_VALUE;
-                tx_hash_context.current_value_len = 0;
-                break;
-            case JSON_EXPECTING_VALUE:
-                if (c == '"') {
-                    tx_hash_context.status = JSON_PROCESSING_STRING_VALUE;
-                    break;
-                }
-                if (!is_digit(c))
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.status = JSON_PROCESSING_NUMERIC_VALUE;
-                tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
-                break;
-            case JSON_PROCESSING_STRING_VALUE : {
-                bool isDataField = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
-                if (c == '"') {
-                    if (isDataField) {
-                        uint32_t data_value_len;
-                        // remove additional characters and convert to decoded string length
-                        data_value_len = tx_hash_context.current_value_len / 4 * 3;
-                        //  remove trailing padding chars from count if any
-                        if (tx_hash_context.current_value_len > 2) {
-                            // example: 
-                            // "data": "YQ==",
-                            //               ^
-                            // idx is 2 positions ahead of last 2 chars from data value, so idx-2 and idx-3 will contain them
-                            if(dataBuffer[idx-2] == '='){
-                                data_value_len--;
-                            }
-                            if(dataBuffer[idx-3] == '='){
-                                data_value_len--;
-                            }
-                        }
-                        tx_hash_context.data_field_size = data_value_len;
-                    }
-                    uint16_t err = process_field();
-                    if (err != MSG_OK)
-                        return err;
-                    tx_hash_context.status = JSON_EXPECTING_COMMA;
-                    break;
-                }
-                if (tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
-                    if (isDataField && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
-                        tx_hash_context.current_value_len++;
-                        break;
-                    } else {
-                        return ERR_INVALID_MESSAGE;
-                    }
-                }
-                tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
-            }
-                break;
-            case JSON_PROCESSING_NUMERIC_VALUE:
-                if (c == '}') {
-                    tx_hash_context.status = JSON_IDLE;
-                    return process_field();
-                }
-                if (c == ',') {
-                    uint16_t err = process_field();
-                    if (err != MSG_OK)
-                        return err;
-                    tx_hash_context.status = JSON_EXPECTING_FIELD;
-                    break;
-                }
-                if ((tx_hash_context.current_value_len >= MAX_VALUE_LEN) || !is_digit(c))
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
-                break;
-            case JSON_EXPECTING_COMMA:
-                if (c == '}') {
-                    tx_hash_context.status = JSON_IDLE;
-                    return MSG_OK;
-                }
-                if (c != ',')
-                    return ERR_INVALID_MESSAGE;
-                tx_hash_context.status = JSON_EXPECTING_FIELD;
-                break;
-        }
-    }
-    return MSG_OK;
 }
 
 void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {

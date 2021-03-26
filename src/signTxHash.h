@@ -1,8 +1,7 @@
-#include "os.h"
-#include "globals.h"
-
 #ifndef _SIGN_TX_HASH_H_
 #define _SIGN_TX_HASH_H_
+
+#include <stdint.h>
 
 #define NONCE_FIELD             "nonce"
 #define VALUE_FIELD             "value"

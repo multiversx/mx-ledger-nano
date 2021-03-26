@@ -1,3 +1,4 @@
+#include "getPrivateKey.h"
 #include "signMsg.h"
 #include "utils.h"
 
@@ -56,7 +57,7 @@ static uint8_t setResultSignature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
     G_io_apdu_buffer[tx++] = sig_size;
-    os_memmove(G_io_apdu_buffer + tx, msg_context.signature, sig_size);
+    memmove(G_io_apdu_buffer + tx, msg_context.signature, sig_size);
     tx += sig_size;
     return tx;
 }
@@ -77,7 +78,7 @@ bool sign_message(void) {
             success = false;
         }
         FINALLY {
-            os_memset(&privateKey, 0, sizeof(privateKey));
+            memset(&privateKey, 0, sizeof(privateKey));
         }
     }
     END_TRY;

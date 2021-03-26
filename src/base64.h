@@ -1,3 +1,9 @@
+#pragma once
+
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 /*
 This implementation is based on the documentation found at
 https://en.wikipedia.org/wiki/Base64
