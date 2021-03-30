@@ -1,7 +1,15 @@
+#include "getPrivateKey.h"
 #include "signMsg.h"
 #include "utils.h"
 
-msg_context_t msg_context;
+typedef struct {
+    uint32_t len;
+    uint8_t hash[32];
+    char strhash[65];
+    uint8_t signature[64];
+} msg_context_t;
+
+static msg_context_t msg_context;
 
 static uint8_t setResultSignature();
 bool sign_message(void);
@@ -37,11 +45,18 @@ UX_FLOW(ux_sign_msg_flow,
   &ux_sign_msg_flow_16_step
 );
 
+void init_msg_context(void) {
+    bip32_account = 0;
+    bip32_address_index = 0;
+
+    app_state = APP_STATE_IDLE;
+}
+
 static uint8_t setResultSignature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
     G_io_apdu_buffer[tx++] = sig_size;
-    os_memmove(G_io_apdu_buffer + tx, msg_context.signature, sig_size);
+    memmove(G_io_apdu_buffer + tx, msg_context.signature, sig_size);
     tx += sig_size;
     return tx;
 }
@@ -62,7 +77,7 @@ bool sign_message(void) {
             success = false;
         }
         FINALLY {
-            os_memset(&privateKey, 0, sizeof(privateKey));
+            memset(&privateKey, 0, sizeof(privateKey));
         }
     }
     END_TRY;
@@ -70,22 +85,23 @@ bool sign_message(void) {
     return success;
 }
 
-void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         char tmp[11];
         uint32_t index;
         uint32_t base = 10;
         uint8_t pos = 0;
         // first 4 bytes from dataBuffer should be the message length (big endian uint32)
-        if (dataLength < 4)
+        if (dataLength < 4) {
             THROW(ERR_INVALID_MESSAGE);
-        msg_context.state = APP_STATE_SIGNING_MESSAGE;
+        }
+        app_state = APP_STATE_SIGNING_MESSAGE;
         msg_context.len = U4BE(dataBuffer, 0);
         dataBuffer += 4;
         dataLength -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&msg_context.sha3, 256);
-        cx_hash((cx_hash_t *)&msg_context.sha3, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
+        cx_keccak_init(&sha3_context, 256);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
         // convert message length to string and store it in the variable `tmp`
         for (index = 1; (((index * base) <= msg_context.len) &&
             (((index * base) / base) == index));
@@ -95,35 +111,41 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
         }
         tmp[pos] = '\0';
         // add the message length to the hash
-        cx_hash((cx_hash_t *)&msg_context.sha3, 0, (uint8_t*)tmp, pos, NULL, 0);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)tmp, pos, NULL, 0);
     }
-    else if (p1 != P1_MORE) {
-        THROW(ERR_INVALID_P1);
+    else {
+      if (p1 != P1_MORE) {
+          THROW(ERR_INVALID_P1);
+      }
+      if (app_state != APP_STATE_SIGNING_MESSAGE) {
+          THROW(ERR_INVALID_MESSAGE);
+      }
     }
     if (p2 != 0) {
         THROW(ERR_INVALID_ARGUMENTS);
     }
-    if ((p1 == P1_MORE) && (msg_context.state != APP_STATE_SIGNING_MESSAGE)) {
-        THROW(ERR_INVALID_MESSAGE);
-    }
     if (dataLength > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
     }
+
     // add the received message part to the hash and decrease the remaining length
-    cx_hash((cx_hash_t *)&msg_context.sha3, 0, dataBuffer, dataLength, NULL, 0);
+    cx_hash((cx_hash_t *)&sha3_context, 0, dataBuffer, dataLength, NULL, 0);
     msg_context.len -= dataLength;
-    if (msg_context.len == 0) {
-        // finalize hash, compute it and store it in `msg_context.strhash` for display
-        cx_hash((cx_hash_t *)&msg_context.sha3, CX_LAST, dataBuffer, 0, msg_context.hash, 32);
-        snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
-        // sign the hash
-        if (!sign_message()) {
-            THROW(ERR_SIGNATURE_FAILED);
-        }
-        msg_context.state = APP_STATE_IDLE;
-        ux_flow_init(0, ux_sign_msg_flow, NULL);
-        *flags |= IO_ASYNCH_REPLY;
-    } else {
+    if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
+
+    // finalize hash, compute it and store it in `msg_context.strhash` for display
+    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, dataBuffer, 0, msg_context.hash, 32);
+    snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
+
+    // sign the hash
+    if (!sign_message()) {
+        init_msg_context();
+        THROW(ERR_SIGNATURE_FAILED);
+    }
+
+    app_state = APP_STATE_IDLE;
+    ux_flow_init(0, ux_sign_msg_flow, NULL);
+    *flags |= IO_ASYNCH_REPLY;
 }

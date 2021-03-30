@@ -1,8 +1,7 @@
-#include "os.h"
-#include "globals.h"
-
 #ifndef _SIGN_TX_HASH_H_
 #define _SIGN_TX_HASH_H_
+
+#include <stdint.h>
 
 #define NONCE_FIELD             "nonce"
 #define VALUE_FIELD             "value"
@@ -35,15 +34,14 @@ typedef struct {
     uint8_t hash[32];
 
     parserStatus_e status;
-    uint8_t current_field[MAX_FIELD_LEN+1];
+    char current_field[MAX_FIELD_LEN+1];
     uint8_t current_field_len;
-    uint8_t current_value[MAX_VALUE_LEN+1];
+    char current_value[MAX_VALUE_LEN+1];
     uint32_t current_value_len;
     uint32_t data_field_size;
 } tx_hash_context_t;
 
-static tx_hash_context_t tx_hash_context;
-
-void handleSignTxHash(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx);
+void init_tx_context(void);
+void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags);
 
 #endif

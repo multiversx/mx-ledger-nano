@@ -13,3 +13,6 @@ const internalStorage_t N_storage_real;
 // selected account global variables
 uint32_t bip32_account;
 uint32_t bip32_address_index;
+
+cx_sha3_t sha3_context;
+app_state_t app_state;
