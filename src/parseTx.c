@@ -13,19 +13,19 @@
 #endif
 
 // make the eGLD amount look pretty. Add decimals, decimal point and ticker name
-bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
+bool makeAmountPretty(char *amount, size_t max_size, char* ticker, int decimals_places) {
     int len = strlen(amount);
     if ((size_t)len + PRETTY_SIZE >= max_size) {
         return false;
     }
-    int missing = DECIMAL_PLACES - len + 1;
+    int missing = decimals_places - len + 1;
     if (missing > 0) {
         memmove(amount + missing, amount, len + 1);
         memset(amount, '0', missing);
     }
     len = strlen(amount);
-    int dotPos = len - DECIMAL_PLACES;
-    memmove(amount + dotPos + 1, amount + dotPos, DECIMAL_PLACES + 1);
+    int dotPos = len - decimals_places;
+    memmove(amount + dotPos + 1, amount + dotPos, decimals_places + 1);
     amount[dotPos] = '.';
     while (amount[strlen(amount) - 1] == '0') {
         amount[strlen(amount) - 1] = '\0';
@@ -34,10 +34,7 @@ bool makeAmountPretty(char *amount, size_t max_size, network_t network) {
         amount[strlen(amount) - 1] = '\0';
     }
     char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
-    memmove(suffix + 1, TICKER_MAINNET, sizeof(TICKER_MAINNET));
-    if (network == NETWORK_TESTNET) {
-        memmove(suffix + 1, TICKER_TESTNET, sizeof(TICKER_TESTNET));
-    }
+    memmove(suffix + 1, ticker, strlen(ticker));
     memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
 
     return true;
@@ -68,7 +65,8 @@ bool parse_int(char *str, size_t size, uint64_t *result) {
 }
 
 bool parse_hex(char *str, size_t size, uint128_t *result) {
-    uint128_t n, tmp;
+    uint128_t n = {{0, 0}};
+    uint128_t tmp = {{0, 0}};
 
     for (size_t i = 0; i < size; i++) {
         if (!is_hex_digit(str[i]))
@@ -226,15 +224,16 @@ uint16_t verify_data(bool *valid) {
 // verify "chainID" field
 uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
-        network_t network = NETWORK_TESTNET;
+        char* ticker = TICKER_TESTNET;
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0)
-            network = NETWORK_MAINNET;
+            ticker = TICKER_MAINNET;
 
          if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
             return ERR_INVALID_FEE;
 
-        if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), network) ||
-            !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), network))
+        
+        if (!makeAmountPretty(tx_context.amount, sizeof(tx_context.amount), ticker, DECIMAL_PLACES) ||
+            !makeAmountPretty(tx_context.fee, sizeof(tx_context.fee), ticker, DECIMAL_PLACES))
             return ERR_PRETTY_FAILED;
         *valid = true;
     }
@@ -432,7 +431,7 @@ uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength) {
 // parse_esdt_data interprets the ESDT transfer data field of a transaction
 uint16_t parse_esdt_data(const char *dataBuffer, uint16_t dataLength) {
     uint16_t idx;
-    uint128_t value;
+    uint128_t value = {{0,0}};
     bool res;
 
     idx = DATA_SIZE_LEN + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len + 1;
@@ -444,7 +443,8 @@ uint16_t parse_esdt_data(const char *dataBuffer, uint16_t dataLength) {
     if (!tostring128(&value, 10, amount, MAX_AMOUNT_LEN + PRETTY_SIZE - 1))
         return ERR_INVALID_AMOUNT;
 
-    // TODO: add decimal point
+    if (!makeAmountPretty(amount, strlen(amount) + MAX_TICKER_LEN + PRETTY_SIZE + 1, esdt_info.ticker, esdt_info.decimals))
+        return ERR_PRETTY_FAILED;
 
     return MSG_OK;
 }

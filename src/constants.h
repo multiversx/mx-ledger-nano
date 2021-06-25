@@ -38,8 +38,8 @@ typedef enum {
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH          5
 #define COIN_TYPE_EGLD      508UL
-#define TICKER_MAINNET      "eGLD"
-#define TICKER_TESTNET      "XeGLD"
+#define TICKER_MAINNET      "EGLD"
+#define TICKER_TESTNET      "xEGLD"
 #define HRP                 "erd"
 #define DECIMAL_PLACES      18
 #define MAINNET_CHAIN_ID    "1"
