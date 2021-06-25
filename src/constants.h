@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum {
     NETWORK_MAINNET = 0,
     NETWORK_TESTNET = 1
@@ -31,6 +33,7 @@ typedef enum {
 #define ERR_DATA_TOO_LONG          0x6E0E // singTxWithHash
 #define ERR_WRONG_TX_OPTIONS       0x6E0F // signTxWithHash
 #define ERR_SIGN_TX_DEPRECATED     0x6E11 // signTx - deprecated
+#define ERR_INVALID_ESDT_SIGNATURE 0x6E12
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH          5

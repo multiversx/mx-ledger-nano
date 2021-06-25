@@ -20,6 +20,7 @@ const (
 	cmdSetAddress       = 0x05
 	cmdSignMsg          = 0x06
 	cmdSignTxnHash      = 0x07
+	cmdProvideESDTInfo  = 0x08
 
 	p1WithConfirmation = 0x01
 	p1NoConfirmation   = 0x00
@@ -285,4 +286,9 @@ func OpenNanoS() (*NanoS, error) {
 			},
 		},
 	}, nil
+}
+
+func (n *NanoS) ProvideESDTInfo(info []byte) error {
+	_, err := n.Exchange(cmdProvideESDTInfo, 0, 0, byte(len(info)), info)
+	return err
 }

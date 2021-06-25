@@ -6,6 +6,7 @@
 #include "signTxHash.h"
 #include "base64.h"
 #include "parseTx.h"
+#include "provideESDTInfo.h"
 
 #ifndef FUZZING
 #include "globals.h"
@@ -46,6 +47,10 @@ bool is_digit(char c) {
   return c >= '0' && c <= '9';
 }
 
+bool is_hex_digit(char c) {
+  return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
 bool parse_int(char *str, size_t size, uint64_t *result) {
     uint64_t min = 0, n = 0;
 
@@ -57,6 +62,25 @@ bool parse_int(char *str, size_t size, uint64_t *result) {
         if (n < min)
             return false;
         min = n;
+    }
+    *result = n;
+    return true;
+}
+
+bool parse_hex(char *str, size_t size, uint128_t *result) {
+    uint128_t n, tmp;
+
+    for (size_t i = 0; i < size; i++) {
+        if (!is_hex_digit(str[i]))
+            return false;
+        uint128_t digit = {{0, str[i] - '0'}};
+        if (str[i] >= 'a')
+            digit.elements[1] = str[i] - 'a' + 10;
+        else
+        if (str[i] >= 'A')
+            digit.elements[1] = str[i] - 'A' + 10;
+        shiftl128(&n, 4, &tmp);
+        add128(&tmp, &digit, &n);
     }
     *result = n;
     return true;
@@ -88,7 +112,8 @@ bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char
     add128(&gas_unit_for_move_balance, &z, &y);
     
     x.elements[1] = gas_price;
-    mul128(&x, &y, &z); /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
+    mul128(&x, &y, &z);
+    /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
     if (!tostring128(&z, 10, fee, size - 1))
     {
         return false;
@@ -401,5 +426,25 @@ uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength) {
                 break;
         }
     }
+    return MSG_OK;
+}
+
+// parse_esdt_data interprets the ESDT transfer data field of a transaction
+uint16_t parse_esdt_data(const char *dataBuffer, uint16_t dataLength) {
+    uint16_t idx;
+    uint128_t value;
+    bool res;
+
+    idx = DATA_SIZE_LEN + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len + 1;
+    dataLength -= idx;
+    res = parse_hex(dataBuffer + idx - 1, dataLength, &value);
+    if (!res)
+        return ERR_INVALID_AMOUNT;
+    char *amount = tx_context.amount;
+    if (!tostring128(&value, 10, amount, MAX_AMOUNT_LEN + PRETTY_SIZE - 1))
+        return ERR_INVALID_AMOUNT;
+
+    // TODO: add decimal point
+
     return MSG_OK;
 }

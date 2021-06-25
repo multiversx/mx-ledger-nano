@@ -3,6 +3,7 @@
 #include <uint256.h>
 #include "parseTx.h"
 #include "getPrivateKey.h"
+#include "provideESDTInfo.h"
 #include "utils.h"
 #include "ux.h"
 
@@ -11,6 +12,61 @@ tx_context_t tx_context;
 
 static uint8_t setResultSignature();
 bool sign_tx_hash(uint8_t *dataBuffer);
+
+// UI for confirming the ESDT transfer on screen
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_23_step, 
+    bnnn_paging, 
+    {
+      .title = "ESDT",
+      .text = esdt_info.ticker,
+    });
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_24_step, 
+    bnnn_paging, 
+    {
+      .title = "Value",
+      .text = tx_context.amount,
+    });
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_25_step, 
+    bnnn_paging, 
+    {
+      .title = "Receiver",
+      .text = tx_context.receiver,
+    });
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_26_step, 
+    bnnn_paging, 
+    {
+      .title = "Fee",
+      .text = tx_context.fee,
+    });
+UX_STEP_VALID(
+    ux_transfer_esdt_flow_27_step, 
+    pb, 
+    sendResponse(setResultSignature(), true),
+    {
+      &C_icon_validate_14,
+      "Confirm transfer",
+    });
+UX_STEP_VALID(
+    ux_transfer_esdt_flow_28_step, 
+    pb,
+    sendResponse(0, false),
+    {
+      &C_icon_crossmark,
+      "Reject",
+    });
+
+UX_FLOW(ux_transfer_esdt_flow,
+  &ux_transfer_esdt_flow_23_step,
+  &ux_transfer_esdt_flow_24_step,
+  &ux_transfer_esdt_flow_25_step,
+  &ux_transfer_esdt_flow_26_step,
+  &ux_transfer_esdt_flow_27_step,
+  &ux_transfer_esdt_flow_28_step
+);
 
 // UI for confirming the tx details of the transaction on screen
 UX_STEP_NOCB(
@@ -146,6 +202,20 @@ void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, vola
     }
 
     app_state = APP_STATE_IDLE;
-    ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;
+
+    if ((esdt_info.identifier_len > 0) &&
+        (strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0) &&
+        (strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0)) {
+            // TODO: Check Chain_ID
+            uint16_t res;
+            res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
+            if (res != MSG_OK)
+                THROW(res); // TODO: throw isn't catched !
+
+            ux_flow_init(0, ux_transfer_esdt_flow, NULL);
+            return;
+    }
+
+    ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
 }
