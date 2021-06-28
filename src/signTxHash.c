@@ -18,7 +18,7 @@ UX_STEP_NOCB(
     ux_transfer_esdt_flow_23_step, 
     bnnn_paging, 
     {
-      .title = "ESDT",
+      .title = "Token",
       .text = esdt_info.ticker,
     });
 UX_STEP_NOCB(
