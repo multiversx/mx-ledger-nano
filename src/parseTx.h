@@ -11,6 +11,7 @@ typedef struct {
     char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
     char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
     uint32_t data_size;
+    char chain_id[MAX_CHAINID_LEN];
     uint8_t signature[64];
 } tx_context_t;
 

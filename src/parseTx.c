@@ -34,7 +34,7 @@ bool makeAmountPretty(char *amount, size_t max_size, char* ticker, int decimals_
         amount[strlen(amount) - 1] = '\0';
     }
     char suffix[MAX_TICKER_LEN+2] = " \0"; // 2 = leading space + trailing \0
-    memmove(suffix + 1, ticker, strlen(ticker));
+    memmove(suffix + 1, ticker, strlen(ticker) + 1);
     memmove(amount + strlen(amount), suffix, strlen(suffix) + 1);
 
     return true;
@@ -228,7 +228,9 @@ uint16_t verify_chainid(bool *valid) {
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0)
             ticker = TICKER_MAINNET;
 
-         if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
+        memmove(tx_context.chain_id, tx_hash_context.current_value, tx_hash_context.current_value_len);
+        
+        if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE))
             return ERR_INVALID_FEE;
 
         

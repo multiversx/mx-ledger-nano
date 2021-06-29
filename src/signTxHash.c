@@ -165,6 +165,7 @@ void init_tx_context() {
     tx_context.gas_limit = 0;
     tx_context.gas_price = 0;
     tx_context.receiver[0] = 0;
+    tx_context.chain_id[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, 256);
 
@@ -201,20 +202,25 @@ void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, vola
         THROW(ERR_SIGNATURE_FAILED);
     }
 
-    app_state = APP_STATE_IDLE;
-    *flags |= IO_ASYNCH_REPLY;
-
+    bool should_display_esdt_flow = false;
     if ((esdt_info.identifier_len > 0) &&
         (strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0) &&
-        (strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0)) {
-            // TODO: Check Chain_ID
+        (strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0) &&
+        (strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0)) {
             uint16_t res;
             res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
             if (res != MSG_OK)
-                THROW(res); // TODO: throw isn't catched !
+                THROW(res);
 
-            ux_flow_init(0, ux_transfer_esdt_flow, NULL);
-            return;
+            should_display_esdt_flow = true;
+    }
+
+    app_state = APP_STATE_IDLE;
+    *flags |= IO_ASYNCH_REPLY;
+
+    if(should_display_esdt_flow) {
+        ux_flow_init(0, ux_transfer_esdt_flow, NULL);
+        return;
     }
 
     ux_flow_init(0, ux_sign_tx_hash_flow, NULL);

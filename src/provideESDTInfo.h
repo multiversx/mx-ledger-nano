@@ -2,10 +2,10 @@
 #define _PROVIDE_ESDT_INFO_H_
 
 #include <stdint.h>
+#include <constants.h>
 
 #define MAX_ESDT_TICKER_LEN     32
 #define MAX_ESDT_IDENTIFIER_LEN 32
-#define MAX_CHAIN_ID_LEN        32
 #define ESDT_SIGNATURE_LEN      71
 
 #define ESDT_TRANSFER_PREFIX "ESDTTransfer@"
@@ -29,7 +29,7 @@ typedef struct esdt_info_t {
     char identifier[MAX_ESDT_IDENTIFIER_LEN];
     uint8_t decimals;
     uint8_t chain_id_len;
-    char chain_id[MAX_CHAIN_ID_LEN];
+    char chain_id[MAX_CHAINID_LEN];
     char hash[65];
 } esdt_info_t;
 
