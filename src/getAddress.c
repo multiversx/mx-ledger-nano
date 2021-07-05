@@ -24,7 +24,7 @@ UX_STEP_NOCB(
 UX_STEP_VALID(
     ux_display_public_flow_6_step, 
     pb, 
-    sendResponse(setResultGetAddress(), true),
+    send_response(setResultGetAddress(), true),
     {
         &C_icon_validate_14,
         "Approve",
@@ -32,7 +32,7 @@ UX_STEP_VALID(
 UX_STEP_VALID(
     ux_display_public_flow_7_step, 
     pb, 
-    sendResponse(0, false),
+    send_response(0, false),
     {
         &C_icon_crossmark,
         "Reject",
@@ -113,7 +113,7 @@ void getAddressBech32FromBinary(uint8_t *publicKey, char *address) {
     bech32EncodeFromBytes(address, hrp, buffer, 33);
 }
 
-void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
     uint8_t publicKey[32];
     uint32_t account, index;
 
@@ -122,8 +122,8 @@ void handleGetAddress(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t data
         return;
     }
 
-    account = readUint32BE(dataBuffer);
-    index = readUint32BE(dataBuffer + sizeof(uint32_t));
+    account = read_uint32_be(dataBuffer);
+    index = read_uint32_be(dataBuffer + sizeof(uint32_t));
     if (!getPublicKey(account, index, publicKey)) {
         THROW(ERR_INVALID_ARGUMENTS);
     }

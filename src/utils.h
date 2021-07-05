@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-uint32_t readUint32BE(uint8_t *buffer);
+uint32_t read_uint32_be(uint8_t *buffer);
 
-void sendResponse(uint8_t tx, bool approve);
+void send_response(uint8_t tx, bool approve);
 
 #endif

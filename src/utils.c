@@ -2,12 +2,12 @@
 #include "os.h"
 #include "utils.h"
 
-// readUint32BE reads 4 bytes from the buffer and returns an uint32_t with big endian encoding
-uint32_t readUint32BE(uint8_t *buffer) {
+// read_uint32_be reads 4 bytes from the buffer and returns an uint32_t with big endian encoding
+uint32_t read_uint32_be(uint8_t *buffer) {
   return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
 
-void sendResponse(uint8_t tx, bool approve) {
+void send_response(uint8_t tx, bool approve) {
     uint16_t response = MSG_OK;
 
     if (!approve)

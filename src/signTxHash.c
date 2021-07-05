@@ -10,7 +10,7 @@
 tx_hash_context_t tx_hash_context;
 tx_context_t tx_context;
 
-static uint8_t setResultSignature();
+static uint8_t set_result_signature();
 bool sign_tx_hash(uint8_t *dataBuffer);
 
 // UI for confirming the ESDT transfer on screen
@@ -45,7 +45,7 @@ UX_STEP_NOCB(
 UX_STEP_VALID(
     ux_transfer_esdt_flow_27_step, 
     pb, 
-    sendResponse(setResultSignature(), true),
+    send_response(set_result_signature(), true),
     {
       &C_icon_validate_14,
       "Confirm transfer",
@@ -53,7 +53,7 @@ UX_STEP_VALID(
 UX_STEP_VALID(
     ux_transfer_esdt_flow_28_step, 
     pb,
-    sendResponse(0, false),
+    send_response(0, false),
     {
       &C_icon_crossmark,
       "Reject",
@@ -100,7 +100,7 @@ UX_STEP_NOCB(
 UX_STEP_VALID(
     ux_sign_tx_hash_flow_21_step, 
     pb, 
-    sendResponse(setResultSignature(), true),
+    send_response(set_result_signature(), true),
     {
       &C_icon_validate_14,
       "Sign transaction",
@@ -108,7 +108,7 @@ UX_STEP_VALID(
 UX_STEP_VALID(
     ux_sign_tx_hash_flow_22_step, 
     pb,
-    sendResponse(0, false),
+    send_response(0, false),
     {
       &C_icon_crossmark,
       "Reject",
@@ -123,7 +123,7 @@ UX_FLOW(ux_sign_tx_hash_flow,
   &ux_sign_tx_hash_flow_22_step
 );
 
-static uint8_t setResultSignature() {
+static uint8_t set_result_signature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
     G_io_apdu_buffer[tx++] = sig_size;
@@ -172,7 +172,7 @@ void init_tx_context() {
     app_state = APP_STATE_IDLE;
 }
 
-void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
+void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         init_tx_context();
         app_state = APP_STATE_SIGNING_TX;

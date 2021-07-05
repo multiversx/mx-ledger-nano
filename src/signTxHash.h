@@ -19,7 +19,7 @@
 #define MAX_FIELD_LEN 16
 #define MAX_VALUE_LEN 64UL
 
-typedef enum parserStatus_e {
+typedef enum parser_status_e {
     JSON_IDLE,
     JSON_EXPECTING_FIELD,
     JSON_PROCESSING_FIELD,
@@ -28,12 +28,11 @@ typedef enum parserStatus_e {
     JSON_PROCESSING_STRING_VALUE,
     JSON_PROCESSING_NUMERIC_VALUE,
     JSON_EXPECTING_COMMA
-} parserStatus_e;
+} parser_status_e;
 
 typedef struct {
     uint8_t hash[32];
-
-    parserStatus_e status;
+    parser_status_e status;
     char current_field[MAX_FIELD_LEN+1];
     uint8_t current_field_len;
     char current_value[MAX_VALUE_LEN+1];
@@ -42,6 +41,6 @@ typedef struct {
 } tx_hash_context_t;
 
 void init_tx_context(void);
-void handleSignTxHash(uint8_t p1, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags);
+void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags);
 
 #endif

@@ -46,6 +46,6 @@ static unsigned int app_version_ui_button(unsigned int button_mask, unsigned int
     return 0;
 }
 
-void viewAppVersion() {
+void view_app_version() {
     UX_DISPLAY(app_version_ui, NULL);
 }
