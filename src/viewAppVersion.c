@@ -37,6 +37,8 @@ static const bagl_element_t app_version_ui[] = {
 
 // this function is called by the OS when a button event occurs
 static unsigned int app_version_ui_button(unsigned int button_mask, unsigned int button_mask_counter) {
+    (void)(button_mask_counter);
+
     switch (button_mask) {
     case BUTTON_EVT_RELEASED | BUTTON_LEFT | BUTTON_RIGHT: // EXIT
         ui_idle();

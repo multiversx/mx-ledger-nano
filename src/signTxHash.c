@@ -11,7 +11,7 @@ tx_hash_context_t tx_hash_context;
 tx_context_t tx_context;
 
 static uint8_t set_result_signature();
-bool sign_tx_hash(uint8_t *dataBuffer);
+bool sign_tx_hash(uint8_t *data_buffer);
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
@@ -132,7 +132,7 @@ static uint8_t set_result_signature() {
     return tx;
 }
 
-bool sign_tx_hash(uint8_t *dataBuffer) {
+bool sign_tx_hash(uint8_t *data_buffer) {
     cx_ecfp_private_key_t privateKey;
     bool success = true;
 
@@ -142,7 +142,7 @@ bool sign_tx_hash(uint8_t *dataBuffer) {
 
     BEGIN_TRY {
         TRY {
-            cx_hash((cx_hash_t *)&sha3_context, CX_LAST, dataBuffer, 0, tx_hash_context.hash, 32);
+            cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, tx_hash_context.hash, 32);
             cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_hash_context.hash, 32, NULL, 0, tx_context.signature, 64, NULL);
         }
         CATCH_ALL {
@@ -185,8 +185,8 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
       }
     }
 
-    cx_hash((cx_hash_t *)&sha3_context, 0, dataBuffer, dataLength, NULL, 0);
-    uint16_t err = parse_data(dataBuffer, dataLength);
+    cx_hash((cx_hash_t *)&sha3_context, 0, data_buffer, data_length, NULL, 0);
+    uint16_t err = parse_data(data_buffer, data_length);
     if (err != MSG_OK) {
         init_tx_context();
         THROW(err);
@@ -197,21 +197,23 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
     }
 
     // sign the hash
-    if (!sign_tx_hash(dataBuffer)) {
+    if (!sign_tx_hash(data_buffer)) {
         init_tx_context();
         THROW(ERR_SIGNATURE_FAILED);
     }
 
     bool should_display_esdt_flow = false;
-    if ((esdt_info.identifier_len > 0) &&
-        (strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0) &&
-        (strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0) &&
-        (strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0)) {
+    bool identifier_len_valid = esdt_info.identifier_len > 0;
+    bool has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
+    bool has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
+    bool is_mainnet_transaction = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
+
+    if (identifier_len_valid && has_esdt_transfer_prefix && has_registered_esdt_identifier && is_mainnet_transaction) {
             uint16_t res;
             res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
-            if (res != MSG_OK)
+            if (res != MSG_OK) {
                 THROW(res);
-
+            }
             should_display_esdt_flow = true;
     }
 

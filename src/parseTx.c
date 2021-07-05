@@ -66,7 +66,7 @@ bool parse_int(char *str, size_t size, uint64_t *result) {
     return true;
 }
 
-bool parse_hex(char *str, size_t size, uint128_t *result) {
+bool parse_hex(const char *str, size_t size, uint128_t *result) {
     uint128_t n = {{0, 0}};
     uint128_t tmp = {{0, 0}};
 
@@ -77,8 +77,7 @@ bool parse_hex(char *str, size_t size, uint128_t *result) {
         uint128_t digit = {{0, str[i] - '0'}};
         if (str[i] >= 'a') {
             digit.elements[1] = str[i] - 'a' + 10;
-        }
-        else if (str[i] >= 'A') {
+        } else if (str[i] >= 'A') {
             digit.elements[1] = str[i] - 'A' + 10;
         }
         shiftl128(&n, 4, &tmp);
@@ -131,14 +130,16 @@ bool valid_amount(char *amount, size_t size) {
   return true;
 }
 
-void compute_data_size(char *base64, uint32_t decodedDataLen) {
+void compute_data_size(uint32_t decodedDataLen) {
     tx_context.data_size = decodedDataLen;
     int len = sizeof(tx_context.data);
     // prepare the first display page, which contains the data field size
     char str_size[DATA_SIZE_LEN] = "[Size:       0] ";
     // sprintf equivalent workaround
-    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--)
+    for (uint32_t ds = tx_context.data_size, idx = 13; ds > 0; ds /= 10, idx--) {
         str_size[idx] = '0' + ds % 10;
+    }
+
     int size_len = strlen(str_size);
     // shift the actual data field to the right in order to make room for inserting the size in the first page
     memmove(tx_context.data + size_len, tx_context.data, len - size_len);
@@ -226,7 +227,7 @@ uint16_t verify_data(bool *valid) {
         if (!base64decode(tx_context.data, encoded, ascii_len)) {
             return ERR_INVALID_MESSAGE;
         }
-        compute_data_size(tx_hash_context.current_value, tx_hash_context.data_field_size);
+        compute_data_size(tx_hash_context.data_field_size);
         *valid = true;
     }
     return MSG_OK;
@@ -341,16 +342,16 @@ uint16_t process_field(void) {
 }
 
 // parse_data interprets the json marshalized tx
-uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength) {
-    if ((dataLength == 0) && (tx_hash_context.status == JSON_IDLE)) {
+uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
+    if ((data_length == 0) && (tx_hash_context.status == JSON_IDLE)) {
         return ERR_INVALID_MESSAGE;
     }
     uint8_t idx = 0;
     for (;;) {
-        if (idx >= dataLength) {
+        if (idx >= data_length) {
             break;
         }
-        uint8_t c = dataBuffer[idx];
+        uint8_t c = data_buffer[idx];
         idx++;
         switch(tx_hash_context.status) {
             case JSON_IDLE:
@@ -407,10 +408,10 @@ uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength) {
                             // "data": "YQ==",
                             //               ^
                             // idx is 2 positions ahead of last 2 chars from data value, so idx-2 and idx-3 will contain them
-                            if(dataBuffer[idx-2] == '='){
+                            if(data_buffer[idx-2] == '='){
                                 data_value_len--;
                             }
-                            if(dataBuffer[idx-3] == '='){
+                            if(data_buffer[idx-3] == '='){
                                 data_value_len--;
                             }
                         }
@@ -468,14 +469,14 @@ uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength) {
 }
 
 // parse_esdt_data interprets the ESDT transfer data field of a transaction
-uint16_t parse_esdt_data(const char *dataBuffer, uint16_t dataLength) {
+uint16_t parse_esdt_data(const char *data_buffer, uint16_t data_length) {
     uint16_t idx;
     uint128_t value = {{0,0}};
     bool res;
 
     idx = DATA_SIZE_LEN + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len + 1;
-    dataLength -= idx;
-    res = parse_hex(dataBuffer + idx - 1, dataLength, &value);
+    data_length -= idx;
+    res = parse_hex(data_buffer + idx - 1, data_length, &value);
     if (!res) {
         return ERR_INVALID_AMOUNT;
     }

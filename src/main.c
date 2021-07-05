@@ -21,6 +21,7 @@
 #include "setAddress.h"
 #include "signTxHash.h"
 #include "signMsg.h"
+#include "provideESDTInfo.h"
 #include "menu.h"
 #include "globals.h"
 
@@ -218,6 +219,7 @@ void io_seproxyhal_display(const bagl_element_t *element) {
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
     // needed
+    (void)(channel);
 
     // can't have more than one tag in the reply, not supported yet.
     switch (G_io_seproxyhal_spi_buffer[0]) {
