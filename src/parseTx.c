@@ -475,6 +475,10 @@ uint16_t parse_esdt_data(const char *data_buffer, uint16_t data_length) {
     bool res;
 
     idx = DATA_SIZE_LEN + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len + 1;
+    if (idx > data_len){
+        return ERR_INDEX_OUT_OF_BOUNDS
+    }
+
     data_length -= idx;
     res = parse_hex(data_buffer + idx - 1, data_length, &value);
     if (!res) {
