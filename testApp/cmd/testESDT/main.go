@@ -99,7 +99,7 @@ func main() {
 	h.Write([]byte(toHashStr))
 	hash := h.Sum(nil)
 
-	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), common.TestPkBytes)
+	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
 	signature, _ := privateKey.Sign(hash)
 	fmt.Println(hex.EncodeToString(signature.Serialize())) // debug
 	toSend := append([]byte(toHashStr), signature.Serialize()...)
