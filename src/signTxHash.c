@@ -12,6 +12,7 @@ tx_context_t tx_context;
 
 static uint8_t set_result_signature();
 bool sign_tx_hash(uint8_t *data_buffer);
+bool is_esdt_transfer();
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
@@ -203,19 +204,13 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
     }
 
     bool should_display_esdt_flow = false;
-    bool identifier_len_valid = esdt_info.identifier_len > 0;
-    bool has_data = strlen(tx_context.data) > 0;
-    bool has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
-    bool has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
-    bool same_chainid = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
-
-    if (has_data && identifier_len_valid && has_esdt_transfer_prefix && has_registered_esdt_identifier && same_chainid) {
-            uint16_t res;
-            res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
-            if (res != MSG_OK) {
-                THROW(res);
-            }
-            should_display_esdt_flow = true;
+    if (is_esdt_transfer()) {
+        uint16_t res;
+        res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
+        if (res != MSG_OK) {
+            THROW(res);
+        }
+        should_display_esdt_flow = true;
     }
 
     app_state = APP_STATE_IDLE;
@@ -227,4 +222,20 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
     }
 
     ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
+}
+
+bool is_esdt_transfer() {
+    bool identifier_len_valid = esdt_info.identifier_len > 0;
+    bool has_data = strlen(tx_context.data) > 0;
+    bool has_esdt_transfer_prefix = false;
+    bool has_registered_esdt_identifier = false;
+    bool same_chainid = false;
+
+    if (has_data && identifier_len_valid)  {
+        has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
+        has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
+        same_chainid = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
+    }
+
+    return has_esdt_transfer_prefix && has_registered_esdt_identifier && same_chainid;
 }
