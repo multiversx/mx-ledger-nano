@@ -206,7 +206,7 @@ func GetDeviceInfo(nanos *ledger.NanoS) error {
 }
 
 // GetTxDataFromUser retrieves tx fields from user
-func GetTxDataFromUser(contractData uint8, denomination *big.Float) (string, *big.Int, string, error) {
+func GetTxDataFromUser(contractData uint8, denomination *big.Float, ticker string) (string, *big.Int, string, error) {
 	var err error
 	reader := bufio.NewReader(os.Stdin)
 	// read destination address
@@ -224,7 +224,7 @@ func GetTxDataFromUser(contractData uint8, denomination *big.Float) (string, *bi
 	}
 
 	// read amount
-	fmt.Printf("Amount of %s to send: ", TickerMainnet)
+	fmt.Printf("Amount of %s to send: ", ticker)
 	strAmount, _ := reader.ReadString('\n')
 	strAmount = strings.TrimSpace(strAmount)
 	bigFloatAmount, ok := big.NewFloat(0).SetPrec(0).SetString(strAmount)

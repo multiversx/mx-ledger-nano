@@ -81,7 +81,7 @@ func main() {
 	fmt.Printf("Sender shard: %v\n\rBalance: %v %s\n\rNonce: %v\n\r", strSenderShard, strBalance, ticker, nonce)
 
 	var data string
-	strReceiverAddress, bigIntAmount, _, err := common.GetTxDataFromUser(0, denomination)
+	strReceiverAddress, bigIntAmount, _, err := common.GetTxDataFromUser(0, denomination, ticker)
 	if err != nil {
 		log.Println(err)
 		common.WaitInputAndExit()

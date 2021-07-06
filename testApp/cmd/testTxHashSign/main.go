@@ -77,7 +77,7 @@ func main() {
 	}
 	fmt.Printf("Sender shard: %v\n\rBalance: %v %s\n\rNonce: %v\n\r", strSenderShard, strBalance, ticker, nonce)
 
-	strReceiverAddress, bigIntAmount, data, err := common.GetTxDataFromUser(nanos.ContractData, denomination)
+	strReceiverAddress, bigIntAmount, data, err := common.GetTxDataFromUser(nanos.ContractData, denomination, ticker)
 	if err != nil {
 		log.Println(err)
 		common.WaitInputAndExit()

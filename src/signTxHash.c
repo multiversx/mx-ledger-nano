@@ -204,11 +204,12 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
 
     bool should_display_esdt_flow = false;
     bool identifier_len_valid = esdt_info.identifier_len > 0;
+    bool has_data = strlen(tx_context.data)>0;
     bool has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
     bool has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
     bool is_mainnet_transaction = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
 
-    if (identifier_len_valid && has_esdt_transfer_prefix && has_registered_esdt_identifier && is_mainnet_transaction) {
+    if (has_data && identifier_len_valid && has_esdt_transfer_prefix && has_registered_esdt_identifier && is_mainnet_transaction) {
             uint16_t res;
             res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
             if (res != MSG_OK) {
