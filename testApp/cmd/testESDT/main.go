@@ -99,9 +99,11 @@ func main() {
 	h.Write([]byte(toHashStr))
 	hash := h.Sum(nil)
 
-	privateKey, _ := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
+	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
 	signature, _ := privateKey.Sign(hash)
-	fmt.Println(hex.EncodeToString(signature.Serialize())) // debug
+	fmt.Printf("private key: %s \n", hex.EncodeToString(privateKey.Serialize()))
+	fmt.Printf("public key: %s \n", hex.EncodeToString(publicKey.SerializeUncompressed()))
+	fmt.Printf("signature: %s \n", hex.EncodeToString(signature.Serialize()))
 	toSend := append([]byte(toHashStr), signature.Serialize()...)
 
 	err = nanos.ProvideESDTInfo(toSend)

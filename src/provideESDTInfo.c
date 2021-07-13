@@ -72,11 +72,6 @@ uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
     memmove(esdt_info.chain_id, data_buffer + last_required_len, esdt_info.chain_id_len);
     esdt_info.chain_id[esdt_info.chain_id_len] = '\0';
 
-    // compute hash and verify signature
-    if (data_length < required_len + ESDT_SIGNATURE_LEN) {
-        return ERR_MESSAGE_INCOMPLETE;
-    }
-
     cx_sha256_init(&sha256);
     cx_hash((cx_hash_t *) &sha256, CX_LAST, data_buffer, required_len, hash, 32);
 
@@ -85,13 +80,14 @@ uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
                             sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
                             &tokenKey);
 
+    int signature_size = data_length - required_len;
     if (!cx_ecdsa_verify(&tokenKey,
                          CX_LAST,
                          CX_SHA256,
                          hash,
                          32,
                          data_buffer + required_len,
-                         ESDT_SIGNATURE_LEN)) {
+                         signature_size)) {
         return ERR_INVALID_ESDT_SIGNATURE;
     }
 
