@@ -63,20 +63,20 @@ jobs:
           mkdir sdk
           mkdir sdk/nanos-secure-sdk
 
-          wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q1-update/+download/gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-          tar xf gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-          rm gcc-arm-none-eabi-5_3-2016q1-20160330-linux.tar.bz2
-          mv gcc-arm-none-eabi-5_3-2016q1 buildchain/gcc-arm-none-eabi-5_3-2016q1
+          wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/10-2020q4/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+          tar xf gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+          rm gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux.tar.bz2
+          mv gcc-arm-none-eabi-10-2020-q4-major buildchain/gcc-arm-none-eabi-10-2020-q4-major
 
-          wget http://releases.llvm.org/4.0.0/clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10.tar.xz -O clang+llvm.tar.xz
+          wget https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.0/clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz -O clang+llvm.tar.xz
           tar xf clang+llvm.tar.xz
           rm clang+llvm.tar.xz
-          mv clang+llvm-4.0.0-x86_64-linux-gnu-ubuntu-16.10/* buildchain/clang-arm-fropi
+          mv clang+llvm-10.0.0-x86_64-linux-gnu-ubuntu-18.04/* buildchain/clang-arm-fropi
 
-          wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/nanos-160.tar.gz -O nanos-secure-sdk.tar.gz
+          wget https://github.com/LedgerHQ/nanos-secure-sdk/archive/refs/tags/2.0.0-1.tar.gz -O nanos-secure-sdk.tar.gz
           tar xf nanos-secure-sdk.tar.gz
           rm nanos-secure-sdk.tar.gz
-          mv nanos-secure-sdk-nanos-160/* sdk/nanos-secure-sdk
+          mv nanos-secure-sdk-2.0.0-1/* sdk/nanos-secure-sdk
       - name: Build project
         run: |
           BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk APPVERSION_M=${APPVERSION_M} APPVERSION_N=${APPVERSION_N} APPVERSION_P=${APPVERSION_P} make
