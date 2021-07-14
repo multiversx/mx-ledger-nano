@@ -81,7 +81,7 @@ jobs:
           mv nanos-secure-sdk* sdk/nanos-secure-sdk
       - name: Build project
         run: |
-          BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk APPVERSION_M=${APPVERSION_M} APPVERSION_N=${APPVERSION_N} APPVERSION_P=${APPVERSION_P} make
+          BOLOS_ENV=$(pwd)/buildchain BOLOS_SDK=$(pwd)/sdk/nanos-secure-sdk/nanos-secure-sdk-2.0.0-1 APPVERSION_M=${APPVERSION_M} APPVERSION_N=${APPVERSION_N} APPVERSION_P=${APPVERSION_P} make
       
       - name: Load Release URL File from release job
         uses: actions/download-artifact@v1
