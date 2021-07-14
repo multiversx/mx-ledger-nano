@@ -23,13 +23,13 @@ extern unsigned int ux_step_count;
 extern uint32_t bip32_account;
 extern uint32_t bip32_address_index;
 
-typedef struct internalStorage_t {
+typedef struct internal_storage_t {
     unsigned char setting_contract_data;
     uint8_t initialized;
-} internalStorage_t;
+} internal_storage_t;
 
-extern const internalStorage_t N_storage_real;
-#define N_storage (*(volatile internalStorage_t*) PIC(&N_storage_real))
+extern const internal_storage_t N_storage_real;
+#define N_storage (*(volatile internal_storage_t*) PIC(&N_storage_real))
 
 // common types for sign message and sign tx hash
 

@@ -11,7 +11,7 @@ typedef struct {
 
 static msg_context_t msg_context;
 
-static uint8_t setResultSignature();
+static uint8_t set_result_signature();
 bool sign_message(void);
 
 // UI for confirming the message hash on screen
@@ -25,7 +25,7 @@ UX_STEP_NOCB(
 UX_STEP_VALID(
     ux_sign_msg_flow_15_step, 
     pb, 
-    sendResponse(setResultSignature(), true),
+    send_response(set_result_signature(), true),
     {
       &C_icon_validate_14,
       "Sign message",
@@ -33,7 +33,7 @@ UX_STEP_VALID(
 UX_STEP_VALID(
     ux_sign_msg_flow_16_step, 
     pb,
-    sendResponse(0, false),
+    send_response(0, false),
     {
       &C_icon_crossmark,
       "Reject",
@@ -52,7 +52,7 @@ void init_msg_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-static uint8_t setResultSignature() {
+static uint8_t set_result_signature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
     G_io_apdu_buffer[tx++] = sig_size;
@@ -85,20 +85,20 @@ bool sign_message(void) {
     return success;
 }
 
-void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags) {
+void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         char tmp[11];
         uint32_t index;
         uint32_t base = 10;
         uint8_t pos = 0;
-        // first 4 bytes from dataBuffer should be the message length (big endian uint32)
-        if (dataLength < 4) {
+        // first 4 bytes from data_buffer should be the message length (big endian uint32)
+        if (data_length < 4) {
             THROW(ERR_INVALID_MESSAGE);
         }
         app_state = APP_STATE_SIGNING_MESSAGE;
-        msg_context.len = U4BE(dataBuffer, 0);
-        dataBuffer += 4;
-        dataLength -= 4;
+        msg_context.len = U4BE(data_buffer, 0);
+        data_buffer += 4;
+        data_length -= 4;
         // initialize hash with the constant string to prepend
         cx_keccak_init(&sha3_context, 256);
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
@@ -124,19 +124,19 @@ void handleSignMsg(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLen
     if (p2 != 0) {
         THROW(ERR_INVALID_ARGUMENTS);
     }
-    if (dataLength > msg_context.len) {
+    if (data_length > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash((cx_hash_t *)&sha3_context, 0, dataBuffer, dataLength, NULL, 0);
-    msg_context.len -= dataLength;
+    cx_hash((cx_hash_t *)&sha3_context, 0, data_buffer, data_length, NULL, 0);
+    msg_context.len -= data_length;
     if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, dataBuffer, 0, msg_context.hash, 32);
+    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, 32);
     snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
 
     // sign the hash
