@@ -94,7 +94,7 @@ func main() {
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
 	// ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
-	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", 3, "DRD", 20, "4452442d633462303861", 2, 1, "T")
+	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", 5, "TESDT", 24, "54455344542d386531386365", 5, 1, "T")
 	h := sha256.New()
 	h.Write([]byte(toHashStr))
 	hash := h.Sum(nil)
@@ -112,7 +112,7 @@ func main() {
 		common.WaitInputAndExit()
 	}
 
-	data = "ESDTTransfer@4452442d633462303861@7B"
+	data = "ESDTTransfer@54455344542d386531386365@0aae60"
 
 	// generate and sign transaction
 	var tx common.Transaction
@@ -122,7 +122,7 @@ func main() {
 	tx.Nonce = nonce
 	tx.GasPrice = netConfig.Data.Config.MinGasPrice
 	tx.Data = []byte(data)
-	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
+	tx.GasLimit = 600000
 	tx.ChainID = netConfig.Data.Config.ChainID
 	tx.Version = common.TxHashSignVersion
 	tx.Options = common.TxHashSignOptions
