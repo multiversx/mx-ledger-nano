@@ -64,3 +64,4 @@ typedef enum {
 #define GAS_PER_DATA_BYTE     1500
 #define GAS_PRICE_DIVIDER     100
 #define MIN_GAS_LIMIT         50000
+#define MAX_AUTH_TOKEN_LEN    100

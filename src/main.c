@@ -34,6 +34,7 @@
 #define INS_SIGN_MSG              0x06
 #define INS_SIGN_TX_HASH          0x07
 #define INS_PROVIDE_ESDT_INFO     0x08
+#define INS_GET_ADDR_AUTH_TOKEN   0x09
 
 #define OFFSET_CLA   0
 #define OFFSET_INS   1
@@ -84,8 +85,12 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_GET_ADDR:
-                    handle_get_address(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handle_get_address(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], true, flags, tx);
                     break;
+
+                case INS_GET_ADDR_AUTH_TOKEN:
+                    handle_get_address(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], true, flags, tx);
+                    break;    
 
                 case INS_SET_ADDR:
                     ret = handle_set_address(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
