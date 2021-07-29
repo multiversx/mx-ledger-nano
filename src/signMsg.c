@@ -146,6 +146,6 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
     }
 
     app_state = APP_STATE_IDLE;
-    ux_flow_init(0, ux_sign_msg_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;
+    ux_flow_init(0, ux_sign_msg_flow, NULL);
 }

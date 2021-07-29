@@ -10,7 +10,6 @@ import (
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
 )
 
-// main function
 func main() {
 	log.SetFlags(0)
 

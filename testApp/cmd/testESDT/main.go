@@ -13,7 +13,6 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 )
 
-// main function
 func main() {
 	log.SetFlags(0)
 

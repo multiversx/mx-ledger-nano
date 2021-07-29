@@ -1,14 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/ElrondNetwork/ledger-elrond/testApp/cmd/common"
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
 )
 
-// main function
 func main() {
 	log.SetFlags(0)
 
@@ -39,7 +41,13 @@ func main() {
 		log.Println(common.ErrSetAddress, err)
 		common.WaitInputAndExit()
 	}
-	senderAddress, signature, err := nanos.GetAddressWithAuthToken(nanos.Account, nanos.AddressIndex, "test token 123 {}")
+
+	fmt.Print("Token to be signed: ")
+	reader := bufio.NewReader(os.Stdin)
+	tkn, _ := reader.ReadString('\n')
+	tkn = strings.TrimSpace(tkn)
+
+	senderAddress, signature, err := nanos.GetAddressWithAuthToken(nanos.Account, nanos.AddressIndex, tkn)
 	if err != nil {
 		log.Println(common.ErrGetAddress, err)
 		common.WaitInputAndExit()
