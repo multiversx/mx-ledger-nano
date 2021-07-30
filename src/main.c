@@ -21,6 +21,7 @@
 #include "setAddress.h"
 #include "signTxHash.h"
 #include "signMsg.h"
+#include "provideESDTInfo.h"
 #include "menu.h"
 #include "globals.h"
 
@@ -32,6 +33,7 @@
 #define INS_SET_ADDR              0x05
 #define INS_SIGN_MSG              0x06
 #define INS_SIGN_TX_HASH          0x07
+#define INS_PROVIDE_ESDT_INFO     0x08
 
 #define OFFSET_CLA   0
 #define OFFSET_INS   1
@@ -42,7 +44,7 @@
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 
-void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx);
+void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);
 void elrond_main(void);
 void io_seproxyhal_display(const bagl_element_t *element);
 unsigned char io_event(unsigned char channel);
@@ -50,7 +52,7 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len);
 void app_exit(void);
 void nv_app_state_init();
 
-void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
+void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
     uint16_t ret;
 
@@ -82,11 +84,11 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_GET_ADDR:
-                    handleGetAddress(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handle_get_address(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
                     break;
 
                 case INS_SET_ADDR:
-                    ret = handleSetAddress(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    ret = handle_set_address(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
                     THROW(ret);
                     break;
 
@@ -96,11 +98,16 @@ void handleApdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_MSG:
-                    handleSignMsg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    handle_sign_msg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
                     break;
 
                 case INS_SIGN_TX_HASH:
-                    handleSignTxHash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    handle_sign_tx_hash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    break;
+
+                case INS_PROVIDE_ESDT_INFO:
+                    ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    THROW(ret);
                     break;
 
                 default:
@@ -167,7 +174,7 @@ void elrond_main(void) {
                     THROW(0x6982);
                 }
 
-                handleApdu(&flags, &tx);
+                handle_apdu(&flags, &tx);
             }
             CATCH(EXCEPTION_IO_RESET) {
               THROW(EXCEPTION_IO_RESET);
@@ -212,6 +219,7 @@ void io_seproxyhal_display(const bagl_element_t *element) {
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
     // needed
+    (void)(channel);
 
     // can't have more than one tag in the reply, not supported yet.
     switch (G_io_seproxyhal_spi_buffer[0]) {
@@ -301,10 +309,10 @@ void app_exit(void) {
 
 void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
-        internalStorage_t storage;
+        internal_storage_t storage;
         storage.setting_contract_data = DEFAULT_CONTRACT_DATA;
         storage.initialized = 0x01;
-        nvm_write((internalStorage_t*)&N_storage, (void*)&storage, sizeof(internalStorage_t));
+        nvm_write((internal_storage_t*)&N_storage, (void*)&storage, sizeof(internal_storage_t));
     }
 }
 

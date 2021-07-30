@@ -11,10 +11,12 @@ typedef struct {
     char fee[MAX_AMOUNT_LEN + PRETTY_SIZE];
     char data[MAX_DISPLAY_DATA_SIZE + DATA_SIZE_LEN];
     uint32_t data_size;
+    char chain_id[MAX_CHAINID_LEN];
     uint8_t signature[64];
 } tx_context_t;
 
 extern tx_context_t tx_context;
 extern tx_hash_context_t tx_hash_context;
 
-uint16_t parse_data(const uint8_t *dataBuffer, uint16_t dataLength);
+uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length);
+uint16_t parse_esdt_data(const char *data_buffer, uint16_t data_length);

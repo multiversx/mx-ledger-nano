@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdbool.h>
+
 typedef enum {
     NETWORK_MAINNET = 0,
     NETWORK_TESTNET = 1
@@ -31,12 +33,14 @@ typedef enum {
 #define ERR_DATA_TOO_LONG          0x6E0E // singTxWithHash
 #define ERR_WRONG_TX_OPTIONS       0x6E0F // signTxWithHash
 #define ERR_SIGN_TX_DEPRECATED     0x6E11 // signTx - deprecated
+#define ERR_INVALID_ESDT_SIGNATURE 0x6E12
+#define ERR_INDEX_OUT_OF_BOUNDS    0x6E13
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH          5
 #define COIN_TYPE_EGLD      508UL
-#define TICKER_MAINNET      "eGLD"
-#define TICKER_TESTNET      "XeGLD"
+#define TICKER_MAINNET      "EGLD"
+#define TICKER_TESTNET      "xEGLD"
 #define HRP                 "erd"
 #define DECIMAL_PLACES      18
 #define MAINNET_CHAIN_ID    "1"

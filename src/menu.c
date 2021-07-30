@@ -118,7 +118,7 @@ const char* info_submenu_getter(unsigned int idx) {
 void info_submenu_selector(unsigned int idx) {
     switch(idx) {
     case 0:
-        viewAppVersion();
+        view_app_version();
         break;
     default:
         ui_idle();

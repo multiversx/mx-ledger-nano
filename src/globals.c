@@ -8,7 +8,7 @@ bolos_ux_params_t G_ux_params;
 // display stepped screens
 unsigned int ux_step;
 unsigned int ux_step_count;
-const internalStorage_t N_storage_real;
+const internal_storage_t N_storage_real;
 
 // selected account global variables
 uint32_t bip32_account;

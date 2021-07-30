@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math"
@@ -8,6 +10,7 @@ import (
 
 	"github.com/ElrondNetwork/ledger-elrond/testApp/cmd/common"
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
+	"github.com/btcsuite/btcd/btcec"
 )
 
 // main function
@@ -77,7 +80,8 @@ func main() {
 	}
 	fmt.Printf("Sender shard: %v\n\rBalance: %v %s\n\rNonce: %v\n\r", strSenderShard, strBalance, ticker, nonce)
 
-	strReceiverAddress, bigIntAmount, data, err := common.GetTxDataFromUser(nanos.ContractData, denomination, ticker)
+	var data string
+	strReceiverAddress, bigIntAmount, _, err := common.GetTxDataFromUser(0, denomination, ticker)
 	if err != nil {
 		log.Println(err)
 		common.WaitInputAndExit()
@@ -88,6 +92,27 @@ func main() {
 		common.WaitInputAndExit()
 	}
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
+
+	// ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
+	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", 3, "DRD", 20, "4452442d633462303861", 2, 1, "T")
+	h := sha256.New()
+	h.Write([]byte(toHashStr))
+	hash := h.Sum(nil)
+
+	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
+	signature, _ := privateKey.Sign(hash)
+	fmt.Printf("private key: %s \n", hex.EncodeToString(privateKey.Serialize()))
+	fmt.Printf("public key: %s \n", hex.EncodeToString(publicKey.SerializeUncompressed()))
+	fmt.Printf("signature: %s \n", hex.EncodeToString(signature.Serialize()))
+	toSend := append([]byte(toHashStr), signature.Serialize()...)
+
+	err = nanos.ProvideESDTInfo(toSend)
+	if err != nil {
+		log.Println(err)
+		common.WaitInputAndExit()
+	}
+
+	data = "ESDTTransfer@4452442d633462303861@7B"
 
 	// generate and sign transaction
 	var tx common.Transaction

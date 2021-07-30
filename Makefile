@@ -24,7 +24,7 @@ APP_LOAD_PARAMS= --curve ed25519 --path "44'/508'" --appFlags 0x240 $(COMMON_LOA
 
 APPVERSION_M:=$(if $(APPVERSION_M),$(APPVERSION_M),1)
 APPVERSION_N:=$(if $(APPVERSION_N),$(APPVERSION_N),0)
-APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),12)
+APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),13)
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 APPNAME = "Elrond"
 
@@ -102,7 +102,7 @@ endif
 ifneq ($(BOLOS_ENV),)
 $(info BOLOS_ENV=$(BOLOS_ENV))
 CLANGPATH := $(BOLOS_ENV)/clang-arm-fropi/bin/
-GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-5_3-2016q1/bin/
+GCCPATH := $(BOLOS_ENV)/gcc-arm-none-eabi-10-2020-q4-major/bin/
 else
 $(info BOLOS_ENV is not set: falling back to CLANGPATH and GCCPATH)
 endif
