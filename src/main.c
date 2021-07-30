@@ -17,12 +17,12 @@
 ********************************************************************************/
 
 #include "utils.h"
-#include "getAddress.h"
-#include "setAddress.h"
-#include "signTxHash.h"
-#include "signMsg.h"
-#include "signMsgAuthToken.h"
-#include "provideESDTInfo.h"
+#include "get_address.h"
+#include "set_address.h"
+#include "sign_tx_hash.h"
+#include "sign_msg.h"
+#include "sign_msg_auth_token.h"
+#include "provide_ESDT_info.h"
 #include "menu.h"
 #include "globals.h"
 

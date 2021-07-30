@@ -1,5 +1,5 @@
-#include "getPrivateKey.h"
-#include "signMsg.h"
+#include "get_private_key.h"
+#include "sign_msg.h"
 #include "utils.h"
 
 typedef struct {

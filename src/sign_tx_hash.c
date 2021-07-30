@@ -1,9 +1,9 @@
 #include "globals.h"
-#include "signTxHash.h"
+#include "sign_tx_hash.h"
 #include <uint256.h>
-#include "parseTx.h"
-#include "getPrivateKey.h"
-#include "provideESDTInfo.h"
+#include "parse_tx.h"
+#include "get_private_key.h"
+#include "provide_ESDT_info.h"
 #include "utils.h"
 #include "ux.h"
 

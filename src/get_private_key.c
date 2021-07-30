@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "constants.h"
-#include "getPrivateKey.h"
+#include "get_private_key.h"
 
 static const uint32_t HARDENED_OFFSET = 0x80000000;
 static const uint32_t derivePath[BIP32_PATH] = {

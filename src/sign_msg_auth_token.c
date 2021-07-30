@@ -1,6 +1,6 @@
-#include "getPrivateKey.h"
-#include "signMsgAuthToken.h"
-#include "addressHelpers.h"
+#include "get_private_key.h"
+#include "sign_msg_auth_token.h"
+#include "address_helpers.h"
 #include "utils.h"
 
 typedef struct {
@@ -13,7 +13,7 @@ typedef struct {
 
 static token_auth_context_t token_auth_context;
 
-static uint8_t set_result_auth_token();
+static uint8_t set_result_auth_token(void);
 bool sign_auth_token(void);
 
 // UI for confirming the message hash on screen

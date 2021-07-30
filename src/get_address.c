@@ -2,9 +2,9 @@
 #include <stddef.h>
 
 #include "bech32.h"
-#include "getAddress.h"
-#include "getPrivateKey.h"
-#include "addressHelpers.h"
+#include "get_address.h"
+#include "get_private_key.h"
+#include "address_helpers.h"
 #include "globals.h"
 #include "os.h"
 #include "ux.h"
