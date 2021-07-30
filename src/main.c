@@ -90,7 +90,7 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_GET_ADDR_AUTH_TOKEN:
-                    handle_auth_token(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handle_auth_token(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
                     break;    
 
                 case INS_SET_ADDR:
