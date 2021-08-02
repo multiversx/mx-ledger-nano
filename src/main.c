@@ -104,7 +104,7 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_MSG:
-                    handle_sign_msg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    handle_sign_msg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
                     break;
 
                 case INS_SIGN_TX_HASH:

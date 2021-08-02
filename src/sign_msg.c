@@ -84,8 +84,8 @@ bool sign_message(void) {
     return success;
 }
 
-void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
-     /* 
+void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+     /*
         data buffer structure should be:
         <message length> + <token>
                ^             ^
@@ -93,10 +93,9 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
 
         the message length is computed in the first bulk, while the entire message can come in multiple bulks
     */
-
     if (p1 == P1_FIRST) {
         char message_length_str[11];
-       
+
         // first 4 bytes from data_buffer should be the message length (big endian uint32)
         if (data_length < 4) {
             THROW(ERR_INVALID_MESSAGE);
@@ -122,9 +121,6 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
       if (app_state != APP_STATE_SIGNING_MESSAGE) {
           THROW(ERR_INVALID_MESSAGE);
       }
-    }
-    if (p2 != 0) {
-        THROW(ERR_INVALID_ARGUMENTS);
     }
     if (data_length > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
