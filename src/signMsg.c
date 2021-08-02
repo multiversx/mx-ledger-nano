@@ -85,7 +85,7 @@ bool sign_message(void) {
     return success;
 }
 
-void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
     if (p1 == P1_FIRST) {
         char tmp[11];
         uint32_t index;
@@ -120,9 +120,6 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
       if (app_state != APP_STATE_SIGNING_MESSAGE) {
           THROW(ERR_INVALID_MESSAGE);
       }
-    }
-    if (p2 != 0) {
-        THROW(ERR_INVALID_ARGUMENTS);
     }
     if (data_length > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
