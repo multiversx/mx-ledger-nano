@@ -58,7 +58,7 @@ static uint8_t set_result_get_address() {
 }
 
 void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags, volatile unsigned int *tx) {
-    uint8_t publicKey[PUBLIC_LEY_LEN];
+    uint8_t publicKey[PUBLIC_KEY_LEN];
     uint32_t account, index;
 
     if (data_length != sizeof(uint32_t) * 2) {

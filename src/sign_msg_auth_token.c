@@ -142,7 +142,7 @@ void handle_auth_token(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, v
             THROW(ERR_INVALID_MESSAGE);
         }
 
-        uint8_t public_key[PUBLIC_LEY_LEN];
+        uint8_t public_key[PUBLIC_KEY_LEN];
 
         uint32_t const account_index = read_uint32_be(data_buffer);
         uint32_t const address_index = read_uint32_be(data_buffer + sizeof(uint32_t));

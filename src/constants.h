@@ -69,7 +69,7 @@ typedef enum {
 #define HASH_LEN              32
 #define MESSAGE_SIGNATURE_LEN 64
 #define SHA3_KECCAK_BITS      256
-#define PUBLIC_LEY_LEN        32
+#define PUBLIC_KEY_LEN        32
 
 static const char PREPEND[] = "\x17"
                               "Elrond Signed Message:\n";
