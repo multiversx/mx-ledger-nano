@@ -19,3 +19,16 @@ void send_response(uint8_t tx, bool approve) {
     // Display back the original UX
     ui_idle();
 }
+
+void uint32_t_to_char_array(uint32_t const input, char *output) {
+  uint32_t const base = 10;
+  uint32_t index;
+  uint8_t pos = 0;
+  for (index = 1; (((index * base) <= input) &&
+            (((index * base) / base) == index));
+            index *= base);
+  for (; index; index /= base) {
+            output[pos++] = '0' + ((input / index) % base);
+        }
+    output[pos] = '\0';
+}

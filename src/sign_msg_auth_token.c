@@ -4,10 +4,10 @@
 #include "utils.h"
 
 typedef struct {
-    char address[62];
+    char address[BECH32_ADDRESS_LEN];
     uint32_t len;
-    uint8_t hash[32];
-    uint8_t signature[64];
+    uint8_t hash[HASH_LEN];
+    uint8_t signature[SIGNATURE_LEN];
     char token[MAX_DISPLAY_DATA_SIZE];
 } token_auth_context_t;
 
@@ -62,7 +62,7 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-void update_token_display_data(uint8_t *data_buffer, uint8_t data_length) {
+void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
     if(strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
         return;
     }
@@ -86,13 +86,12 @@ void update_token_display_data(uint8_t *data_buffer, uint8_t data_length) {
     }
 }
 
-
-static uint8_t set_result_auth_token() {
+static uint8_t set_result_auth_token(void) {
     uint8_t tx = 0;
-    char complete_response[strlen(token_auth_context.address) + 64]; // <addresssignature>
+    char complete_response[strlen(token_auth_context.address) + SIGNATURE_LEN]; // <addresssignature>
     memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
-    memmove(complete_response + strlen(token_auth_context.address), token_auth_context.signature, 64);
-    const uint8_t response_size = strlen(token_auth_context.address) + 64;
+    memmove(complete_response + strlen(token_auth_context.address), token_auth_context.signature, SIGNATURE_LEN);
+    const uint8_t response_size = strlen(token_auth_context.address) + SIGNATURE_LEN;
 
     G_io_apdu_buffer[tx++] = response_size;
     memmove(G_io_apdu_buffer + tx, complete_response, response_size);
@@ -110,7 +109,7 @@ bool sign_auth_token(void) {
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, token_auth_context.hash, 32, NULL, 0, token_auth_context.signature, 64, NULL);
+            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, token_auth_context.hash, 32, NULL, 0, token_auth_context.signature, SIGNATURE_LEN, NULL);
         }
         CATCH_ALL {
             success = false;
@@ -125,18 +124,28 @@ bool sign_auth_token(void) {
 }
 
 void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+    /* 
+        data buffer structure should be:
+        <account index> + <address index> + <token length> + <token>
+               ^                 ^                 ^            ^
+           4 bytes           4 bytes           4 bytes     <token length> bytes
+
+        the account and address indexes, alongside token length are computed in the first bulk, while the entire token can come in multiple bulks
+    */
     if (p1 == P1_FIRST) {
+        memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
         token_auth_context.token[0] = '\0';
-        char tmp[11];
-        uint32_t index;
-        uint32_t base = 10;
-        uint8_t pos = 0;
+        char token_length_str[11];
+
+        // check that the indexes and the length are valid
+        if (data_length < 12) {
+            THROW(ERR_INVALID_MESSAGE);
+        }
 
         uint8_t public_key[32];
-        uint32_t account_index, address_index;
 
-        account_index = read_uint32_be(data_buffer);
-        address_index = read_uint32_be(data_buffer + sizeof(uint32_t));
+        uint32_t const account_index = read_uint32_be(data_buffer);
+        uint32_t const address_index = read_uint32_be(data_buffer + sizeof(uint32_t));
         if (!get_public_key(account_index, address_index, public_key)) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
@@ -145,11 +154,13 @@ void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t da
 
         app_state = APP_STATE_SIGNING_MESSAGE;
     
+        // account and address indexes (4 bytes each) have been read, so skip the first 8 bytes
         data_buffer += 8;
         data_length -= 8;
  
         token_auth_context.len = U4BE(data_buffer, 0);
 
+        // the token length (4 bytes) has been read, so skip the next 4 bytes
         data_buffer += 4;
         data_length -= 4;
 
@@ -160,17 +171,11 @@ void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t da
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
 
         // convert message length to string and store it in the variable `tmp`
-        uint32_t full_message_len = token_auth_context.len + 62;
-        for (index = 1; (((index * base) <= full_message_len) &&
-            (((index * base) / base) == index));
-            index *= base);
-        for (; index; index /= base) {
-            tmp[pos++] = '0' + ((full_message_len / index) % base);
-        }
-        tmp[pos] = '\0';
+        uint32_t full_message_len = token_auth_context.len + BECH32_ADDRESS_LEN;
+        uint32_t_to_char_array(full_message_len, token_length_str);
 
         // add the message length to the hash
-        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)tmp, pos, NULL, 0);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)token_length_str, strlen(token_length_str), NULL, 0);
 
         // add the message length to the hash
         cx_hash((cx_hash_t *)&sha3_context, 0, token_auth_context.address, strlen(token_auth_context.address), NULL, 0);
@@ -199,7 +204,7 @@ void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t da
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, token_auth_context.hash, 32);
+    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, token_auth_context.hash, HASH_LEN);
 
     // sign the hash
     if (!sign_auth_token()) {
