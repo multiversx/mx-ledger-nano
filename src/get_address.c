@@ -57,17 +57,17 @@ static uint8_t set_result_get_address() {
     return tx;
 }
 
-void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *dataBuffer, uint16_t dataLength, volatile unsigned int *flags, volatile unsigned int *tx) {
-    uint8_t publicKey[32];
+void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags, volatile unsigned int *tx) {
+    uint8_t publicKey[PUBLIC_LEY_LEN];
     uint32_t account, index;
 
-    if (dataLength != sizeof(uint32_t) * 2) {
+    if (data_length != sizeof(uint32_t) * 2) {
         THROW(ERR_INVALID_ARGUMENTS);
         return;
     }
 
-    account = read_uint32_be(dataBuffer);
-    index = read_uint32_be(dataBuffer + sizeof(uint32_t));
+    account = read_uint32_be(data_buffer);
+    index = read_uint32_be(data_buffer + sizeof(uint32_t));
     if (!get_public_key(account, index, publicKey)) {
         THROW(ERR_INVALID_ARGUMENTS);
     }

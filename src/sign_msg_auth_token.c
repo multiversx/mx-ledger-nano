@@ -7,7 +7,7 @@ typedef struct {
     char address[BECH32_ADDRESS_LEN];
     uint32_t len;
     uint8_t hash[HASH_LEN];
-    uint8_t signature[SIGNATURE_LEN];
+    uint8_t signature[MESSAGE_SIGNATURE_LEN];
     char token[MAX_DISPLAY_DATA_SIZE];
 } token_auth_context_t;
 
@@ -88,10 +88,10 @@ void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_le
 
 static uint8_t set_result_auth_token(void) {
     uint8_t tx = 0;
-    char complete_response[strlen(token_auth_context.address) + SIGNATURE_LEN]; // <addresssignature>
+    char complete_response[strlen(token_auth_context.address) + MESSAGE_SIGNATURE_LEN]; // <addresssignature>
     memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
-    memmove(complete_response + strlen(token_auth_context.address), token_auth_context.signature, SIGNATURE_LEN);
-    const uint8_t response_size = strlen(token_auth_context.address) + SIGNATURE_LEN;
+    memmove(complete_response + strlen(token_auth_context.address), token_auth_context.signature, MESSAGE_SIGNATURE_LEN);
+    const uint8_t response_size = strlen(token_auth_context.address) + MESSAGE_SIGNATURE_LEN;
 
     G_io_apdu_buffer[tx++] = response_size;
     memmove(G_io_apdu_buffer + tx, complete_response, response_size);
@@ -109,7 +109,7 @@ bool sign_auth_token(void) {
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, token_auth_context.hash, 32, NULL, 0, token_auth_context.signature, SIGNATURE_LEN, NULL);
+            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, token_auth_context.hash, HASH_LEN, NULL, 0, token_auth_context.signature, MESSAGE_SIGNATURE_LEN, NULL);
         }
         CATCH_ALL {
             success = false;
@@ -142,7 +142,7 @@ void handle_auth_token(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, v
             THROW(ERR_INVALID_MESSAGE);
         }
 
-        uint8_t public_key[32];
+        uint8_t public_key[PUBLIC_LEY_LEN];
 
         uint32_t const account_index = read_uint32_be(data_buffer);
         uint32_t const address_index = read_uint32_be(data_buffer + sizeof(uint32_t));
@@ -167,7 +167,7 @@ void handle_auth_token(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, v
         update_token_display_data(data_buffer, data_length);
 
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&sha3_context, 256);
+        cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
 
         // convert message length to string and store it in the variable `tmp`

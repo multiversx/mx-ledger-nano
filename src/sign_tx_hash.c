@@ -168,7 +168,7 @@ void init_tx_context() {
     tx_context.receiver[0] = 0;
     tx_context.chain_id[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init(&sha3_context, 256);
+    cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
 
     app_state = APP_STATE_IDLE;
 }

@@ -20,6 +20,7 @@ void send_response(uint8_t tx, bool approve) {
     ui_idle();
 }
 
+// TODO: refactor this function
 void uint32_t_to_char_array(uint32_t const input, char *output) {
   uint32_t const base = 10;
   uint32_t index;

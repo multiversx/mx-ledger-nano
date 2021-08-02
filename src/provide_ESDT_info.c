@@ -11,7 +11,7 @@ esdt_info_t esdt_info;
 uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
     uint8_t last_required_len = 0;
     uint8_t required_len = 1;
-    uint8_t hash[32];
+    uint8_t hash[HASH_LEN];
     cx_sha256_t sha256;
     cx_ecfp_public_key_t tokenKey;
 

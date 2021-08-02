@@ -5,8 +5,8 @@
 typedef struct {
     uint32_t len;
     uint8_t hash[HASH_LEN];
-    char strhash[65];
-    uint8_t signature[SIGNATURE_LEN];
+    char strhash[2 * HASH_LEN + 1];
+    uint8_t signature[MESSAGE_SIGNATURE_LEN];
 } msg_context_t;
 
 static msg_context_t msg_context;
@@ -54,9 +54,9 @@ void init_msg_context(void) {
 
 static uint8_t set_result_signature() {
     uint8_t tx = 0;
-    G_io_apdu_buffer[tx++] = SIGNATURE_LEN;
-    memmove(G_io_apdu_buffer + tx, msg_context.signature, SIGNATURE_LEN);
-    tx += SIGNATURE_LEN;
+    G_io_apdu_buffer[tx++] = MESSAGE_SIGNATURE_LEN;
+    memmove(G_io_apdu_buffer + tx, msg_context.signature, MESSAGE_SIGNATURE_LEN);
+    tx += MESSAGE_SIGNATURE_LEN;
     return tx;
 }
 
@@ -70,7 +70,7 @@ bool sign_message(void) {
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, HASH_LEN, NULL, 0, msg_context.signature, SIGNATURE_LEN, NULL);
+            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, HASH_LEN, NULL, 0, msg_context.signature, MESSAGE_SIGNATURE_LEN, NULL);
         }
         CATCH_ALL {
             success = false;
@@ -87,7 +87,7 @@ bool sign_message(void) {
 void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
      /*
         data buffer structure should be:
-        <message length> + <token>
+        <message length> + <message>
                ^             ^
            4 bytes      <message length> bytes
 
@@ -105,7 +105,7 @@ void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, vol
         data_buffer += 4;
         data_length -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&sha3_context, 256);
+        cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
 
         // convert message length to string and store it in the variable `message_length_str`

@@ -44,6 +44,7 @@ bool get_public_key(uint32_t account_number, uint32_t index, uint8_t *public_key
     return true;
 }
 
+// TODO: maybe make this function more general and extract to a new file binary <-> hex converters
 void get_address_hex_from_binary(uint8_t *public_key, char *address) {
     const char hex[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     uint8_t i;
