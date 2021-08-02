@@ -56,6 +56,7 @@ void get_address_hex_from_binary(uint8_t *public_key, char *address) {
     address[64] = '\0';
 }
 
+// TODO: analyze and refactor this function
 void get_address_bech32_from_binary(uint8_t *public_key, char *address) {
     uint8_t buffer[33];
 

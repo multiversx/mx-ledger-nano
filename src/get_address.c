@@ -58,7 +58,7 @@ static uint8_t set_result_get_address() {
 }
 
 void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags, volatile unsigned int *tx) {
-    uint8_t publicKey[PUBLIC_KEY_LEN];
+    uint8_t public_key[PUBLIC_KEY_LEN];
     uint32_t account, index;
 
     if (data_length != sizeof(uint32_t) * 2) {
@@ -68,16 +68,16 @@ void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t d
 
     account = read_uint32_be(data_buffer);
     index = read_uint32_be(data_buffer + sizeof(uint32_t));
-    if (!get_public_key(account, index, publicKey)) {
+    if (!get_public_key(account, index, public_key)) {
         THROW(ERR_INVALID_ARGUMENTS);
     }
 
     switch(p2) {
         case P2_DISPLAY_BECH32:
-            get_address_bech32_from_binary(publicKey, address);
+            get_address_bech32_from_binary(public_key, address);
             break;
         case P2_DISPLAY_HEX:
-            get_address_hex_from_binary(publicKey, address);
+            get_address_hex_from_binary(public_key, address);
             break;
         default:
             THROW(ERR_INVALID_ARGUMENTS);
