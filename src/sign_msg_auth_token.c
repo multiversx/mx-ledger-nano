@@ -123,7 +123,7 @@ bool sign_auth_token(void) {
     return success;
 }
 
-void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+void handle_auth_token(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
     /* 
         data buffer structure should be:
         <account index> + <address index> + <token length> + <token>
@@ -187,9 +187,6 @@ void handle_auth_token(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t da
       if (app_state != APP_STATE_SIGNING_MESSAGE) {
           THROW(ERR_INVALID_MESSAGE);
       }
-    }
-    if (p2 != 0) {
-        THROW(ERR_INVALID_ARGUMENTS);
     }
     if (data_length > token_auth_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
