@@ -6,4 +6,4 @@
 #include "os.h"
 #include "cx.h"
 
-bool getPrivateKey(uint32_t account, uint32_t addressIndex, cx_ecfp_private_key_t *privateKey);
+bool get_private_key(uint32_t account_index, uint32_t address_index, cx_ecfp_private_key_t *private_key);

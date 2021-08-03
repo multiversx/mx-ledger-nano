@@ -61,22 +61,22 @@ static uint8_t set_result_signature() {
 }
 
 bool sign_message(void) {
-    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_private_key_t private_key;
     bool success = true;
 
-    if (!getPrivateKey(bip32_account, bip32_address_index, &privateKey)) {
+    if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, HASH_LEN, NULL, 0, msg_context.signature, MESSAGE_SIGNATURE_LEN, NULL);
+            cx_eddsa_sign(&private_key, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, HASH_LEN, NULL, 0, msg_context.signature, MESSAGE_SIGNATURE_LEN, NULL);
         }
         CATCH_ALL {
             success = false;
         }
         FINALLY {
-            memset(&privateKey, 0, sizeof(privateKey));
+            memset(&private_key, 0, sizeof(private_key));
         }
     }
     END_TRY;
@@ -144,6 +144,6 @@ void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, vol
     }
 
     app_state = APP_STATE_IDLE;
-    *flags |= IO_ASYNCH_REPLY;
     ux_flow_init(0, ux_sign_msg_flow, NULL);
+    *flags |= IO_ASYNCH_REPLY;
 }

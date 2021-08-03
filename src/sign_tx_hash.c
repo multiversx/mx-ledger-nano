@@ -134,23 +134,23 @@ static uint8_t set_result_signature() {
 }
 
 bool sign_tx_hash(uint8_t *data_buffer) {
-    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_private_key_t private_key;
     bool success = true;
 
-    if (!getPrivateKey(bip32_account, bip32_address_index, &privateKey)) {
+    if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
     BEGIN_TRY {
         TRY {
             cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, tx_hash_context.hash, 32);
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_hash_context.hash, 32, NULL, 0, tx_context.signature, 64, NULL);
+            cx_eddsa_sign(&private_key, CX_RND_RFC6979 | CX_LAST, CX_SHA512, tx_hash_context.hash, 32, NULL, 0, tx_context.signature, 64, NULL);
         }
         CATCH_ALL {
             success = false;
         }
         FINALLY {
-            memset(&privateKey, 0, sizeof(privateKey));
+            memset(&private_key, 0, sizeof(private_key));
         }
     }
     END_TRY;
@@ -214,14 +214,15 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
     }
 
     app_state = APP_STATE_IDLE;
-    *flags |= IO_ASYNCH_REPLY;
+   
 
     if(should_display_esdt_flow) {
         ux_flow_init(0, ux_transfer_esdt_flow, NULL);
-        return;
+    } else {
+        ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
     }
 
-    ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
+     *flags |= IO_ASYNCH_REPLY;
 }
 
 bool is_esdt_transfer() {

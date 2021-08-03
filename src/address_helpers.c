@@ -13,7 +13,7 @@ bool get_public_key(uint32_t account_number, uint32_t index, uint8_t *public_key
     cx_ecfp_public_key_t public_key;
     bool error = false;
 
-    if (!getPrivateKey(account_number, index, &private_key)) {
+    if (!get_private_key(account_number, index, &private_key)) {
         return false;
     }
 
