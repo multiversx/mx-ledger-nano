@@ -3,10 +3,10 @@
 #include <uint256.h>
 
 #include "constants.h"
-#include "signTxHash.h"
+#include "sign_tx_hash.h"
 #include "base64.h"
-#include "parseTx.h"
-#include "provideESDTInfo.h"
+#include "parse_tx.h"
+#include "provide_ESDT_info.h"
 
 #ifndef FUZZING
 #include "globals.h"

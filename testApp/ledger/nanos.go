@@ -3,6 +3,7 @@ package ledger
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
@@ -13,14 +14,15 @@ import (
 const (
 	cla = 0xED // identifies an Elrond app command
 
-	cmdGetVersion       = 0x01
-	cmdGetConfiguration = 0x02
-	cmdGetAddress       = 0x03
-	cmdSignTxn          = 0x04
-	cmdSetAddress       = 0x05
-	cmdSignMsg          = 0x06
-	cmdSignTxnHash      = 0x07
-	cmdProvideESDTInfo  = 0x08
+	cmdGetVersion             = 0x01
+	cmdGetConfiguration       = 0x02
+	cmdGetAddress             = 0x03
+	cmdSignTxn                = 0x04
+	cmdSetAddress             = 0x05
+	cmdSignMsg                = 0x06
+	cmdSignTxnHash            = 0x07
+	cmdProvideESDTInfo        = 0x08
+	cmdGetAddressAndAuthToken = 0x09
 
 	p1WithConfirmation = 0x01
 	p1NoConfirmation   = 0x00
@@ -185,6 +187,43 @@ func (n *NanoS) GetAddress(account uint32, index uint32) (pubkey []byte, err err
 // (without confirmation on device)
 func (n *NanoS) GetAddressWithoutConfirmation(account uint32, index uint32) (pubkey []byte, err error) {
 	return n.getAddress(account, index, p1NoConfirmation)
+}
+
+// GetAddressWithAuthToken retrieves the address from the device, alongside with the signature for auth token
+func (n *NanoS) GetAddressWithAuthToken(account uint32, index uint32, token string) (string, string, error) {
+	encAccount := make([]byte, 4)
+	binary.BigEndian.PutUint32(encAccount, account)
+	encIndex := make([]byte, 4)
+	binary.BigEndian.PutUint32(encIndex, index)
+
+	encLen := make([]byte, 4)
+	binary.BigEndian.PutUint32(encLen, uint32(len(token)))
+
+	dataField := append(encAccount, encIndex...)
+	dataField = append(dataField, encLen...)
+	dataField = append(dataField, []byte(token)...)
+
+	buf := new(bytes.Buffer)
+	buf.Write(dataField)
+
+	var resp []byte = nil
+	var err error
+	for buf.Len() > 0 {
+		var p1 byte = p1More
+		if resp == nil {
+			p1 = p1First
+		}
+		toSend := buf.Next(math.MaxUint8)
+		resp, err = n.Exchange(cmdGetAddressAndAuthToken, p1, 0, byte(len(toSend)), toSend)
+		if err != nil {
+			return "", "", err
+		}
+	}
+
+	response := resp[1:]
+	address := string(response[:62])
+	signature := hex.EncodeToString(response[62:])
+	return address, signature, nil
 }
 
 func (n *NanoS) getAddress(account uint32, index uint32, confirmation byte) (pubkey []byte, err error) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "constants.h"
-#include "signTxHash.h"
+#include "sign_tx_hash.h"
 
 typedef struct {
     char receiver[FULL_ADDRESS_LENGTH];

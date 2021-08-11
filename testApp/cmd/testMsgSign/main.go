@@ -45,7 +45,6 @@ func checkSignature(address string, message string, signature []byte) error {
 	return txSingleSigner.Verify(publicKey, sha, signature)
 }
 
-// main function
 func main() {
 	log.SetFlags(0)
 
