@@ -1,6 +1,6 @@
 #include "menu.h"
 #include "os.h"
-#include "viewAppVersion.h"
+#include "view_app_version.h"
 
 const char* const setting_contract_data_getter_values[] = {
     "No",

@@ -35,7 +35,7 @@ var Status = [...]string{"Disabled", "Enabled"}
 
 /*
 For testing the ESDT tokens whitelisting, one can use the following sk. For this secret key, you have to update the public
-key LEDGER_SIGNATURE_PUBLIC_KEY in ledger-elrond/src/provideESDTInfo.h
+key LEDGER_SIGNATURE_PUBLIC_KEY in ledger-elrond/src/provide_ESDT_info.h
 The public key specific to this secret key is:
 static const uint8_t LEDGER_SIGNATURE_PUBLIC_KEY[] = {
     0x04, 0x0d, 0x04, 0x9d, 0xd5, 0x3d, 0x97, 0x7d, 0x21, 0x92, 0xed, 0xeb, 0xba, 0xac, 0x71,

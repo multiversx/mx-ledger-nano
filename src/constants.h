@@ -64,3 +64,12 @@ typedef enum {
 #define GAS_PER_DATA_BYTE     1500
 #define GAS_PRICE_DIVIDER     100
 #define MIN_GAS_LIMIT         50000
+#define MAX_AUTH_TOKEN_LEN    100
+#define BECH32_ADDRESS_LEN    62
+#define HASH_LEN              32
+#define MESSAGE_SIGNATURE_LEN 64
+#define SHA3_KECCAK_BITS      256
+#define PUBLIC_KEY_LEN        32
+
+static const char PREPEND[] = "\x17"
+                              "Elrond Signed Message:\n";

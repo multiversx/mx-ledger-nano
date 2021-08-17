@@ -1,12 +1,12 @@
-#include "getPrivateKey.h"
-#include "signMsg.h"
+#include "get_private_key.h"
+#include "sign_msg.h"
 #include "utils.h"
 
 typedef struct {
     uint32_t len;
-    uint8_t hash[32];
-    char strhash[65];
-    uint8_t signature[64];
+    uint8_t hash[HASH_LEN];
+    char strhash[2 * HASH_LEN + 1];
+    uint8_t signature[MESSAGE_SIGNATURE_LEN];
 } msg_context_t;
 
 static msg_context_t msg_context;
@@ -54,30 +54,29 @@ void init_msg_context(void) {
 
 static uint8_t set_result_signature() {
     uint8_t tx = 0;
-    const uint8_t sig_size = 64;
-    G_io_apdu_buffer[tx++] = sig_size;
-    memmove(G_io_apdu_buffer + tx, msg_context.signature, sig_size);
-    tx += sig_size;
+    G_io_apdu_buffer[tx++] = MESSAGE_SIGNATURE_LEN;
+    memmove(G_io_apdu_buffer + tx, msg_context.signature, MESSAGE_SIGNATURE_LEN);
+    tx += MESSAGE_SIGNATURE_LEN;
     return tx;
 }
 
 bool sign_message(void) {
-    cx_ecfp_private_key_t privateKey;
+    cx_ecfp_private_key_t private_key;
     bool success = true;
 
-    if (!getPrivateKey(bip32_account, bip32_address_index, &privateKey)) {
+    if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
     BEGIN_TRY {
         TRY {
-            cx_eddsa_sign(&privateKey, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, 32, NULL, 0, msg_context.signature, 64, NULL);
+            cx_eddsa_sign(&private_key, CX_RND_RFC6979 | CX_LAST, CX_SHA512, msg_context.hash, HASH_LEN, NULL, 0, msg_context.signature, MESSAGE_SIGNATURE_LEN, NULL);
         }
         CATCH_ALL {
             success = false;
         }
         FINALLY {
-            memset(&privateKey, 0, sizeof(privateKey));
+            memset(&private_key, 0, sizeof(private_key));
         }
     }
     END_TRY;
@@ -85,12 +84,18 @@ bool sign_message(void) {
     return success;
 }
 
-void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
+     /*
+        data buffer structure should be:
+        <message length> + <message>
+               ^             ^
+           4 bytes      <message length> bytes
+
+        the message length is computed in the first bulk, while the entire message can come in multiple bulks
+    */
     if (p1 == P1_FIRST) {
-        char tmp[11];
-        uint32_t index;
-        uint32_t base = 10;
-        uint8_t pos = 0;
+        char message_length_str[11];
+
         // first 4 bytes from data_buffer should be the message length (big endian uint32)
         if (data_length < 4) {
             THROW(ERR_INVALID_MESSAGE);
@@ -100,18 +105,14 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
         data_buffer += 4;
         data_length -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&sha3_context, 256);
+        cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
-        // convert message length to string and store it in the variable `tmp`
-        for (index = 1; (((index * base) <= msg_context.len) &&
-            (((index * base) / base) == index));
-            index *= base);
-        for (; index; index /= base) {
-            tmp[pos++] = '0' + ((msg_context.len / index) % base);
-        }
-        tmp[pos] = '\0';
+
+        // convert message length to string and store it in the variable `message_length_str`
+        uint32_t_to_char_array(msg_context.len, message_length_str);
+
         // add the message length to the hash
-        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)tmp, pos, NULL, 0);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)message_length_str, strlen(message_length_str), NULL, 0);
     }
     else {
       if (p1 != P1_MORE) {
@@ -120,9 +121,6 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
       if (app_state != APP_STATE_SIGNING_MESSAGE) {
           THROW(ERR_INVALID_MESSAGE);
       }
-    }
-    if (p2 != 0) {
-        THROW(ERR_INVALID_ARGUMENTS);
     }
     if (data_length > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
@@ -136,7 +134,7 @@ void handle_sign_msg(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, 32);
+    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
     snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
 
     // sign the hash
