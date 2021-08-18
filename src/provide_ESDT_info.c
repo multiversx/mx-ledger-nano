@@ -2,8 +2,7 @@
 #include "constants.h"
 #include <string.h>
 #include <ux.h>
-#include <lcx_ecdsa.h>
-#include <lcx_sha256.h>
+#include <cx.h>
 #include "globals.h"
 
 esdt_info_t esdt_info;
