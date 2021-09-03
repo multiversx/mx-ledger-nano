@@ -32,7 +32,7 @@ bool get_private_key(uint32_t account_index, uint32_t address_index, cx_ecfp_pri
             success = false;
         }
         FINALLY {
-            memset(private_key_data, 0, sizeof(private_key_data));
+            explicit_bzero(private_key_data, sizeof(private_key_data));
         }
     }
     END_TRY;

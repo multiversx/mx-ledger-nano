@@ -115,7 +115,7 @@ bool sign_auth_token(void) {
             success = false;
         }
         FINALLY {
-            memset(&private_key, 0, sizeof(private_key));
+            explicit_bzero(&private_key, sizeof(private_key));
         }
     }
     END_TRY;
@@ -178,7 +178,7 @@ void handle_auth_token(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, v
         cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)token_length_str, strlen(token_length_str), NULL, 0);
 
         // add the message length to the hash
-        cx_hash((cx_hash_t *)&sha3_context, 0, token_auth_context.address, strlen(token_auth_context.address), NULL, 0);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)token_auth_context.address, strlen(token_auth_context.address), NULL, 0);
     }
     else {
       if (p1 != P1_MORE) {
