@@ -150,7 +150,7 @@ bool sign_tx_hash(uint8_t *data_buffer) {
             success = false;
         }
         FINALLY {
-            memset(&private_key, 0, sizeof(private_key));
+            explicit_bzero(&private_key, sizeof(private_key));
         }
     }
     END_TRY;

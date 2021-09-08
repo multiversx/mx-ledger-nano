@@ -7,9 +7,10 @@
 
 esdt_info_t esdt_info;
 
-uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
-    uint8_t last_required_len = 0;
-    uint8_t required_len = 1;
+// TODO: refactor the input so signature can be checked before parsing all token fields
+uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_length) {
+    size_t last_required_len = 0;
+    size_t required_len = 1;
     uint8_t hash[HASH_LEN];
     cx_sha256_t sha256;
     cx_ecfp_public_key_t tokenKey;
@@ -26,7 +27,7 @@ uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memmove(esdt_info.ticker, data_buffer + last_required_len, esdt_info.ticker_len);
+    memcpy(esdt_info.ticker, data_buffer + last_required_len, esdt_info.ticker_len);
     esdt_info.ticker[esdt_info.ticker_len] = '\0';
     
     // read identifier len
@@ -43,7 +44,7 @@ uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memmove(esdt_info.identifier, data_buffer + last_required_len, esdt_info.identifier_len);
+    memcpy(esdt_info.identifier, data_buffer + last_required_len, esdt_info.identifier_len);
     esdt_info.identifier[esdt_info.identifier_len] = '\0';
 
     // read decimals
@@ -68,7 +69,7 @@ uint16_t handle_provide_ESDT_info(uint8_t *data_buffer, uint16_t data_length) {
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memmove(esdt_info.chain_id, data_buffer + last_required_len, esdt_info.chain_id_len);
+    memcpy(esdt_info.chain_id, data_buffer + last_required_len, esdt_info.chain_id_len);
     esdt_info.chain_id[esdt_info.chain_id_len] = '\0';
 
     cx_sha256_init(&sha256);
