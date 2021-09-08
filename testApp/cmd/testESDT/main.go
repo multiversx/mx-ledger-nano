@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -94,16 +93,17 @@ func main() {
 
 	// ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
 	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", 3, "DRD", 20, "4452442d633462303861", 2, 1, "T")
-	h := sha256.New()
-	h.Write([]byte(toHashStr))
-	hash := h.Sum(nil)
+	//h := sha256.New()
+	//h.Write([]byte(toHashStr))
+	//hash := h.Sum(nil)
 
+	signaturesBytes, _ := hex.DecodeString("3044022053be2428f709a1c1c3f281fa55c83bf6ecb9e61955dd306d568c63ec040b86f802204adbf1cb366e35627c5bd39a30b48d4c2a2e1c1e61ee631ebbd86c729455c735")
 	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
-	signature, _ := privateKey.Sign(hash)
+	//signature, _ := privateKey.Sign(hash)
 	fmt.Printf("private key: %s \n", hex.EncodeToString(privateKey.Serialize()))
 	fmt.Printf("public key: %s \n", hex.EncodeToString(publicKey.SerializeUncompressed()))
-	fmt.Printf("signature: %s \n", hex.EncodeToString(signature.Serialize()))
-	toSend := append([]byte(toHashStr), signature.Serialize()...)
+	fmt.Printf("signature: %s \n", hex.EncodeToString(signaturesBytes))
+	toSend := append([]byte(toHashStr), signaturesBytes...)
 
 	err = nanos.ProvideESDTInfo(toSend)
 	if err != nil {
