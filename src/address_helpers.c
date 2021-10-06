@@ -25,7 +25,7 @@ bool get_public_key(uint32_t account_number, uint32_t index, uint8_t *public_key
             error = true;
         }
         FINALLY {
-            memset(&private_key, 0, sizeof(private_key));
+            explicit_bzero(&private_key, sizeof(private_key));
         }
     }
     END_TRY;
@@ -45,7 +45,7 @@ bool get_public_key(uint32_t account_number, uint32_t index, uint8_t *public_key
 }
 
 // TODO: maybe make this function more general and extract to a new file binary <-> hex converters
-void get_address_hex_from_binary(uint8_t *public_key, char *address) {
+void get_address_hex_from_binary(const uint8_t *public_key, char *address) {
     const char hex[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     uint8_t i;
 
@@ -57,10 +57,10 @@ void get_address_hex_from_binary(uint8_t *public_key, char *address) {
 }
 
 // TODO: analyze and refactor this function
-void get_address_bech32_from_binary(uint8_t *public_key, char *address) {
+void get_address_bech32_from_binary(const uint8_t *public_key, char *address) {
     uint8_t buffer[33];
 
-    memmove(buffer, public_key, 32);
+    memcpy(buffer, public_key, 32);
     buffer[32] = '\0';
     bech32EncodeFromBytes(address, HRP, buffer, 33);
 }
