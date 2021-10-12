@@ -44,6 +44,12 @@ typedef enum {
 #define HRP                 "erd"
 #define DECIMAL_PLACES      18
 #define MAINNET_CHAIN_ID    "1"
+#define TESTNET_CHAIN_ID    "T"
+#define DEVNET_CHAIN_ID     "D"
+#define MAINNET_NETWORK     "Mainnet"
+#define TESTNET_NETWORK     "Testnet"
+#define DEVNET_NETWORK      "Devnet"
+#define UNKNOWN_NETWORK     "Unknown"
 #define TX_VERSION          1
 #define TX_HASH_VERSION     2
 #define TX_HASH_OPTIONS     1
@@ -56,7 +62,7 @@ typedef enum {
 #define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
 #define DATA_SIZE_LEN         17
 #define MAX_CHAINID_LEN       4
-#define MAX_TICKER_LEN        5
+#define MAX_TICKER_LEN        10
 #define MAX_UINT32_LEN        10    // len(f"{0xffffffff:d}")
 #define MAX_UINT64_LEN        20    // len(f"{0xffffffffffffffff:d}")
 #define MAX_UINT128_LEN       39    // len(f"{0xffffffffffffffffffffffffffffffff:d}")
@@ -70,6 +76,8 @@ typedef enum {
 #define MESSAGE_SIGNATURE_LEN 64
 #define SHA3_KECCAK_BITS      256
 #define PUBLIC_KEY_LEN        32
+#define MAX_ESDT_VALUE_HEX_COUNT  32
+#define ESDT_TRANSFER_PREFIX "ESDTTransfer@"
 
 static const char PREPEND[] = "\x17"
                               "Elrond Signed Message:\n";

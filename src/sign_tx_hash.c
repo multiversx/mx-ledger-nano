@@ -43,6 +43,13 @@ UX_STEP_NOCB(
       .title = "Fee",
       .text = tx_context.fee,
     });
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_29_step, 
+    bnnn_paging, 
+    {
+      .title = "Network",
+      .text = tx_context.network,
+    });    
 UX_STEP_VALID(
     ux_transfer_esdt_flow_27_step, 
     pb, 
@@ -65,6 +72,7 @@ UX_FLOW(ux_transfer_esdt_flow,
   &ux_transfer_esdt_flow_24_step,
   &ux_transfer_esdt_flow_25_step,
   &ux_transfer_esdt_flow_26_step,
+  &ux_transfer_esdt_flow_29_step,
   &ux_transfer_esdt_flow_27_step,
   &ux_transfer_esdt_flow_28_step
 );
@@ -98,6 +106,13 @@ UX_STEP_NOCB(
       .title = "Data",
       .text = tx_context.data,
     });
+UX_STEP_NOCB(
+    ux_sign_tx_hash_flow_30_step, 
+    bnnn_paging, 
+    {
+      .title = "Network",
+      .text = tx_context.network,
+    });     
 UX_STEP_VALID(
     ux_sign_tx_hash_flow_21_step, 
     pb, 
@@ -120,6 +135,7 @@ UX_FLOW(ux_sign_tx_hash_flow,
   &ux_sign_tx_hash_flow_18_step,
   &ux_sign_tx_hash_flow_19_step,
   &ux_sign_tx_hash_flow_20_step,
+  &ux_sign_tx_hash_flow_30_step,
   &ux_sign_tx_hash_flow_21_step,
   &ux_sign_tx_hash_flow_22_step
 );
@@ -167,6 +183,7 @@ void init_tx_context() {
     tx_context.gas_price = 0;
     tx_context.receiver[0] = 0;
     tx_context.chain_id[0] = 0;
+    tx_context.esdt_value[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
 

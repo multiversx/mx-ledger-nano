@@ -76,12 +76,23 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
                     // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not to be taken into account anymore
                     // since now those variables are 32 bit long, but we still expect 6 bytes
-                    // transmitted to maintain compatibility with the web wallet. The respective
-                    // values (account and address_index) should now be read with the help of the getAddress function.
+                    // transmitted to maintain compatibility with the web wallet.
+                    // Account index should be read from bits 6->9, while address index should be read from bits 10->13 (Big Endian)
                     G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
                     G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
-                    *tx = 6;
+
+                    G_io_apdu_buffer[6] = bip32_account >> 24;
+                    G_io_apdu_buffer[7] = bip32_account >> 16;
+                    G_io_apdu_buffer[8] = bip32_account >> 8;
+                    G_io_apdu_buffer[9] = bip32_account;
+
+                    G_io_apdu_buffer[10] = bip32_address_index >> 24;
+                    G_io_apdu_buffer[11] = bip32_address_index >> 16;
+                    G_io_apdu_buffer[12] = bip32_address_index >> 8;
+                    G_io_apdu_buffer[13] = bip32_address_index;
+
+                    *tx = 14;
                     THROW(MSG_OK);
                     break;
 
