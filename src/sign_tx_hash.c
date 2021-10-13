@@ -247,13 +247,18 @@ bool is_esdt_transfer() {
     bool has_data = strlen(tx_context.data) > 0;
     bool has_esdt_transfer_prefix = false;
     bool has_registered_esdt_identifier = false;
+    bool next_char_after_identifier_is_at_separator = false;
     bool same_chainid = false;
 
     if (has_data && identifier_len_valid)  {
         has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
         has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
+
+        size_t identifier_end_position = DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len;
+        next_char_after_identifier_is_at_separator = (strlen(tx_context.data) > identifier_end_position) && (tx_context.data[identifier_end_position] == '@');
+
         same_chainid = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
     }
 
-    return has_esdt_transfer_prefix && has_registered_esdt_identifier && same_chainid;
+    return has_esdt_transfer_prefix && has_registered_esdt_identifier && next_char_after_identifier_is_at_separator && same_chainid;
 }

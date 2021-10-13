@@ -280,7 +280,7 @@ static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t 
     tx_context.esdt_value[0] = '2';
     size_t num_chars_to_copy = esdt_value_end_position - esdt_value_start_position + 1;
     memmove(tx_context.esdt_value + 1, data_field + esdt_value_start_position, num_chars_to_copy);
-    tx_context.esdt_value[num_chars_to_copy] = '\0';
+    tx_context.esdt_value[num_chars_to_copy + 1] = '\0';
 }
 
 // verify "chainID" field
@@ -496,18 +496,14 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
                     tx_hash_context.status = JSON_EXPECTING_COMMA;
                     break;
                 }
-                if (!is_data_field && tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
-                    return ERR_INVALID_FEE;
-                }
-                if (is_data_field && tx_hash_context.current_value_len >= MAX_DATA_VALUE_LEN) {
-                    if (tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
+                if (tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
+                    if (is_data_field && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
                         tx_hash_context.current_value_len++;
                         break;
+                    } else {
+                        return ERR_INVALID_MESSAGE;
                     }
-
-                    return ERR_INVALID_MESSAGE;
                 }
-
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
             }
                 break;
