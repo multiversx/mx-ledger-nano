@@ -542,7 +542,6 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
 
 // parse_esdt_data interprets the ESDT transfer data field of a transaction
 uint16_t parse_esdt_data() {
-    uint16_t idx;
     uint128_t value = {{0,0}};
     bool res;
 
