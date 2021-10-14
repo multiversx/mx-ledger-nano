@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -55,7 +54,7 @@ func main() {
 		log.Println(common.ErrSetAddress, err)
 		common.WaitInputAndExit()
 	}
-	senderAddress, err := nanos.GetAddress(nanos.Account, nanos.AddressIndex)
+	senderAddress, err := nanos.GetAddressWithoutConfirmation(nanos.Account, nanos.AddressIndex)
 	if err != nil {
 		log.Println(common.ErrGetAddress, err)
 		common.WaitInputAndExit()
@@ -92,18 +91,23 @@ func main() {
 	}
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
+	// These token details are from a whitelisted testnet token. Alternatively, any token can be tested by generating
+	// the signature using the private key described in testscommon.TestSkBytes and by setting it's public key inside
+	// Ledger app
+	tokenTicker := "BUSD"
+	numDecimals := 18
+	tokenIdentifier := "425553442d663263343664"
+	chainID := "T"
+	signature, _ := hex.DecodeString("304402207d2e749601bcec748ceb80bdc107cdde2bcb2f69fd8a82ceeb94fb088d90b1cc022032e008de068fe6eafc4b0a88e45c2b0b9f4ba62db9c0499d23e85df053295708")
+
 	// ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
-	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", 3, "DRD", 20, "4452442d633462303861", 2, 1, "T")
-	h := sha256.New()
-	h.Write([]byte(toHashStr))
-	hash := h.Sum(nil)
+	toHashStr := fmt.Sprintf("%c%s%c%s%c%c%s", len(tokenTicker), tokenTicker, len(tokenIdentifier), tokenIdentifier, numDecimals, len(chainID), chainID)
 
 	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), common.TestSkBytes)
-	signature, _ := privateKey.Sign(hash)
 	fmt.Printf("private key: %s \n", hex.EncodeToString(privateKey.Serialize()))
 	fmt.Printf("public key: %s \n", hex.EncodeToString(publicKey.SerializeUncompressed()))
-	fmt.Printf("signature: %s \n", hex.EncodeToString(signature.Serialize()))
-	toSend := append([]byte(toHashStr), signature.Serialize()...)
+	fmt.Printf("signature: %s \n", hex.EncodeToString(signature))
+	toSend := append([]byte(toHashStr), signature...)
 
 	err = nanos.ProvideESDTInfo(toSend)
 	if err != nil {
@@ -111,7 +115,8 @@ func main() {
 		common.WaitInputAndExit()
 	}
 
-	data = "ESDTTransfer@4452442d633462303861@7B"
+	fmt.Println("provided ESDT info")
+	data = fmt.Sprintf("ESDTTransfer@%s@%s", tokenIdentifier, "15af1d78b58c40000")
 
 	// generate and sign transaction
 	var tx common.Transaction
@@ -121,7 +126,7 @@ func main() {
 	tx.Nonce = nonce
 	tx.GasPrice = netConfig.Data.Config.MinGasPrice
 	tx.Data = []byte(data)
-	tx.GasLimit = netConfig.Data.Config.MinGasLimit + uint64(len(data))*netConfig.Data.Config.GasPerDataByte
+	tx.GasLimit = uint64(600_000 + 1500*len(tx.Data))
 	tx.ChainID = netConfig.Data.Config.ChainID
 	tx.Version = common.TxHashSignVersion
 	tx.Options = common.TxHashSignOptions
