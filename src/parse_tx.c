@@ -565,7 +565,7 @@ uint16_t parse_esdt_data() {
     }
 
     char *amount = tx_context.amount;
-    if (!tostring128(&value, 10, amount, 40)) {
+    if (!tostring128(&value, 10, amount, ESDT_VALUE_MAX_LENGTH)) {
         memmove(tx_context.amount, tx_context.esdt_value, strlen(tx_context.esdt_value));
         return ERR_INVALID_AMOUNT;
     }

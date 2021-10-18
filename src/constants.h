@@ -81,5 +81,7 @@ typedef enum {
 #define ESDT_TRANSFER_PREFIX     "ESDTTransfer@"
 #define ESDT_CODE_VALUE_TOO_HIGH '1'
 #define ESDT_CODE_VALUE_OK       '2'
+#define ESDT_VALUE_MAX_LENGTH    40
+
 static const char PREPEND[] = "\x17"
                               "Elrond Signed Message:\n";
