@@ -77,7 +77,7 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not to be taken into account anymore
                     // since now those variables are 32 bit long, but we still expect 6 bytes
                     // transmitted to maintain compatibility with the web wallet.
-                    // Account index should be read from bits 6->9, while address index should be read from bits 10->13 (Big Endian)
+                    // Account index should be read from bytes 6->9, while address index should be read from bytes 10->13 (Big Endian)
                     G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
                     G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;

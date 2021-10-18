@@ -16,42 +16,42 @@ bool is_esdt_transfer();
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_23_step, 
+    ux_transfer_esdt_flow_24_step, 
     bnnn_paging, 
     {
       .title = "Token",
       .text = esdt_info.ticker,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_24_step, 
+    ux_transfer_esdt_flow_25_step, 
     bnnn_paging, 
     {
       .title = "Value",
       .text = tx_context.amount,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_25_step, 
+    ux_transfer_esdt_flow_26_step, 
     bnnn_paging, 
     {
       .title = "Receiver",
       .text = tx_context.receiver,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_26_step, 
+    ux_transfer_esdt_flow_27_step, 
     bnnn_paging, 
     {
       .title = "Fee",
       .text = tx_context.fee,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_29_step, 
+    ux_transfer_esdt_flow_28_step, 
     bnnn_paging, 
     {
       .title = "Network",
       .text = tx_context.network,
     });    
 UX_STEP_VALID(
-    ux_transfer_esdt_flow_27_step, 
+    ux_transfer_esdt_flow_29_step, 
     pb, 
     send_response(set_result_signature(), true),
     {
@@ -59,7 +59,7 @@ UX_STEP_VALID(
       "Confirm transfer",
     });
 UX_STEP_VALID(
-    ux_transfer_esdt_flow_28_step, 
+    ux_transfer_esdt_flow_30_step, 
     pb,
     send_response(0, false),
     {
@@ -68,13 +68,13 @@ UX_STEP_VALID(
     });
 
 UX_FLOW(ux_transfer_esdt_flow,
-  &ux_transfer_esdt_flow_23_step,
   &ux_transfer_esdt_flow_24_step,
   &ux_transfer_esdt_flow_25_step,
   &ux_transfer_esdt_flow_26_step,
-  &ux_transfer_esdt_flow_29_step,
   &ux_transfer_esdt_flow_27_step,
-  &ux_transfer_esdt_flow_28_step
+  &ux_transfer_esdt_flow_28_step,
+  &ux_transfer_esdt_flow_29_step,
+  &ux_transfer_esdt_flow_30_step
 );
 
 // UI for confirming the tx details of the transaction on screen
@@ -107,14 +107,14 @@ UX_STEP_NOCB(
       .text = tx_context.data,
     });
 UX_STEP_NOCB(
-    ux_sign_tx_hash_flow_30_step, 
+    ux_sign_tx_hash_flow_21_step, 
     bnnn_paging, 
     {
       .title = "Network",
       .text = tx_context.network,
     });     
 UX_STEP_VALID(
-    ux_sign_tx_hash_flow_21_step, 
+    ux_sign_tx_hash_flow_22_step, 
     pb, 
     send_response(set_result_signature(), true),
     {
@@ -122,7 +122,7 @@ UX_STEP_VALID(
       "Sign transaction",
     });
 UX_STEP_VALID(
-    ux_sign_tx_hash_flow_22_step, 
+    ux_sign_tx_hash_flow_23_step, 
     pb,
     send_response(0, false),
     {
@@ -135,9 +135,9 @@ UX_FLOW(ux_sign_tx_hash_flow,
   &ux_sign_tx_hash_flow_18_step,
   &ux_sign_tx_hash_flow_19_step,
   &ux_sign_tx_hash_flow_20_step,
-  &ux_sign_tx_hash_flow_30_step,
   &ux_sign_tx_hash_flow_21_step,
-  &ux_sign_tx_hash_flow_22_step
+  &ux_sign_tx_hash_flow_22_step,
+  &ux_sign_tx_hash_flow_23_step
 );
 
 static uint8_t set_result_signature() {
@@ -184,6 +184,7 @@ void init_tx_context() {
     tx_context.receiver[0] = 0;
     tx_context.chain_id[0] = 0;
     tx_context.esdt_value[0] = 0;
+    tx_context.network[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
 
