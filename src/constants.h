@@ -76,12 +76,19 @@ typedef enum {
 #define MESSAGE_SIGNATURE_LEN 64
 #define SHA3_KECCAK_BITS      256
 #define PUBLIC_KEY_LEN        32
+#define BASE_10               10
+#define BASE_64_INVALID_CHAR     '?'
+#define SC_ARGS_SEPARATOR        '@'
 #define MAX_ESDT_VALUE_HEX_COUNT 32
 #define INVALID_INDEX            -1
-#define ESDT_TRANSFER_PREFIX     "ESDTTransfer@"
 #define ESDT_CODE_VALUE_TOO_HIGH '1'
 #define ESDT_CODE_VALUE_OK       '2'
 #define ESDT_VALUE_MAX_LENGTH    40
+#define ESDT_TRANSFER_PREFIX     "ESDTTransfer@"
+#define ESDT_VALUE_N_A           "N/a"
+#define ESDT_VALUE_TOO_LONG      "<value too big to display>"
+#define ESDT_VALUE_HEX_PARSE_ERR "<value cannot be parsed to hex>"
+#define ESDT_TRANSFER_PREFIX_LENGTH 13 // used for avoiding a strlen call for ESDT_TRANSFER_PREFIX
 
 static const char PREPEND[] = "\x17"
                               "Elrond Signed Message:\n";

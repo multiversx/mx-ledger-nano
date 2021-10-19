@@ -14,7 +14,7 @@
 
 static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t encoded_data_length);
 static void set_network(const char *chain_id);
-static void set_esdt_value_not_available();
+static void set_message_in_amount(const char* message);
 
 // make the eGLD/token amount look pretty. Add decimals, decimal point and ticker name
 bool make_amount_pretty(char *amount, size_t max_size, char* ticker, int decimals_places) {
@@ -119,7 +119,7 @@ bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char
     x.elements[1] = gas_price;
     mul128(&x, &y, &z);
     /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
-    if (!tostring128(&z, 10, fee, size - 1)) {
+    if (!tostring128(&z, BASE_10, fee, size - 1)) {
         return false;
     }
     return true;
@@ -231,7 +231,7 @@ uint16_t verify_data(bool *valid) {
         if (!base64decode(tx_context.data, encoded, ascii_len)) {
             return ERR_INVALID_MESSAGE;
         }
-        if(strncmp(tx_context.data, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0) {
+        if(strncmp(tx_context.data, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0) {
             extract_esdt_value(tx_hash_context.current_value, tx_hash_context.current_value_len);
         }
         compute_data_size(tx_hash_context.data_field_size);
@@ -250,8 +250,8 @@ static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t 
     }
 
     int esdt_value_start_position = INVALID_INDEX;
-    for(int idx=strlen(ESDT_TRANSFER_PREFIX); idx<strlen(data_field); idx++) {
-        if(data_field[idx]=='@'){
+    for(int idx=ESDT_TRANSFER_PREFIX_LENGTH; idx<strlen(data_field); idx++) {
+        if(data_field[idx]==SC_ARGS_SEPARATOR){
             esdt_value_start_position = idx + 1;
             break;
         }
@@ -262,7 +262,7 @@ static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t 
 
     int esdt_value_end_position = INVALID_INDEX;
     for(int idx=esdt_value_start_position; idx<strlen(data_field); idx++) {
-        if(data_field[idx]=='@' || data_field[idx]=='?'){
+        if(data_field[idx]==SC_ARGS_SEPARATOR || data_field[idx]==BASE_64_INVALID_CHAR){
             esdt_value_end_position = idx - 1;
             break;
         }
@@ -547,25 +547,23 @@ uint16_t parse_esdt_data() {
     bool res;
 
     if(strlen(tx_context.esdt_value) == 0) {
-        set_esdt_value_not_available();
+        set_message_in_amount(ESDT_VALUE_N_A);
         return MSG_OK;
     }
 
     if((strlen(tx_context.esdt_value) == 1) && tx_context.esdt_value[0] == ESDT_CODE_VALUE_TOO_HIGH) {
-        char* too_long_message = "<value too big to display>";
-        memmove(tx_context.amount, too_long_message, strlen(too_long_message));
-        tx_context.amount[strlen(too_long_message)] = '\0';
+        set_message_in_amount(ESDT_VALUE_TOO_LONG);
         return MSG_OK;
     } 
 
     res = parse_hex(tx_context.esdt_value + 1, strlen(tx_context.esdt_value) - 1, &value);
     if (!res) {
-        set_esdt_value_not_available();
+        set_message_in_amount(ESDT_VALUE_HEX_PARSE_ERR);
         return MSG_OK;
     }
 
     char *amount = tx_context.amount;
-    if (!tostring128(&value, 10, amount, ESDT_VALUE_MAX_LENGTH)) {
+    if (!tostring128(&value, BASE_10, amount, ESDT_VALUE_MAX_LENGTH)) {
         memmove(tx_context.amount, tx_context.esdt_value, strlen(tx_context.esdt_value));
         return ERR_INVALID_AMOUNT;
     }
@@ -576,8 +574,7 @@ uint16_t parse_esdt_data() {
     return MSG_OK;
 }
 
-static void set_esdt_value_not_available() {
-    char* n_a_message = "N/A";
-    memmove(tx_context.amount, n_a_message, strlen(n_a_message));
-    tx_context.amount[strlen(n_a_message)] = '\0';
+static void set_message_in_amount(const char* message) {
+    memmove(tx_context.amount, message, strlen(message));
+    tx_context.amount[strlen(message)] = '\0';
 }
