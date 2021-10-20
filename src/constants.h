@@ -88,7 +88,7 @@ typedef enum {
 #define ESDT_VALUE_N_A           "N/a"
 #define ESDT_VALUE_TOO_LONG      "<value too big to display>"
 #define ESDT_VALUE_HEX_PARSE_ERR "<value cannot be parsed to hex>"
-#define ESDT_TRANSFER_PREFIX_LENGTH 13 // used for avoiding a strlen call for ESDT_TRANSFER_PREFIX
+#define ESDT_TRANSFER_PREFIX_LENGTH strlen(ESDT_TRANSFER_PREFIX)
 
 static const char PREPEND[] = "\x17"
                               "Elrond Signed Message:\n";
