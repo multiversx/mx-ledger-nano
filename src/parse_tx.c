@@ -564,7 +564,6 @@ uint16_t parse_esdt_data() {
 
     char *amount = tx_context.amount;
     if (!tostring128(&value, BASE_10, amount, ESDT_VALUE_MAX_LENGTH)) {
-        memmove(tx_context.amount, tx_context.esdt_value, strlen(tx_context.esdt_value));
         return ERR_INVALID_AMOUNT;
     }
     if (!make_amount_pretty(amount, strlen(amount) + MAX_TICKER_LEN + PRETTY_SIZE + 1, esdt_info.ticker, esdt_info.decimals)) {
