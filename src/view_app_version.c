@@ -20,7 +20,7 @@ static const bagl_element_t app_version_ui[] = {
         "App version",
     },
     {
-        {BAGL_LABELINE, 0x01, 0, 56, 128, 16, 0, 0, 0, 0xFFFFFF, 0x000000,
+        {BAGL_LABELINE, 0x01, 0, 50, 128, 16, 0, 0, 0, 0xFFFFFF, 0x000000,
          BAGL_FONT_OPEN_SANS_REGULAR_11px | BAGL_FONT_ALIGNMENT_CENTER, 0},
         APPVERSION,
     },
