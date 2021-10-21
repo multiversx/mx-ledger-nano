@@ -16,35 +16,42 @@ bool is_esdt_transfer();
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_23_step, 
+    ux_transfer_esdt_flow_24_step, 
     bnnn_paging, 
     {
       .title = "Token",
       .text = esdt_info.ticker,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_24_step, 
+    ux_transfer_esdt_flow_25_step, 
     bnnn_paging, 
     {
       .title = "Value",
       .text = tx_context.amount,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_25_step, 
+    ux_transfer_esdt_flow_26_step, 
     bnnn_paging, 
     {
       .title = "Receiver",
       .text = tx_context.receiver,
     });
 UX_STEP_NOCB(
-    ux_transfer_esdt_flow_26_step, 
+    ux_transfer_esdt_flow_27_step, 
     bnnn_paging, 
     {
       .title = "Fee",
       .text = tx_context.fee,
     });
+UX_STEP_NOCB(
+    ux_transfer_esdt_flow_28_step, 
+    bnnn_paging, 
+    {
+      .title = "Network",
+      .text = tx_context.network,
+    });    
 UX_STEP_VALID(
-    ux_transfer_esdt_flow_27_step, 
+    ux_transfer_esdt_flow_29_step, 
     pb, 
     send_response(set_result_signature(), true),
     {
@@ -52,7 +59,7 @@ UX_STEP_VALID(
       "Confirm transfer",
     });
 UX_STEP_VALID(
-    ux_transfer_esdt_flow_28_step, 
+    ux_transfer_esdt_flow_30_step, 
     pb,
     send_response(0, false),
     {
@@ -61,12 +68,13 @@ UX_STEP_VALID(
     });
 
 UX_FLOW(ux_transfer_esdt_flow,
-  &ux_transfer_esdt_flow_23_step,
   &ux_transfer_esdt_flow_24_step,
   &ux_transfer_esdt_flow_25_step,
   &ux_transfer_esdt_flow_26_step,
   &ux_transfer_esdt_flow_27_step,
-  &ux_transfer_esdt_flow_28_step
+  &ux_transfer_esdt_flow_28_step,
+  &ux_transfer_esdt_flow_29_step,
+  &ux_transfer_esdt_flow_30_step
 );
 
 // UI for confirming the tx details of the transaction on screen
@@ -98,8 +106,15 @@ UX_STEP_NOCB(
       .title = "Data",
       .text = tx_context.data,
     });
-UX_STEP_VALID(
+UX_STEP_NOCB(
     ux_sign_tx_hash_flow_21_step, 
+    bnnn_paging, 
+    {
+      .title = "Network",
+      .text = tx_context.network,
+    });     
+UX_STEP_VALID(
+    ux_sign_tx_hash_flow_22_step, 
     pb, 
     send_response(set_result_signature(), true),
     {
@@ -107,7 +122,7 @@ UX_STEP_VALID(
       "Sign transaction",
     });
 UX_STEP_VALID(
-    ux_sign_tx_hash_flow_22_step, 
+    ux_sign_tx_hash_flow_23_step, 
     pb,
     send_response(0, false),
     {
@@ -121,7 +136,8 @@ UX_FLOW(ux_sign_tx_hash_flow,
   &ux_sign_tx_hash_flow_19_step,
   &ux_sign_tx_hash_flow_20_step,
   &ux_sign_tx_hash_flow_21_step,
-  &ux_sign_tx_hash_flow_22_step
+  &ux_sign_tx_hash_flow_22_step,
+  &ux_sign_tx_hash_flow_23_step
 );
 
 static uint8_t set_result_signature() {
@@ -167,6 +183,8 @@ void init_tx_context() {
     tx_context.gas_price = 0;
     tx_context.receiver[0] = 0;
     tx_context.chain_id[0] = 0;
+    tx_context.esdt_value[0] = 0;
+    tx_context.network[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
 
@@ -230,13 +248,18 @@ bool is_esdt_transfer() {
     bool has_data = strlen(tx_context.data) > 0;
     bool has_esdt_transfer_prefix = false;
     bool has_registered_esdt_identifier = false;
+    bool next_char_after_identifier_is_at_separator = false;
     bool same_chainid = false;
 
     if (has_data && identifier_len_valid)  {
-        has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, strlen(ESDT_TRANSFER_PREFIX)) == 0;
-        has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + strlen(ESDT_TRANSFER_PREFIX), esdt_info.identifier, esdt_info.identifier_len) == 0;
+        has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0;
+        has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + ESDT_TRANSFER_PREFIX_LENGTH, esdt_info.identifier, esdt_info.identifier_len) == 0;
+
+        size_t identifier_end_position = DATA_SIZE_LEN - 1 + ESDT_TRANSFER_PREFIX_LENGTH + esdt_info.identifier_len;
+        next_char_after_identifier_is_at_separator = (strlen(tx_context.data) > identifier_end_position) && (tx_context.data[identifier_end_position] == '@');
+
         same_chainid = strncmp(tx_context.chain_id, esdt_info.chain_id, MAX_CHAINID_LEN) == 0;
     }
 
-    return has_esdt_transfer_prefix && has_registered_esdt_identifier && same_chainid;
+    return has_esdt_transfer_prefix && has_registered_esdt_identifier && next_char_after_identifier_is_at_separator && same_chainid;
 }
