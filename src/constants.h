@@ -85,7 +85,7 @@ typedef enum {
 #define ESDT_CODE_VALUE_OK       '2'
 #define ESDT_VALUE_MAX_LENGTH    40
 #define ESDT_TRANSFER_PREFIX     "ESDTTransfer@"
-#define ESDT_VALUE_N_A           "N/a"
+#define ESDT_VALUE_N_A           "N/A"
 #define ESDT_VALUE_TOO_LONG      "<value too big to display>"
 #define ESDT_VALUE_HEX_PARSE_ERR "<value cannot be parsed to hex>"
 #define ESDT_TRANSFER_PREFIX_LENGTH strlen(ESDT_TRANSFER_PREFIX)
