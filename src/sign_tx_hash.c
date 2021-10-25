@@ -13,6 +13,9 @@ tx_context_t tx_context;
 static uint8_t set_result_signature();
 bool sign_tx_hash(uint8_t *data_buffer);
 bool is_esdt_transfer();
+void display_tx_sign_flow();
+
+const ux_flow_step_t *tx_flow[8];
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
@@ -130,16 +133,6 @@ UX_STEP_VALID(
       "Reject",
     });
 
-UX_FLOW(ux_sign_tx_hash_flow,
-  &ux_sign_tx_hash_flow_17_step,
-  &ux_sign_tx_hash_flow_18_step,
-  &ux_sign_tx_hash_flow_19_step,
-  &ux_sign_tx_hash_flow_20_step,
-  &ux_sign_tx_hash_flow_21_step,
-  &ux_sign_tx_hash_flow_22_step,
-  &ux_sign_tx_hash_flow_23_step
-);
-
 static uint8_t set_result_signature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
@@ -237,10 +230,27 @@ void handle_sign_tx_hash(uint8_t p1, uint8_t *data_buffer, uint16_t data_length,
     if(should_display_esdt_flow) {
         ux_flow_init(0, ux_transfer_esdt_flow, NULL);
     } else {
-        ux_flow_init(0, ux_sign_tx_hash_flow, NULL);
+        display_tx_sign_flow();
     }
 
      *flags |= IO_ASYNCH_REPLY;
+}
+
+void display_tx_sign_flow() {
+    uint8_t step = 0;
+
+    tx_flow[step++] = &ux_sign_tx_hash_flow_17_step;
+    tx_flow[step++] = &ux_sign_tx_hash_flow_18_step;
+    tx_flow[step++] = &ux_sign_tx_hash_flow_19_step;
+    if(tx_context.data_size > 0) {
+        tx_flow[step++] = &ux_sign_tx_hash_flow_20_step;
+    }
+    tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
+    tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
+    tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
+    tx_flow[step++] = FLOW_END_STEP;
+
+    ux_flow_init(0, tx_flow, NULL);
 }
 
 bool is_esdt_transfer() {
