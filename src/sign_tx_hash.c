@@ -15,7 +15,7 @@ bool sign_tx_hash(uint8_t *data_buffer);
 bool is_esdt_transfer();
 void display_tx_sign_flow();
 
-const ux_flow_step_t *tx_flow[8];
+const ux_flow_step_t *tx_flow[TX_SIGN_FLOW_SIZE];
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(
