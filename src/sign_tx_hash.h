@@ -17,7 +17,7 @@
 #define RECEIVER_USERNAME_FIELD "receiverUsername"
 
 #define MAX_FIELD_LEN 16
-#define MAX_VALUE_LEN 64UL
+#define MAX_VALUE_LEN 128UL
 
 typedef enum parser_status_e {
     JSON_IDLE,

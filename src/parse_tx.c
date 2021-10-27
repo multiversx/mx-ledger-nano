@@ -12,6 +12,10 @@
 #include "globals.h"
 #endif
 
+static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t encoded_data_length);
+static void set_network(const char *chain_id);
+static void set_message_in_amount(const char* message);
+
 // make the eGLD/token amount look pretty. Add decimals, decimal point and ticker name
 bool make_amount_pretty(char *amount, size_t max_size, char* ticker, int decimals_places) {
     int len = strlen(amount);
@@ -115,7 +119,7 @@ bool gas_to_fee(uint64_t gas_limit, uint64_t gas_price, uint32_t data_size, char
     x.elements[1] = gas_price;
     mul128(&x, &y, &z);
     /* XXX: there is a one-byte overflow in tostring128(), hence size-1 */
-    if (!tostring128(&z, 10, fee, size - 1)) {
+    if (!tostring128(&z, BASE_10, fee, size - 1)) {
         return false;
     }
     return true;
@@ -227,10 +231,57 @@ uint16_t verify_data(bool *valid) {
         if (!base64decode(tx_context.data, encoded, ascii_len)) {
             return ERR_INVALID_MESSAGE;
         }
+        if(strncmp(tx_context.data, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0) {
+            extract_esdt_value(tx_hash_context.current_value, tx_hash_context.current_value_len);
+        }
         compute_data_size(tx_hash_context.data_field_size);
         *valid = true;
     }
     return MSG_OK;
+}
+
+static void extract_esdt_value(const uint8_t *encoded_data_field, const uint8_t encoded_data_length) {
+    if(encoded_data_length==0){
+        return;
+    }
+    char data_field[encoded_data_length];
+    if (!base64decode(data_field, encoded_data_field, encoded_data_length)) {
+        return;
+    }
+
+    int esdt_value_start_position = INVALID_INDEX;
+    for(int idx=ESDT_TRANSFER_PREFIX_LENGTH; idx<strlen(data_field); idx++) {
+        if(data_field[idx]==SC_ARGS_SEPARATOR){
+            esdt_value_start_position = idx + 1;
+            break;
+        }
+    }
+    if(esdt_value_start_position == INVALID_INDEX) {
+        return;
+    }
+
+    int esdt_value_end_position = INVALID_INDEX;
+    for(int idx=esdt_value_start_position; idx<strlen(data_field); idx++) {
+        if(data_field[idx]==SC_ARGS_SEPARATOR || data_field[idx]==BASE_64_INVALID_CHAR){
+            esdt_value_end_position = idx - 1;
+            break;
+        }
+    }
+
+    if(esdt_value_end_position == INVALID_INDEX) {
+        esdt_value_end_position = strlen(data_field);
+    }
+
+    if(esdt_value_end_position - esdt_value_start_position + 1 > MAX_ESDT_VALUE_HEX_COUNT) {
+        tx_context.esdt_value[0] = ESDT_CODE_VALUE_TOO_HIGH;
+        tx_context.esdt_value[1] = '\0';
+        return;
+    }
+
+    tx_context.esdt_value[0] = ESDT_CODE_VALUE_OK;
+    size_t num_chars_to_copy = esdt_value_end_position - esdt_value_start_position + 1;
+    memmove(tx_context.esdt_value + 1, data_field + esdt_value_start_position, num_chars_to_copy);
+    tx_context.esdt_value[num_chars_to_copy + 1] = '\0';
 }
 
 // verify "chainID" field
@@ -241,6 +292,7 @@ uint16_t verify_chainid(bool *valid) {
             ticker = TICKER_MAINNET;
         }
         memmove(tx_context.chain_id, tx_hash_context.current_value, tx_hash_context.current_value_len);
+        set_network(tx_hash_context.current_value);
         
         if (!gas_to_fee(tx_context.gas_limit, tx_context.gas_price, tx_context.data_size, tx_context.fee, sizeof(tx_context.fee) - PRETTY_SIZE)) {
             return ERR_INVALID_FEE;
@@ -253,6 +305,27 @@ uint16_t verify_chainid(bool *valid) {
         *valid = true;
     }
     return MSG_OK;
+}
+
+static void set_network(const char *chain_id) {
+    if (strncmp(chain_id, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) == 0) {
+        memmove(tx_context.network, MAINNET_NETWORK, strlen(MAINNET_NETWORK));
+        tx_context.network[strlen(MAINNET_NETWORK)] = '\0';
+        return;
+    }
+    if (strncmp(chain_id, TESTNET_CHAIN_ID, strlen(TESTNET_CHAIN_ID)) == 0) {
+        memmove(tx_context.network, TESTNET_NETWORK, strlen(TESTNET_NETWORK));
+        tx_context.network[strlen(TESTNET_NETWORK)] = '\0';
+        return;
+    }
+    if (strncmp(chain_id, DEVNET_CHAIN_ID, strlen(DEVNET_CHAIN_ID)) == 0) {
+        memmove(tx_context.network, DEVNET_NETWORK, strlen(DEVNET_NETWORK));
+        tx_context.network[strlen(DEVNET_NETWORK)] = '\0';
+        return;
+    }
+
+    memmove(tx_context.network, UNKNOWN_NETWORK, strlen(UNKNOWN_NETWORK));
+    tx_context.network[strlen(UNKNOWN_NETWORK)] = '\0';
 }
 
 // verify "version" field
@@ -396,9 +469,9 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
                 tx_hash_context.current_value[tx_hash_context.current_value_len++] = c;
                 break;
             case JSON_PROCESSING_STRING_VALUE : {
-                bool isDataField = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
+                bool is_data_field = strncmp(tx_hash_context.current_field, DATA_FIELD, tx_hash_context.current_field_len) == 0;
                 if (c == '"') {
-                    if (isDataField) {
+                    if (is_data_field) {
                         uint32_t data_value_len;
                         // remove additional characters and convert to decoded string length
                         data_value_len = tx_hash_context.current_value_len / 4 * 3;
@@ -425,7 +498,7 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
                     break;
                 }
                 if (tx_hash_context.current_value_len >= MAX_VALUE_LEN) {
-                    if (isDataField && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
+                    if (is_data_field && tx_hash_context.current_field_len == strlen(DATA_FIELD)) {
                         tx_hash_context.current_value_len++;
                         break;
                     } else {
@@ -469,24 +542,28 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
 }
 
 // parse_esdt_data interprets the ESDT transfer data field of a transaction
-uint16_t parse_esdt_data(const char *data_buffer, uint16_t data_length) {
-    uint16_t idx;
+uint16_t parse_esdt_data() {
     uint128_t value = {{0,0}};
     bool res;
 
-    idx = DATA_SIZE_LEN + strlen(ESDT_TRANSFER_PREFIX) + esdt_info.identifier_len + 1;
-    if (idx > data_length) {
-        return ERR_INDEX_OUT_OF_BOUNDS;
+    if(strlen(tx_context.esdt_value) == 0) {
+        set_message_in_amount(ESDT_VALUE_N_A);
+        return MSG_OK;
     }
 
-    data_length -= idx;
-    res = parse_hex(data_buffer + idx - 1, data_length, &value);
+    if((strlen(tx_context.esdt_value) == 1) && tx_context.esdt_value[0] == ESDT_CODE_VALUE_TOO_HIGH) {
+        set_message_in_amount(ESDT_VALUE_TOO_LONG);
+        return MSG_OK;
+    } 
+
+    res = parse_hex(tx_context.esdt_value + 1, strlen(tx_context.esdt_value) - 1, &value);
     if (!res) {
-        return ERR_INVALID_AMOUNT;
+        set_message_in_amount(ESDT_VALUE_HEX_PARSE_ERR);
+        return MSG_OK;
     }
 
     char *amount = tx_context.amount;
-    if (!tostring128(&value, 10, amount, MAX_AMOUNT_LEN + PRETTY_SIZE - 1)) {
+    if (!tostring128(&value, BASE_10, amount, ESDT_VALUE_MAX_LENGTH)) {
         return ERR_INVALID_AMOUNT;
     }
     if (!make_amount_pretty(amount, strlen(amount) + MAX_TICKER_LEN + PRETTY_SIZE + 1, esdt_info.ticker, esdt_info.decimals)) {
@@ -494,4 +571,9 @@ uint16_t parse_esdt_data(const char *data_buffer, uint16_t data_length) {
     }
 
     return MSG_OK;
+}
+
+static void set_message_in_amount(const char* message) {
+    memmove(tx_context.amount, message, strlen(message));
+    tx_context.amount[strlen(message)] = '\0';
 }

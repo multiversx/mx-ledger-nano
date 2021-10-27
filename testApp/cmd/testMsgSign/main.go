@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ElrondNetwork/elrond-go/crypto/signing"
-	"github.com/ElrondNetwork/elrond-go/crypto/signing/ed25519"
-	"github.com/ElrondNetwork/elrond-go/crypto/signing/ed25519/singlesig"
+	"github.com/ElrondNetwork/elrond-go-crypto/signing"
+	"github.com/ElrondNetwork/elrond-go-crypto/signing/ed25519"
+	"github.com/ElrondNetwork/elrond-go-crypto/signing/ed25519/singlesig"
 	"github.com/ElrondNetwork/ledger-elrond/testApp/cmd/common"
 	"github.com/ElrondNetwork/ledger-elrond/testApp/ledger"
 	"github.com/btcsuite/btcutil/bech32"
