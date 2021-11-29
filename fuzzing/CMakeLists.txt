@@ -13,8 +13,10 @@ enable_testing()
 include_directories(../src ../deps/uint256/)
 
 add_library(elrond
-  ../src/parseTx.c
-  ../src/parseTx.h
+  ../src/parse_tx.c
+  ../src/parse_tx.h
+  ../src/provide_ESDT_info.c
+  ../src/provide_ESDT_info.h
   ../deps/uint256/uint256.c
   ../deps/uint256/uint256.h
 )
