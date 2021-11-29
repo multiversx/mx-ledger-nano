@@ -168,6 +168,7 @@ void elrond_main(void) {
 
     init_msg_context();
     init_tx_context();
+    esdt_info.valid = false;
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.

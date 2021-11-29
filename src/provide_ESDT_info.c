@@ -98,5 +98,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     }
 #endif
 
+    esdt_info->valid = true;
+
     return MSG_OK;
 }
