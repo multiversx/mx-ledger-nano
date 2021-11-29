@@ -35,6 +35,7 @@ typedef enum {
 #define ERR_SIGN_TX_DEPRECATED     0x6E11 // signTx - deprecated
 #define ERR_INVALID_ESDT_SIGNATURE 0x6E12
 #define ERR_INDEX_OUT_OF_BOUNDS    0x6E13
+#define ERR_INVALID_ESDT           0x6E14
 
 #define FULL_ADDRESS_LENGTH 65 // hex address is 64 characters + \0 = 65
 #define BIP32_PATH          5

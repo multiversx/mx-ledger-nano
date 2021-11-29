@@ -2,6 +2,7 @@
 #define _PROVIDE_ESDT_INFO_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <constants.h>
 
 #define MAX_ESDT_TICKER_LEN     32
@@ -15,6 +16,7 @@ static const uint8_t LEDGER_SIGNATURE_PUBLIC_KEY[] = {
     0x2c, 0xc5, 0x56, 0x0d, 0x09};
 
 typedef struct esdt_info_t {
+    bool valid;
     uint8_t ticker_len;
     char ticker[MAX_ESDT_TICKER_LEN];
     uint8_t identifier_len;

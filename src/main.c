@@ -59,6 +59,8 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
     uint16_t ret;
 
+    esdt_info.valid = false;
+
     BEGIN_TRY {
         TRY {
             if (G_io_apdu_buffer[OFFSET_CLA] != CLA) {

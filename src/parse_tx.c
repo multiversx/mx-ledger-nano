@@ -566,6 +566,11 @@ uint16_t parse_esdt_data() {
     if (!tostring128(&value, BASE_10, amount, ESDT_VALUE_MAX_LENGTH)) {
         return ERR_INVALID_AMOUNT;
     }
+
+    if (!esdt_info.valid) {
+        return ERR_INVALID_ESDT;
+    }
+
     if (!make_amount_pretty(amount, strlen(amount) + MAX_TICKER_LEN + PRETTY_SIZE + 1, esdt_info.ticker, esdt_info.decimals)) {
         return ERR_PRETTY_FAILED;
     }
