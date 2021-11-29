@@ -44,7 +44,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     // read ticker
     last_required_len = required_len;
     required_len += esdt_info->ticker_len;
-    if (data_length < required_len) {
+    if (esdt_info->ticker_len >= sizeof(esdt_info->ticker) || data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
     memcpy(esdt_info->ticker, data_buffer + last_required_len, esdt_info->ticker_len);
@@ -61,7 +61,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     // read identifier
     last_required_len = required_len;
     required_len += esdt_info->identifier_len;
-    if (data_length < required_len) {
+    if (esdt_info->identifier_len >= sizeof(esdt_info->identifier) || data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
     memcpy(esdt_info->identifier, data_buffer + last_required_len, esdt_info->identifier_len);
@@ -86,7 +86,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     // read chain id
     last_required_len = required_len;
     required_len += esdt_info->chain_id_len;
-    if (data_length < required_len) {
+    if (esdt_info->chain_id_len >= sizeof(esdt_info->chain_id) || data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
     memcpy(esdt_info->chain_id, data_buffer + last_required_len, esdt_info->chain_id_len);
