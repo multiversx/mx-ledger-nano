@@ -8,7 +8,7 @@ static unsigned int app_version_ui_button(unsigned int button_mask, unsigned int
 
 // UI for displaying the app version
 static const bagl_element_t app_version_ui[] = {
-  #ifdef TARGET_NANOX  
+  #if defined(TARGET_NANOX) || defined(TARGET_NANOS2)
     {
         {BAGL_RECTANGLE, 0x00, 0, 0, 128, 64, 0, 0, BAGL_FILL, 0x000000,
          0xFFFFFF, 0, 0},
