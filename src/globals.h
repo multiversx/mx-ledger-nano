@@ -12,7 +12,7 @@
 #define P1_FIRST       0x00
 #define P1_MORE        0x80
 
-#define DEFAULT_CONTRACT_DATA CONTRACT_DATA_DISABLED
+#define DEFAULT_CONTRACT_DATA CONTRACT_DATA_ENABLED
 
 extern ux_state_t ux;
 // display stepped screens

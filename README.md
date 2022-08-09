@@ -31,12 +31,12 @@ pip3 install --user --upgrade --no-cache-dir ledgerblue
 Note that `python3` and `pip3` are required in order to install `ledgerblue`.
 
 
-## Installation
+## Loading a released version onto the device
 
 Download the latest `*.hex` file from our [releases page](https://github.com/ElrondNetwork/ledger-elrond/releases). If `wget` is available on your machine, then:
 
 ```
-export APP_VERSION=1.0.17
+export APP_VERSION=1.0.18
 
 wget https://github.com/ElrondNetwork/ledger-elrond/releases/download/v${APP_VERSION}/elrond-ledger-app-v${APP_VERSION}.hex
 ```
@@ -44,7 +44,7 @@ wget https://github.com/ElrondNetwork/ledger-elrond/releases/download/v${APP_VER
 Now that you've downloaded the app and `ledgerblue` package is available, let's load the app on the device:
 
 ```
-export APP_VERSION=1.0.17
+export APP_VERSION=1.0.18
 
 python3 -m ledgerblue.loadApp --curve ed25519 --path "44'/508'" --appFlags 0x240 --tlv --targetId 0x31100004 --targetVersion=1.6.0 --delete --appName Elrond --appVersion ${APP_VERSION} --fileName elrond-ledger-app-v${APP_VERSION}.hex --dataSize 64 --icon "010000000000ffffffffffffffffff37ecdffbeff7f7eff7eff7eff7efeff7dffb37ecffffffffffff"
 ```
@@ -76,10 +76,28 @@ Before running the application, you need to mark it as executable on Linux / Mac
 chmod +x ./ElrondTestApp*
 ```
 
-Also please note that on Windows you might receive the _Unknown publisher_ warning from the [UAC facility](https://en.wikipedia.org/wiki/User_Account_Control) when you first run the _testApp_.
+Also, please note that on Windows you might receive the _Unknown publisher_ warning from the [UAC facility](https://en.wikipedia.org/wiki/User_Account_Control) when you first run the _testApp_.
 
 ## Development environment: building and installing
 
+### Build and load applications to device via ledger-app-builder Docker image
+As an alternative to install and maintain many packages on your machine, Ledger applications can be built and loaded 
+into the device by using the _ledger-app-builder_. How to build it: https://developers.ledger.com/docs/nano-app/build/
+
+After _ledger-app-builder_ is installed, go to `ledger-elrond` root and run this command:
+```
+docker run --rm -ti -v "/dev/bus/usb:/dev/bus/usb" -v "$(realpath .):/app" --privileged ledger-app-builder:latest
+```
+
+When in the container, run this to load the app onto the device:
+```$ make load```
+
+Or this to remove it:
+```$ make delete```
+
+Reference: https://developers.ledger.com/docs/nano-app/load/
+
+### Install all dependencies (not recommended)
 To build locally, you must first clone this repository, then set up the development environment:
 
 ```$ source prepare-devenv s```
