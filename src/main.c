@@ -45,6 +45,7 @@
 #define OFFSET_CDATA 5
 
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
+esdt_info_t esdt_info;
 
 void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);
 void elrond_main(void);
@@ -123,7 +124,7 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_PROVIDE_ESDT_INFO:
-                    ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], &esdt_info);
                     THROW(ret);
                     break;
 
@@ -167,6 +168,7 @@ void elrond_main(void) {
 
     init_msg_context();
     init_tx_context();
+    esdt_info.valid = false;
 
     // DESIGN NOTE: the bootloader ignores the way APDU are fetched. The only
     // goal is to retrieve APDU.
@@ -264,7 +266,7 @@ unsigned char io_event(unsigned char channel) {
         case SEPROXYHAL_TAG_TICKER_EVENT:
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer,
             {
-#ifndef TARGET_NANOX
+#if !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
                 if (UX_ALLOWED) {
                     if (ux_step_count) {
                     // prepare next screen

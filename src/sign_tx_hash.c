@@ -261,6 +261,10 @@ bool is_esdt_transfer() {
     bool next_char_after_identifier_is_at_separator = false;
     bool same_chainid = false;
 
+    if (!esdt_info.valid) {
+        return false;
+    }
+
     if (has_data && identifier_len_valid)  {
         has_esdt_transfer_prefix = strncmp(tx_context.data + DATA_SIZE_LEN - 1, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0;
         has_registered_esdt_identifier = strncmp(tx_context.data + DATA_SIZE_LEN - 1 + ESDT_TRANSFER_PREFIX_LENGTH, esdt_info.identifier, esdt_info.identifier_len) == 0;
