@@ -1,5 +1,5 @@
-#include "sign_msg.h"
 #include "get_private_key.h"
+#include "sign_msg.h"
 #include "utils.h"
 
 typedef struct {
@@ -16,33 +16,34 @@ bool sign_message(void);
 
 // UI for confirming the message hash on screen
 UX_STEP_NOCB(
-        ux_sign_msg_flow_14_step,
-        bnnn_paging,
-        {
-                .title = "Hash",
-                .text = msg_context.strhash,
-        });
+    ux_sign_msg_flow_14_step, 
+    bnnn_paging, 
+    {
+      .title = "Hash",
+      .text = msg_context.strhash,
+    });
 UX_STEP_VALID(
-        ux_sign_msg_flow_15_step,
-        pb,
-        send_response(set_result_signature(), true),
-        {
-                &C_icon_validate_14,
-                "Sign message",
-        });
+    ux_sign_msg_flow_15_step, 
+    pb, 
+    send_response(set_result_signature(), true),
+    {
+      &C_icon_validate_14,
+      "Sign message",
+    });
 UX_STEP_VALID(
-        ux_sign_msg_flow_16_step,
-        pb,
-        send_response(0, false),
-        {
-                &C_icon_crossmark,
-                "Reject",
-        });
+    ux_sign_msg_flow_16_step, 
+    pb,
+    send_response(0, false),
+    {
+      &C_icon_crossmark,
+      "Reject",
+    });
 
 UX_FLOW(ux_sign_msg_flow,
-        &ux_sign_msg_flow_14_step,
-        &ux_sign_msg_flow_15_step,
-        &ux_sign_msg_flow_16_step);
+  &ux_sign_msg_flow_14_step,
+  &ux_sign_msg_flow_15_step,
+  &ux_sign_msg_flow_16_step
+);
 
 void init_msg_context(void) {
     bip32_account = 0;
@@ -84,7 +85,7 @@ bool sign_message(void) {
 }
 
 void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags) {
-    /*
+     /*
         data buffer structure should be:
         <message length> + <message>
                ^             ^
@@ -105,34 +106,35 @@ void handle_sign_msg(uint8_t p1, uint8_t *data_buffer, uint16_t data_length, vol
         data_length -= 4;
         // initialize hash with the constant string to prepend
         cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
-        cx_hash((cx_hash_t *) &sha3_context, 0, (uint8_t *) PREPEND, sizeof(PREPEND) - 1, NULL, 0);
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)PREPEND, sizeof(PREPEND) - 1, NULL, 0);
 
         // convert message length to string and store it in the variable `message_length_str`
         uint32_t_to_char_array(msg_context.len, message_length_str);
 
         // add the message length to the hash
-        cx_hash((cx_hash_t *) &sha3_context, 0, (uint8_t *) message_length_str, strlen(message_length_str), NULL, 0);
-    } else {
-        if (p1 != P1_MORE) {
-            THROW(ERR_INVALID_P1);
-        }
-        if (app_state != APP_STATE_SIGNING_MESSAGE) {
-            THROW(ERR_INVALID_MESSAGE);
-        }
+        cx_hash((cx_hash_t *)&sha3_context, 0, (uint8_t*)message_length_str, strlen(message_length_str), NULL, 0);
+    }
+    else {
+      if (p1 != P1_MORE) {
+          THROW(ERR_INVALID_P1);
+      }
+      if (app_state != APP_STATE_SIGNING_MESSAGE) {
+          THROW(ERR_INVALID_MESSAGE);
+      }
     }
     if (data_length > msg_context.len) {
         THROW(ERR_MESSAGE_TOO_LONG);
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    cx_hash((cx_hash_t *)&sha3_context, 0, data_buffer, data_length, NULL, 0);
     msg_context.len -= data_length;
     if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
+    cx_hash((cx_hash_t *)&sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
     snprintf(msg_context.strhash, sizeof(msg_context.strhash), "%.*H", sizeof(msg_context.hash), msg_context.hash);
 
     // sign the hash

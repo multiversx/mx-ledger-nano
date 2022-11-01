@@ -1,9 +1,9 @@
-#include <stddef.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "bech32.h"
-#include "get_private_key.h"
 #include "globals.h"
+#include "get_private_key.h"
 #include "os.h"
 #include "ux.h"
 

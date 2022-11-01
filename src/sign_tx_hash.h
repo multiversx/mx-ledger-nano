@@ -3,17 +3,17 @@
 
 #include <stdint.h>
 
-#define NONCE_FIELD "nonce"
-#define VALUE_FIELD "value"
-#define RECEIVER_FIELD "receiver"
-#define SENDER_FIELD "sender"
-#define GASPRICE_FIELD "gasPrice"
-#define GASLIMIT_FIELD "gasLimit"
-#define DATA_FIELD "data"
-#define CHAINID_FIELD "chainID"
-#define VERSION_FIELD "version"
-#define OPTIONS_FIELD "options"
-#define SENDER_USERNAME_FIELD "senderUsername"
+#define NONCE_FIELD             "nonce"
+#define VALUE_FIELD             "value"
+#define RECEIVER_FIELD          "receiver"
+#define SENDER_FIELD            "sender"
+#define GASPRICE_FIELD          "gasPrice"
+#define GASLIMIT_FIELD          "gasLimit"
+#define DATA_FIELD              "data"
+#define CHAINID_FIELD           "chainID"
+#define VERSION_FIELD           "version"
+#define OPTIONS_FIELD           "options"
+#define SENDER_USERNAME_FIELD   "senderUsername"
 #define RECEIVER_USERNAME_FIELD "receiverUsername"
 
 #define MAX_FIELD_LEN 16
@@ -33,9 +33,9 @@ typedef enum parser_status_e {
 typedef struct {
     uint8_t hash[32];
     parser_status_e status;
-    char current_field[MAX_FIELD_LEN + 1];
+    char current_field[MAX_FIELD_LEN+1];
     uint8_t current_field_len;
-    char current_value[MAX_VALUE_LEN + 1];
+    char current_value[MAX_VALUE_LEN+1];
     uint32_t current_value_len;
     uint32_t data_field_size;
 } tx_hash_context_t;
