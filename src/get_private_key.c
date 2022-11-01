@@ -6,12 +6,11 @@
 
 static const uint32_t HARDENED_OFFSET = 0x80000000;
 static const uint32_t derive_path[BIP32_PATH] = {
-  44 | HARDENED_OFFSET,
-  COIN_TYPE_EGLD | HARDENED_OFFSET,
-  0 | HARDENED_OFFSET,
-  0 | HARDENED_OFFSET,
-  0 | HARDENED_OFFSET
-};
+        44 | HARDENED_OFFSET,
+        COIN_TYPE_EGLD | HARDENED_OFFSET,
+        0 | HARDENED_OFFSET,
+        0 | HARDENED_OFFSET,
+        0 | HARDENED_OFFSET};
 
 bool get_private_key(uint32_t account_index, uint32_t address_index, cx_ecfp_private_key_t *private_key) {
     uint8_t private_key_data[32];

@@ -1,6 +1,6 @@
-#include "os.h"
 #include "cx.h"
 #include "globals.h"
+#include "os.h"
 
 #ifndef _SIGN_MSG_H_
 #define _SIGN_MSG_H_

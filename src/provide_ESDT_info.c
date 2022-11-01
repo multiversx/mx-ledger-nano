@@ -40,7 +40,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
         return ERR_MESSAGE_INCOMPLETE;
     }
     esdt_info->ticker_len = data_buffer[last_required_len];
-    
+
     // read ticker
     last_required_len = required_len;
     required_len += esdt_info->ticker_len;
@@ -49,7 +49,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     }
     memcpy(esdt_info->ticker, data_buffer + last_required_len, esdt_info->ticker_len);
     esdt_info->ticker[esdt_info->ticker_len] = '\0';
-    
+
     // read identifier len
     last_required_len = required_len;
     required_len++;

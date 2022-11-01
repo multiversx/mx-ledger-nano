@@ -16,7 +16,7 @@ static bool base64decode(char *decoded, char *source, size_t len);
 // returns true is the char given as parameter is a valid base64 char and false otherwise
 static bool isBase64Char(char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c == '+') || (c == '/') || (c == '=') ||
-        (c >= '0' && c <= '9');
+           (c >= '0' && c <= '9');
 }
 
 // decode base64 byte
