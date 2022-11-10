@@ -1,4 +1,4 @@
-# Elrond App for the Ledger Nano S
+# Elrond App for the Ledger Nano
 
 [![Build Status](https://travis-ci.com/ElrondNetwork/ledger-elrond.svg?branch=master)](https://travis-ci.com/ElrondNetwork/ledger-elrond)
 
@@ -109,3 +109,13 @@ This could take a while. Then, load the app as follows:
 To remove the app from the device, run:
 
 ```$ make delete```
+
+## GitHub workflows
+
+Creating a PR against `master` or `develop` will trigger some workflows that will:
+- check the successful build for multiple environments
+- run `clang-format11` for checking linter issues
+- look for spelling issues 
+- run static code analyzer
+
+Therefore, contributors must make sure that all the workflows pass before merging a PR into `master` or `develop` branches.

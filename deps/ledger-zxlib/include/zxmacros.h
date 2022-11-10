@@ -187,15 +187,15 @@ __INLINE void fpuint64_to_str(char *dst, const uint64_t value, uint8_t decimals)
         *dst++ = '.';
         for (uint16_t i = 0; i < decimals - digits; i++, dst++)
             *dst = '0';
-        strcpy(dst, buffer);
+        strlcpy(dst, buffer, sizeof(dst));
     } else {
-        strcpy(dst, buffer);
+        strlcpy(dst, buffer, sizeof(dst));
         const size_t shift = digits - decimals;
         dst = dst + shift;
         *dst++ = '.';
 
         char *p = buffer + shift;
-        strcpy(dst, p);
+        strlcpy(dst, p, sizeof(dst));
     }
 }
 

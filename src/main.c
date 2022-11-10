@@ -1,32 +1,32 @@
 /*******************************************************************************
-*   (c) 2016 Ledger
-*   (c) 2018 ZondaX GmbH
-*   (c) 2020 Elrond Ltd
-*
-*  Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-********************************************************************************/
+ *   (c) 2016 Ledger
+ *   (c) 2018 ZondaX GmbH
+ *   (c) 2020 Elrond Ltd
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
 
-#include "utils.h"
 #include "get_address.h"
+#include "globals.h"
+#include "menu.h"
+#include "provide_ESDT_info.h"
 #include "set_address.h"
-#include "sign_tx_hash.h"
 #include "sign_msg.h"
 #include "sign_msg_auth_token.h"
-#include "provide_ESDT_info.h"
-#include "menu.h"
-#include "globals.h"
+#include "sign_tx_hash.h"
+#include "utils.h"
 
-#define CLA 0xED
+#define CLA                       0xED
 #define INS_GET_APP_VERSION       0x01
 #define INS_GET_APP_CONFIGURATION 0x02
 #define INS_GET_ADDR              0x03
@@ -62,11 +62,10 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     BEGIN_TRY {
         TRY {
             if (G_io_apdu_buffer[OFFSET_CLA] != CLA) {
-            THROW(ERR_WRONG_CLA);
+                THROW(ERR_WRONG_CLA);
             }
 
             switch (G_io_apdu_buffer[OFFSET_INS]) {
-
                 case INS_GET_APP_VERSION:
                     *tx = strlen(APPVERSION);
                     os_memcpy(G_io_apdu_buffer, APPVERSION, *tx);
@@ -75,10 +74,11 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_GET_APP_CONFIGURATION:
                     G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
-                    // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not to be taken into account anymore
-                    // since now those variables are 32 bit long, but we still expect 6 bytes
-                    // transmitted to maintain compatibility with the web wallet.
-                    // Account index should be read from bytes 6->9, while address index should be read from bytes 10->13 (Big Endian)
+                    // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not to be taken into
+                    // account anymore since now those variables are 32 bit long, but we
+                    // still expect 6 bytes transmitted to maintain compatibility with the
+                    // web wallet. Account index should be read from bytes 6->9, while
+                    // address index should be read from bytes 10->13 (Big Endian)
                     G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
                     G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
                     G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
@@ -98,15 +98,24 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_GET_ADDR:
-                    handle_get_address(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer[OFFSET_P2], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags, tx);
+                    handle_get_address(G_io_apdu_buffer[OFFSET_P1],
+                                       G_io_apdu_buffer[OFFSET_P2],
+                                       G_io_apdu_buffer + OFFSET_CDATA,
+                                       G_io_apdu_buffer[OFFSET_LC],
+                                       flags,
+                                       tx);
                     break;
 
                 case INS_GET_ADDR_AUTH_TOKEN:
-                    handle_auth_token(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
-                    break;    
+                    handle_auth_token(G_io_apdu_buffer[OFFSET_P1],
+                                      G_io_apdu_buffer + OFFSET_CDATA,
+                                      G_io_apdu_buffer[OFFSET_LC],
+                                      flags);
+                    break;
 
                 case INS_SET_ADDR:
-                    ret = handle_set_address(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC]);
+                    ret = handle_set_address(G_io_apdu_buffer + OFFSET_CDATA,
+                                             G_io_apdu_buffer[OFFSET_LC]);
                     THROW(ret);
                     break;
 
@@ -116,15 +125,23 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
                     break;
 
                 case INS_SIGN_MSG:
-                    handle_sign_msg(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    handle_sign_msg(G_io_apdu_buffer[OFFSET_P1],
+                                    G_io_apdu_buffer + OFFSET_CDATA,
+                                    G_io_apdu_buffer[OFFSET_LC],
+                                    flags);
                     break;
 
                 case INS_SIGN_TX_HASH:
-                    handle_sign_tx_hash(G_io_apdu_buffer[OFFSET_P1], G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], flags);
+                    handle_sign_tx_hash(G_io_apdu_buffer[OFFSET_P1],
+                                        G_io_apdu_buffer + OFFSET_CDATA,
+                                        G_io_apdu_buffer[OFFSET_LC],
+                                        flags);
                     break;
 
                 case INS_PROVIDE_ESDT_INFO:
-                    ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA, G_io_apdu_buffer[OFFSET_LC], &esdt_info);
+                    ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA,
+                                                   G_io_apdu_buffer[OFFSET_LC],
+                                                   &esdt_info);
                     THROW(ret);
                     break;
 
@@ -137,18 +154,18 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
             THROW(EXCEPTION_IO_RESET);
         }
         CATCH_OTHER(e) {
-        switch (e & 0xF000) {
-            case 0x6000:
-                sw = e;
-                break;
-            case MSG_OK:
-                // All is well
-                sw = e;
-                break;
-            default:
-                // Internal error
-                sw = 0x6800 | (e & 0x7FF);
-                break;
+            switch (e & 0xF000) {
+                case 0x6000:
+                    sw = e;
+                    break;
+                case MSG_OK:
+                    // All is well
+                    sw = e;
+                    break;
+                default:
+                    // Internal error
+                    sw = 0x6800 | (e & 0x7FF);
+                    break;
             }
             // Unexpected exception => report
             G_io_apdu_buffer[*tx] = sw >> 8;
@@ -182,8 +199,8 @@ void elrond_main(void) {
         BEGIN_TRY {
             TRY {
                 rx = tx;
-                tx = 0; // ensure no race in catch_other if io_exchange throws
-                        // an error
+                tx = 0;  // ensure no race in catch_other if io_exchange throws
+                         // an error
                 rx = io_exchange(CHANNEL_APDU | flags, rx);
                 flags = 0;
 
@@ -196,7 +213,7 @@ void elrond_main(void) {
                 handle_apdu(&flags, &tx);
             }
             CATCH(EXCEPTION_IO_RESET) {
-              THROW(EXCEPTION_IO_RESET);
+                THROW(EXCEPTION_IO_RESET);
             }
             CATCH_OTHER(e) {
                 switch (e & 0xF000) {
@@ -226,19 +243,19 @@ void elrond_main(void) {
         END_TRY;
     }
 
-    //return_to_dashboard:
+    // return_to_dashboard:
     return;
 }
 
 // override point, but nothing more to do
 void io_seproxyhal_display(const bagl_element_t *element) {
-    io_seproxyhal_display_default((bagl_element_t*)element);
+    io_seproxyhal_display_default((bagl_element_t *) element);
 }
 
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
     // needed
-    (void)(channel);
+    (void) (channel);
 
     // can't have more than one tag in the reply, not supported yet.
     switch (G_io_seproxyhal_spi_buffer[0]) {
@@ -251,7 +268,9 @@ unsigned char io_event(unsigned char channel) {
             break;
 
         case SEPROXYHAL_TAG_STATUS_EVENT:
-            if (G_io_apdu_media == IO_APDU_MEDIA_USB_HID && !(U4BE(G_io_seproxyhal_spi_buffer, 3) & SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
+            if (G_io_apdu_media == IO_APDU_MEDIA_USB_HID &&
+                !(U4BE(G_io_seproxyhal_spi_buffer, 3) &
+                  SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
                 THROW(EXCEPTION_IO_RESET);
             }
             // no break is intentional
@@ -264,18 +283,17 @@ unsigned char io_event(unsigned char channel) {
             break;
 
         case SEPROXYHAL_TAG_TICKER_EVENT:
-            UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer,
-            {
+            UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
 #if !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
                 if (UX_ALLOWED) {
                     if (ux_step_count) {
-                    // prepare next screen
-                    ux_step = (ux_step+1)%ux_step_count;
-                    // redisplay screen
-                    UX_REDISPLAY();
+                        // prepare next screen
+                        ux_step = (ux_step + 1) % ux_step_count;
+                        // redisplay screen
+                        UX_REDISPLAY();
                     }
                 }
-#endif // TARGET_NANOX
+#endif  // TARGET_NANOX
             });
             break;
     }
@@ -302,11 +320,10 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len) {
                 if (channel & IO_RESET_AFTER_REPLIED) {
                     reset();
                 }
-                return 0; // nothing received from the master so far (it's a tx
-                        // transaction)
+                return 0;  // nothing received from the master so far (it's a tx
+                           // transaction)
             } else {
-                return io_seproxyhal_spi_recv(G_io_apdu_buffer,
-                                            sizeof(G_io_apdu_buffer), 0);
+                return io_seproxyhal_spi_recv(G_io_apdu_buffer, sizeof(G_io_apdu_buffer), 0);
             }
 
         default:
@@ -331,7 +348,7 @@ void nv_app_state_init() {
         internal_storage_t storage;
         storage.setting_contract_data = DEFAULT_CONTRACT_DATA;
         storage.initialized = 0x01;
-        nvm_write((internal_storage_t*)&N_storage, (void*)&storage, sizeof(internal_storage_t));
+        nvm_write((internal_storage_t *) &N_storage, (void *) &storage, sizeof(internal_storage_t));
     }
 }
 
@@ -354,12 +371,12 @@ __attribute__((section(".boot"))) int main(void) {
                 USB_power(0);
                 USB_power(1);
 
-                ui_idle(); // main menu
+                ui_idle();  // main menu
 
 #ifdef HAVE_BLE
                 BLE_power(0, NULL);
                 BLE_power(1, "Nano X");
-#endif // HAVE_BLE
+#endif  // HAVE_BLE
 
                 elrond_main();
             }
