@@ -24,7 +24,7 @@ CLA = 0xED
 
 LEDGER_MAJOR_VERSION = 1
 LEDGER_MINOR_VERSION = 0
-LEDGER_PATCH_VERSION = 17
+LEDGER_PATCH_VERSION = 19
 
 class Ins(IntEnum):
     GET_APP_VERSION       = 0x01
@@ -79,7 +79,10 @@ class TestGetAppVersion:
 
     def test_get_app_version(self, client):
         data = client.apdu_exchange(self.INS, b"", P1.FIRST, 0)
-        assert re.match("\d+\.\d+\.\d+", data.decode("ascii"))
+        version = data.decode("ascii").split('.')
+        assert version[0] == str(LEDGER_MAJOR_VERSION)
+        assert version[1] == str(LEDGER_MINOR_VERSION)
+        assert version[2] == str(LEDGER_PATCH_VERSION)
 
 class TestGetAppConfiguration:
     INS = Ins.GET_APP_CONFIGURATION
