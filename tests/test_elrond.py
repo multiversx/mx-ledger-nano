@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Functional tests for the Elrond app. Compatible with a real Ledger Nano S device
-and Speculos
+Functional tests for the Elrond app. Compatible with a real Ledger device and Speculos
 
 Simple usage:
 pytest ./tests/
@@ -28,7 +27,7 @@ from pathlib import Path
 
 from ragger.navigator import NavInsID, NavIns, NanoNavigator
 from ragger.backend.interface import RAPDU, RaisePolicy
-from .utils import validate_displayed_message, create_simple_nav_instructions
+from .utils import create_simple_nav_instructions
 
 CLA = 0xED
 
@@ -89,10 +88,10 @@ def send_async_sign_message(client, ins, payload: bytes) -> Generator[None, None
             p1 = P1.MORE
 
     with client.exchange_async(CLA,
-                                     ins,
-                                     p1,
-                                     0,
-                                     payload_splited[-1]):
+                               ins,
+                               p1,
+                               0,
+                               payload_splited[-1]):
         yield
 
 
@@ -158,7 +157,7 @@ class TestSignMsg:
                 nav_ins = create_simple_nav_instructions(4)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_msg_long(self, client, backend, navigator, test_name):
         payload = b"a" * 512
@@ -168,7 +167,7 @@ class TestSignMsg:
                 nav_ins = create_simple_nav_instructions(4)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_msg_too_long(self, client, backend):
         payload = b"abcd"
@@ -187,7 +186,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(6)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_tx_valid_large_receiver(self, client, backend, navigator, test_name):
         payload  = b'{"nonce":1234,"value":"'
@@ -202,7 +201,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(8)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_tx_valid_large_nonce(self, client, backend, navigator, test_name):
         # nonce is a 64-bit unsigned integer
@@ -212,7 +211,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(6)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_tx_valid_large_amount(self, client, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
@@ -221,7 +220,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(7)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.0)
 
     def test_sign_tx_invalid_nonce(self, client, backend):
         payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
