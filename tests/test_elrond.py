@@ -110,14 +110,14 @@ class TestGetAppConfiguration:
     def test_get_app_configuration(self, client, backend):
         data = client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data
         assert len(data) == 14
-        assert data[0] == 0 or data[0] == 1                         # N_storage.setting_contract_data
-        # print(data[1])                                            # not to be taken into account anymore
-        # print(data[2])                                            # not to be taken into account anymore
-        assert data[3] == LEDGER_MAJOR_VERSION                      # LEDGER_MAJOR_VERSION
-        assert data[4] == LEDGER_MINOR_VERSION                      # LEDGER_MINOR_VERSION
-        assert data[5] == LEDGER_PATCH_VERSION                      # LEDGER_PATCH_VERSION
-        # assert int.from_bytes(data[6:10], byteorder="big") == 0     # bip32_account
-        # assert int.from_bytes(data[10:14], byteorder="big") == 0    # bip32_address_index
+        assert data[0] == 0 or data[0] == 1                 # N_storage.setting_contract_data
+        # data[1] is not to be taken into account anymore
+        # data[2] is not to be taken into account anymore
+        assert data[3] == LEDGER_MAJOR_VERSION              # LEDGER_MAJOR_VERSION
+        assert data[4] == LEDGER_MINOR_VERSION              # LEDGER_MINOR_VERSION
+        assert data[5] == LEDGER_PATCH_VERSION              # LEDGER_PATCH_VERSION
+        # data[6:10] is the bip32_account
+        # data[10:14] is the bip32_address_index
 
 
 class TestGetAddr:

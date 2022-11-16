@@ -1,1 +1,2 @@
-ragger[tests,speculos]
+ragger[tests,speculos,ledgerwallet,ledgercomm]
+protobuf==3.20.3
