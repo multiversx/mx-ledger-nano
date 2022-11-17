@@ -22,6 +22,10 @@ from ledgerwallet.transport import enumerate_devices
 
 CLA = 0xED
 
+LEDGER_MAJOR_VERSION = 1
+LEDGER_MINOR_VERSION = 0
+LEDGER_PATCH_VERSION = 19
+
 class Ins(IntEnum):
     GET_APP_VERSION       = 0x01
     GET_APP_CONFIGURATION = 0x02
@@ -75,14 +79,25 @@ class TestGetAppVersion:
 
     def test_get_app_version(self, client):
         data = client.apdu_exchange(self.INS, b"", P1.FIRST, 0)
-        assert re.match("\d+\.\d+\.\d+", data.decode("ascii"))
+        version = data.decode("ascii").split('.')
+        assert version[0] == str(LEDGER_MAJOR_VERSION)
+        assert version[1] == str(LEDGER_MINOR_VERSION)
+        assert version[2] == str(LEDGER_PATCH_VERSION)
 
 class TestGetAppConfiguration:
     INS = Ins.GET_APP_CONFIGURATION
 
     def test_get_app_configuration(self, client):
         data = client.apdu_exchange(self.INS, b"", P1.FIRST, 0)
-        assert len(data) == 6
+        assert len(data) == 14
+        assert data[0] == 0 or data[0] == 1                         # N_storage.setting_contract_data
+        # print(data[1])                                            # not to be taken into account anymore
+        # print(data[2])                                            # not to be taken into account anymore
+        assert data[3] == LEDGER_MAJOR_VERSION                      # LEDGER_MAJOR_VERSION
+        assert data[4] == LEDGER_MINOR_VERSION                      # LEDGER_MINOR_VERSION
+        assert data[5] == LEDGER_PATCH_VERSION                      # LEDGER_PATCH_VERSION
+        # assert int.from_bytes(data[6:10], byteorder="big") == 0     # bip32_account
+        # assert int.from_bytes(data[10:14], byteorder="big") == 0    # bip32_address_index
 
 class TestGetAddr:
     INS = Ins.GET_ADDR
