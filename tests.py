@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Functional tests for the Elrond app. Compatible with a real Ledger Nano S device
+Functional tests for the MultiversX (previously Elrond) app. Compatible with a real Ledger Nano S device
 and Speculos. Speculos usage:
 
   $ ./speculos.py ~/app-elrond/bin/app.elf &

@@ -24,8 +24,8 @@ void info_submenu_selector(unsigned int idx);
 UX_STEP_NOCB(ux_idle_flow_1_step,
              pb,
              {
-                 &C_icon_elrond_logo,
-                 "Elrond Network",
+                 &C_icon_multiversx_logo,
+                 "MultiversX",
              });
 UX_STEP_VALID(ux_idle_flow_2_step,
               pb,
