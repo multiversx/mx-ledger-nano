@@ -12,8 +12,7 @@
 #include "globals.h"
 #endif
 
-static void extract_esdt_value(const uint8_t *encoded_data_field,
-                               const uint8_t encoded_data_length);
+static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length);
 static void set_network(const char *chain_id);
 static void set_message_in_amount(const char *message);
 
@@ -256,8 +255,7 @@ uint16_t verify_data(bool *valid) {
     return MSG_OK;
 }
 
-static void extract_esdt_value(const uint8_t *encoded_data_field,
-                               const uint8_t encoded_data_length) {
+static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length) {
     if (encoded_data_length == 0) {
         return;
     }
@@ -267,7 +265,7 @@ static void extract_esdt_value(const uint8_t *encoded_data_field,
     }
 
     int esdt_value_start_position = INVALID_INDEX;
-    for (int idx = ESDT_TRANSFER_PREFIX_LENGTH; idx < strlen(data_field); idx++) {
+    for (size_t idx = ESDT_TRANSFER_PREFIX_LENGTH; idx < strlen(data_field); idx++) {
         if (data_field[idx] == SC_ARGS_SEPARATOR) {
             esdt_value_start_position = idx + 1;
             break;
@@ -278,7 +276,7 @@ static void extract_esdt_value(const uint8_t *encoded_data_field,
     }
 
     int esdt_value_end_position = INVALID_INDEX;
-    for (int idx = esdt_value_start_position; idx < strlen(data_field); idx++) {
+    for (size_t idx = esdt_value_start_position; idx < strlen(data_field); idx++) {
         if (data_field[idx] == SC_ARGS_SEPARATOR || data_field[idx] == BASE_64_INVALID_CHAR) {
             esdt_value_end_position = idx - 1;
             break;

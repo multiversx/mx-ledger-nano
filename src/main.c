@@ -68,7 +68,7 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
             switch (G_io_apdu_buffer[OFFSET_INS]) {
                 case INS_GET_APP_VERSION:
                     *tx = strlen(APPVERSION);
-                    os_memcpy(G_io_apdu_buffer, APPVERSION, *tx);
+                    memcpy(G_io_apdu_buffer, APPVERSION, *tx);
                     THROW(MSG_OK);
                     break;
 
