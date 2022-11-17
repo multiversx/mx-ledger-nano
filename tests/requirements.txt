@@ -1,2 +1,4 @@
-ragger[tests,speculos,ledgerwallet,ledgercomm]
+pytest
+ragger[speculos]
+ragger[ledgerwallet]
 protobuf==3.20.3
