@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Functional tests for the Elrond app. Compatible with a real Ledger device and Speculos
+Functional tests for the MultiversX app (previously Elrond). Compatible with a real Ledger device and Speculos
 
 Simple usage:
 pytest ./tests/
@@ -9,7 +9,7 @@ pytest ./tests/
 Example usage of only the test test_sign_tx_valid_simple on Speculos on LNX
 pytest ./tests/ -v --nanox --display -k test_sign_tx_valid_simple
 
-Please refer to the conftest file for all available options
+Please refer to the usage file for all available options
 """
 
 from contextlib import contextmanager
@@ -33,7 +33,7 @@ CLA = 0xED
 
 LEDGER_MAJOR_VERSION = 1
 LEDGER_MINOR_VERSION = 0
-LEDGER_PATCH_VERSION = 19
+LEDGER_PATCH_VERSION = 20
 
 class Ins(IntEnum):
     GET_APP_VERSION       = 0x01

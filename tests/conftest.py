@@ -9,7 +9,7 @@ from ragger.utils import app_path_from_app_name
 # This variable is needed for Speculos only (physical tests need the application to be already installed)
 APPS_DIRECTORY = (Path(__file__).parent / "elfs").resolve()
 
-APP_NAME = "elrond"
+APP_NAME = "multiversx"
 
 BACKENDS = ["speculos", "ledgercomm", "ledgerwallet"]
 

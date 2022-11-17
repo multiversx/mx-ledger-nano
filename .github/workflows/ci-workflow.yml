@@ -10,7 +10,7 @@ on:
 
 jobs:
   nano_build:
-    name: Build Elrond application for NanoS, X and S+
+    name: Build MultiversX application for NanoS, X and S+
     strategy:
       matrix:
         include:
@@ -32,13 +32,13 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           make BOLOS_SDK=${{ matrix.SDK }}
-          cp bin/app.elf bin/elrond_${{ matrix.device }}.elf
+          cp bin/app.elf bin/multiversx_${{ matrix.device }}.elf
 
       - name: Upload app binary
         uses: actions/upload-artifact@v3
         with:
-          name: elrond_binaries
-          path: ./bin/elrond_${{ matrix.device }}.elf
+          name: multiversx_binaries
+          path: ./bin/multiversx_${{ matrix.device }}.elf
           if-no-files-found: error
 
 
