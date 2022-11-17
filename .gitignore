@@ -14,3 +14,5 @@
 /src/glyphs.h
 
 __pycache__/
+tests/elfs/
+tests/snapshots-tmp/
