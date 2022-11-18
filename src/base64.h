@@ -11,7 +11,7 @@ https://en.wikipedia.org/wiki/Base64
 
 static bool isBase64Char(char c);
 static char base64decode_byte(char c);
-static bool base64decode(char *decoded, char *source, size_t len);
+static bool base64decode(char *decoded, const char *source, size_t len);
 
 // returns true is the char given as parameter is a valid base64 char and false
 // otherwise
@@ -41,7 +41,7 @@ static char base64decode_byte(char c) {
 }
 
 // decode base64 data
-static bool base64decode(char *decoded, char *source, size_t len) {
+static bool base64decode(char *decoded, const char *source, size_t len) {
     for (size_t i = 0; i < len / 4; i++) {
         uint32_t data = 0;
         for (int j = 0; j < 4; j++) {
