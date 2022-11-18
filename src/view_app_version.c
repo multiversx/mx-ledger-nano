@@ -97,6 +97,7 @@ static const bagl_element_t app_version_ui[] = {
     },
     {
         {BAGL_ICON, 0x00, 117, 13, 7, 7, 0, 0, 0, 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_UP},
+        NULL,
     },
 #endif
 };
