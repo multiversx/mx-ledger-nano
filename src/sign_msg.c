@@ -150,11 +150,7 @@ void handle_sign_msg(uint8_t p1,
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
     cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
-    snprintf(msg_context.strhash,
-             sizeof(msg_context.strhash),
-             "%.*H",
-             sizeof(msg_context.hash),
-             msg_context.hash);
+    convert_to_hex_str(msg_context.strhash, msg_context.hash, sizeof(msg_context.hash));
 
     // sign the hash
     if (!sign_message()) {

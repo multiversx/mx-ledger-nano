@@ -33,3 +33,12 @@ void uint32_t_to_char_array(uint32_t const input, char *output) {
     }
     output[pos] = '\0';
 }
+
+void convert_to_hex_str(char* str, uint8_t* val, size_t val_count) {
+    static char hex[] = "0123456789ABCDEF";
+	for (size_t i = 0; i < val_count; i++)
+	{
+		str[(i * 2) + 0] = hex[((val[i] & 0xF0) >> 4)];
+		str[(i * 2) + 1] = hex[((val[i] & 0x0F) >> 0)];
+	}
+}
