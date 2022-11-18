@@ -26,6 +26,10 @@
 #include "sign_tx_hash.h"
 #include "utils.h"
 
+#ifdef HAVE_NBGL
+#include "nbgl_page.h"
+#endif
+
 #define CLA                       0xED
 #define INS_GET_APP_VERSION       0x01
 #define INS_GET_APP_CONFIGURATION 0x02
@@ -47,13 +51,19 @@
 unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 esdt_info_t esdt_info;
 
+#ifdef HAVE_BAGL
+void io_seproxyhal_display(const bagl_element_t *element);
+#else
+nbgl_page_t *pageContext;
+#endif
+
 void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);
 void elrond_main(void);
-void io_seproxyhal_display(const bagl_element_t *element);
 unsigned char io_event(unsigned char channel);
 unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len);
 void app_exit(void);
 void nv_app_state_init();
+
 
 void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
@@ -247,10 +257,12 @@ void elrond_main(void) {
     return;
 }
 
+#ifdef HAVE_BAGL
 // override point, but nothing more to do
 void io_seproxyhal_display(const bagl_element_t *element) {
     io_seproxyhal_display_default((bagl_element_t *) element);
 }
+#endif
 
 unsigned char io_event(unsigned char channel) {
     // nothing done with the event, throw an error on the transport layer if
@@ -264,7 +276,10 @@ unsigned char io_event(unsigned char channel) {
             break;
 
         case SEPROXYHAL_TAG_BUTTON_PUSH_EVENT:
+#ifdef HAVE_BAGL
             UX_BUTTON_PUSH_EVENT(G_io_seproxyhal_spi_buffer);
+#endif  // HAVE_BAGL
+
             break;
 
         case SEPROXYHAL_TAG_STATUS_EVENT:
@@ -273,18 +288,19 @@ unsigned char io_event(unsigned char channel) {
                   SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
                 THROW(EXCEPTION_IO_RESET);
             }
-            // no break is intentional
-        default:
+
             UX_DEFAULT_EVENT();
             break;
 
         case SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT:
+#ifdef HAVE_BAGL
             UX_DISPLAYED_EVENT({});
+#endif  // HAVE_BAGL
             break;
 
         case SEPROXYHAL_TAG_TICKER_EVENT:
             UX_TICKER_EVENT(G_io_seproxyhal_spi_buffer, {
-#if !defined(TARGET_NANOX) && !defined(TARGET_NANOS2)
+#if defined(TARGET_NANOS)
                 if (UX_ALLOWED) {
                     if (ux_step_count) {
                         // prepare next screen
@@ -295,6 +311,9 @@ unsigned char io_event(unsigned char channel) {
                 }
 #endif  // TARGET_NANOX
             });
+            break;
+        default:
+            UX_DEFAULT_EVENT();
             break;
     }
 

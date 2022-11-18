@@ -1,6 +1,6 @@
-#ifndef _VIEW_APP_VERSION_H_
-#define _VIEW_APP_VERSION_H_
+#pragma once
 
+// Not applicatble for Fatstacks
+#if !defined(TARGET_FATSTACKS)
 void view_app_version();
-
 #endif

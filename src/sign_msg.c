@@ -1,6 +1,15 @@
 #include "sign_msg.h"
 #include "get_private_key.h"
 #include "utils.h"
+#include "menu.h"
+
+#ifdef HAVE_NBGL
+#include "nbgl_fonts.h"
+#include "nbgl_front.h"
+#include "nbgl_debug.h"
+#include "nbgl_page.h"
+#include "nbgl_use_case.h"
+#endif
 
 typedef struct {
     uint32_t len;
@@ -11,8 +20,100 @@ typedef struct {
 
 static msg_context_t msg_context;
 
-static uint8_t set_result_signature();
-bool sign_message(void);
+static bool sign_message(void);
+
+void init_msg_context(void) {
+    bip32_account = 0;
+    bip32_address_index = 0;
+
+    app_state = APP_STATE_IDLE;
+}
+
+static uint8_t set_result_signature() {
+    uint8_t tx = 0;
+    G_io_apdu_buffer[tx++] = MESSAGE_SIGNATURE_LEN;
+    memmove(G_io_apdu_buffer + tx, msg_context.signature, MESSAGE_SIGNATURE_LEN);
+    tx += MESSAGE_SIGNATURE_LEN;
+    return tx;
+}
+
+#if defined(TARGET_FATSTACKS)
+
+typedef enum {
+  STATE_HEADER,
+  STATE_REVIEW,
+} sign_message_review_state_t;
+static sign_message_review_state_t state;
+
+static void start_review(void);
+static void ui_sign_message_nbgl(void);
+static void rejectUseCaseChoice(void);
+static nbgl_layoutTagValueList_t layout;
+static nbgl_layoutTagValue_t infos[1];
+
+static const nbgl_pageInfoLongPress_t review_final_long_press = {
+    .text = "Sign message on\nMultiversX network?",
+    .icon = &C_icon_multiversx_logo_64x64,
+    .longPressText = "Hold to sign",
+    .longPressToken = 0,
+    .tuneId = TUNE_TAP_CASUAL,
+};
+
+static void review_final_callback(bool confirmed) {
+    if (confirmed) {
+        send_response(set_result_signature(), true);
+        nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
+    } else {
+        rejectUseCaseChoice();
+    }
+}
+
+static void rejectChoice(bool confirm_rejection) {
+    if (confirm_rejection) {
+        send_response(0, false);
+        nbgl_useCaseStatus("MESSAGE\nREJECTED",false,ui_idle);
+    } else {
+        switch(state) {
+            case STATE_HEADER:
+                ui_sign_message_nbgl();
+                break;
+            case STATE_REVIEW:
+                start_review();
+                break;
+            default:
+                PRINTF("This should not happen !\n");
+        }
+    }
+}
+
+static void rejectUseCaseChoice(void) {
+    nbgl_useCaseChoice("Reject message?",NULL,"Yes, reject","Go back to message",rejectChoice);
+}
+
+static void start_review(void) {
+    state = STATE_REVIEW;
+    layout.nbMaxLinesForValue = 0;
+    layout.smallCaseForValue = true;
+    layout.wrapping = true;
+    layout.pairs = infos;
+    infos[0].item = "hash";
+    infos[0].value = msg_context.strhash;
+    layout.nbPairs = ARRAY_COUNT(infos);
+
+    nbgl_useCaseStaticReview(&layout, &review_final_long_press, "Reject message", review_final_callback);
+}
+
+static void ui_sign_message_nbgl(void) {
+    state = STATE_HEADER;
+    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
+                            "Review message to\nsign on MultiversX\nnetwork",
+                            "",
+                            "Reject message",
+                            start_review,
+                            rejectUseCaseChoice);
+}
+
+#else
 
 // UI for confirming the message hash on screen
 UX_STEP_NOCB(ux_sign_msg_flow_14_step,
@@ -41,22 +142,11 @@ UX_FLOW(ux_sign_msg_flow,
         &ux_sign_msg_flow_15_step,
         &ux_sign_msg_flow_16_step);
 
-void init_msg_context(void) {
-    bip32_account = 0;
-    bip32_address_index = 0;
 
-    app_state = APP_STATE_IDLE;
-}
+#endif
 
-static uint8_t set_result_signature() {
-    uint8_t tx = 0;
-    G_io_apdu_buffer[tx++] = MESSAGE_SIGNATURE_LEN;
-    memmove(G_io_apdu_buffer + tx, msg_context.signature, MESSAGE_SIGNATURE_LEN);
-    tx += MESSAGE_SIGNATURE_LEN;
-    return tx;
-}
 
-bool sign_message(void) {
+static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
 
@@ -162,6 +252,11 @@ void handle_sign_msg(uint8_t p1,
     }
 
     app_state = APP_STATE_IDLE;
+
+#if defined(TARGET_FATSTACKS)
+    ui_sign_message_nbgl();
+#else
     ux_flow_init(0, ux_sign_msg_flow, NULL);
+#endif
     *flags |= IO_ASYNCH_REPLY;
 }

@@ -9,10 +9,43 @@
 #include "os.h"
 #include "utils.h"
 #include "ux.h"
+#include "menu.h"
+
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
+
 
 static char address[FULL_ADDRESS_LENGTH];
 
-static uint8_t set_result_get_address();
+static uint8_t set_result_get_address(void) {
+    uint8_t tx = 0;
+    uint8_t address_size = strlen(address);
+
+    G_io_apdu_buffer[tx++] = address_size;
+    memmove(G_io_apdu_buffer + tx, address, address_size);
+    tx += address_size;
+
+    return tx;
+}
+
+
+#if defined(TARGET_FATSTACKS)
+
+static void callback_match(bool match) {
+    if (match) {
+        send_response(set_result_get_address(), true);
+    } else {
+        send_response(0, false);
+    }
+    ui_idle();
+}
+
+static void ui_get_public_key_nbgl(void) {
+    nbgl_useCaseAddressConfirmation(address, callback_match);
+}
+
+#else
 
 // UI interface for validating the address on screen
 UX_STEP_NOCB(ux_display_public_flow_5_step,
@@ -41,16 +74,8 @@ UX_FLOW(ux_display_public_flow,
         &ux_display_public_flow_6_step,
         &ux_display_public_flow_7_step);
 
-static uint8_t set_result_get_address() {
-    uint8_t tx = 0;
-    const uint8_t address_size = strlen(address);
+#endif
 
-    G_io_apdu_buffer[tx++] = address_size;
-    memmove(G_io_apdu_buffer + tx, address, address_size);
-    tx += address_size;
-
-    return tx;
-}
 
 void handle_get_address(uint8_t p1,
                         uint8_t p2,
@@ -88,7 +113,11 @@ void handle_get_address(uint8_t p1,
         *tx = set_result_get_address();
         THROW(MSG_OK);
     } else {
+#if defined(TARGET_FATSTACKS)
+        ui_get_public_key_nbgl();
+#else
         ux_flow_init(0, ux_display_public_flow, NULL);
+#endif
         *flags |= IO_ASYNCH_REPLY;
     }
 }
