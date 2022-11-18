@@ -34,15 +34,18 @@ void uint32_t_to_char_array(uint32_t const input, char* output) {
     output[pos] = '\0';
 }
 
-void convert_to_hex_str(char* destination, uint8_t* source, size_t destination_size, size_t source_size) {
+void convert_to_hex_str(char* destination,
+                        uint8_t* source,
+                        size_t destination_size,
+                        size_t source_size) {
     static char hex[] = "0123456789ABCDEF";
     int i = 0;
 
-    if(source_size * 2 > destination_size) {
+    if (source_size * 2 > destination_size) {
         source_size = destination_size / 2;
     }
 
-    for (i = 0; i < (int)source_size; i++) {
+    for (i = 0; i < (int) source_size; i++) {
         destination[(i * 2)] = hex[((source[i] & 0xF0) >> 4)];
         destination[(i * 2) + 1] = hex[((source[i] & 0x0F) >> 0)];
     }
