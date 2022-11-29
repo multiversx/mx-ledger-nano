@@ -23,7 +23,7 @@ static void quit_app_callback(void) {
 }
 
 #define NB_SETTINGS_SWITCHES 1
-static nbgl_layoutSwitch_t switches[NB_SETTINGS_SWITCHES];
+static nbgl_layoutSwitch_t G_switches[NB_SETTINGS_SWITCHES];
 
 enum {
     SWITCH_CONTRACT_DATA_SET_TOKEN = FIRST_USER_TOKEN,
@@ -33,14 +33,9 @@ enum {
 
 static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t *content) {
     if (page == 0) {
-        switches[0].text = "Contract data";
-        switches[0].subText = "Enable contract data";
-        switches[0].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
-        switches[0].tuneId = TUNE_TAP_CASUAL;
-
         content->type = SWITCHES_LIST;
         content->switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
-        content->switchesList.switches = (nbgl_layoutSwitch_t*) switches;
+        content->switchesList.switches = (nbgl_layoutSwitch_t*) G_switches;
     } else if (page == 1) {
         content->type = INFOS_LIST;
         content->infosList.nbInfos = ARRAY_COUNT(info_types);
@@ -53,7 +48,7 @@ static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t *content) {
     return true;
 }
 
-void ui_menu_main(void);
+static void ui_menu_main(void);
 static void ui_menu_settings(void);
 
 static void settingsControlsCallback(int token, uint8_t index) {
@@ -61,8 +56,8 @@ static void settingsControlsCallback(int token, uint8_t index) {
     UNUSED(index);
     switch(token) {
         case SWITCH_CONTRACT_DATA_SET_TOKEN:
-            switches[0].initState = !(switches[0].initState);
-            if (switches[0].initState == OFF_STATE) {
+            G_switches[0].initState = !(G_switches[0].initState);
+            if (G_switches[0].initState == OFF_STATE) {
                 new_setting = CONTRACT_DATA_DISABLED;
             } else {
                 new_setting = CONTRACT_DATA_ENABLED;
@@ -77,17 +72,19 @@ static void settingsControlsCallback(int token, uint8_t index) {
 }
 
 static void ui_menu_settings(void) {
+    G_switches[0].text = "Contract data";
+    G_switches[0].subText = "Enable contract data";
+    G_switches[0].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
+    G_switches[0].tuneId = TUNE_TAP_CASUAL;
+    if (N_storage.setting_contract_data == CONTRACT_DATA_DISABLED) {
+        G_switches[0].initState = OFF_STATE;
+    } else {
+        G_switches[0].initState = ON_STATE;
+    }
     nbgl_useCaseSettings("Stellar settings",0,2,true,ui_menu_main, settings_nav_callback, settingsControlsCallback);
 }
 
-void ui_menu_main(void) {
-    nbgl_state_t init_state;
-    if (N_storage.setting_contract_data == 0) {
-        init_state = OFF_STATE;
-    } else {
-        init_state = ON_STATE;
-    }
-    switches[0].initState = init_state;
+static void ui_menu_main(void) {
     nbgl_useCaseHome("MultiversX", &C_icon_multiversx_logo, "Go to Ledger Live to create a\ntransaction. You will approve it\non Stax.", true, ui_menu_settings, quit_app_callback);
 }
 
