@@ -45,7 +45,7 @@ DEFINES += JSMN_STRICT=1
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 	ICONNAME = icons/nanos_app_multiversx.gif
 else ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
-	ICONNAME = icons/fatstacks_app_multiversx.gif
+	ICONNAME = icons/stax_app_multiversx.gif
 else
 	ICONNAME = icons/nanox_app_multiversx.gif
 endif
