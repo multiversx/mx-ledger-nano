@@ -288,14 +288,14 @@ unsigned char io_event(unsigned char channel) {
                   SEPROXYHAL_TAG_STATUS_EVENT_FLAG_USB_POWERED)) {
                 THROW(EXCEPTION_IO_RESET);
             }
-
-            UX_DEFAULT_EVENT();
-            break;
-
+            /* fallthrough */
         case SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT:
 #ifdef HAVE_BAGL
             UX_DISPLAYED_EVENT({});
 #endif  // HAVE_BAGL
+#ifdef HAVE_NBGL
+            UX_DEFAULT_EVENT();
+#endif  // HAVE_NBGL
             break;
 
         case SEPROXYHAL_TAG_TICKER_EVENT:
