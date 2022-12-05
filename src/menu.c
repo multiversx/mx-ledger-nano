@@ -14,7 +14,7 @@
 
 #if defined(TARGET_FATSTACKS)
 
-static const char* const info_types[] = {"Version", "MultiversX"};
+static const char* const info_types[] = {"Version", APPNAME};
 static const char* const info_contents[] = {APPVERSION, "(c) 2022 Ledger"};
 
 static void quit_app_callback(void) {
@@ -81,11 +81,11 @@ static void ui_menu_settings(void) {
     } else {
         G_switches[0].initState = ON_STATE;
     }
-    nbgl_useCaseSettings("Stellar settings",0,2,true,ui_menu_main, settings_nav_callback, settingsControlsCallback);
+    nbgl_useCaseSettings("MultiversX settings",0,2,false,ui_menu_main, settings_nav_callback, settingsControlsCallback);
 }
 
 static void ui_menu_main(void) {
-    nbgl_useCaseHome("MultiversX", &C_icon_multiversx_logo, "Go to Ledger Live to create a\ntransaction. You will approve it\non Stax.", true, ui_menu_settings, quit_app_callback);
+    nbgl_useCaseHome(APPNAME, &C_icon_multiversx_logo_64x64, "This app confirms actions on\nthe MultiversX network.", true, ui_menu_settings, quit_app_callback);
 }
 
 #else
@@ -113,7 +113,7 @@ UX_STEP_NOCB(ux_idle_flow_1_step,
              pb,
              {
                  &C_icon_multiversx_logo,
-                 "MultiversX",
+                 APPNAME,
              });
 UX_STEP_VALID(ux_idle_flow_2_step,
               pb,
