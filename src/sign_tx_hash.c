@@ -149,7 +149,7 @@ static void rejectChoice(bool confirm_rejection) {
 }
 
 static void rejectUseCaseChoice(void) {
-    nbgl_useCaseChoice("Reject transaction?",NULL,"Yes, reject","Go back to transaction",rejectChoice);
+    nbgl_useCaseConfirm("Reject transaction?",NULL,"Yes, reject","Go back to transaction",rejectChoice);
 }
 
 static void start_review(void) {

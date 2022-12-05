@@ -81,11 +81,11 @@ static void ui_menu_settings(void) {
     } else {
         G_switches[0].initState = ON_STATE;
     }
-    nbgl_useCaseSettings("MultiversX settings",0,2,false,ui_menu_main, settings_nav_callback, settingsControlsCallback);
+    nbgl_useCaseSettings(APPNAME" settings",0,2,false,ui_menu_main, settings_nav_callback, settingsControlsCallback);
 }
 
 static void ui_menu_main(void) {
-    nbgl_useCaseHome(APPNAME, &C_icon_multiversx_logo_64x64, "This app confirms actions on\nthe MultiversX network.", true, ui_menu_settings, quit_app_callback);
+    nbgl_useCaseHome(APPNAME, &C_icon_multiversx_logo_64x64, "This app confirms actions on\nthe " APPNAME " network.", true, ui_menu_settings, quit_app_callback);
 }
 
 #else
