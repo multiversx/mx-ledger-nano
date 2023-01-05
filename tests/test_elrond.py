@@ -102,7 +102,7 @@ def send_async_sign_message(client, ins, payload: bytes) -> Generator[None, None
 class TestMenu:
 
     def test_menu(self, client, backend, navigator, test_name):
-        if client.firmware.device == "nanos" or client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+        if client.firmware.device.startswith("nano"):
             nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
@@ -122,12 +122,12 @@ class TestMenu:
         elif client.firmware.device == "fat":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.USE_CASE_SETTINGS_NEXT),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_BACK),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_EXIT),
+                       NavIns(NavInsID.USE_CASE_SETTINGS_PREVIOUS),
+                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT),
                        NavIns(NavInsID.USE_CASE_HOME_QUIT)]
 
         with pytest.raises(exceptions.ConnectionError):
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, screen_change_before_first_instruction=False)
 
 
 class TestGetAppVersion:
@@ -159,7 +159,7 @@ class TestGetAppConfiguration:
         assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
 
         # switch to disabled
-        if client.firmware.device == "nanos" or client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+        if client.firmware.device.startswith("nano"):
             nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
@@ -168,13 +168,13 @@ class TestGetAppConfiguration:
         elif client.firmware.device == "fat":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.TOUCH, (350,115)),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_EXIT)]
+                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
 
-        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_0", nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_0", nav_ins, screen_change_before_first_instruction=False)
         assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 0
 
         # switch back to enabled
-        if client.firmware.device == "nanos" or client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+        if client.firmware.device.startswith("nano"):
             nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
                        NavIns(NavInsID.BOTH_CLICK),
@@ -183,9 +183,9 @@ class TestGetAppConfiguration:
         elif client.firmware.device == "fat":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.TOUCH, (350,115)),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_EXIT)]
+                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
 
-        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_1", nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_1", nav_ins, screen_change_before_first_instruction=False)
         assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
 
 
@@ -213,7 +213,7 @@ class TestGetAddr:
                            NavIns(NavInsID.TOUCH, (200,346)),
                            NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_EXIT_QR),
                            NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert re.match("^@[0-9a-f]{64}$", client.last_async_response.data.decode("ascii"))
 
     def test_get_addr_confirm_refused(self, client, backend, navigator, test_name):
@@ -228,7 +228,7 @@ class TestGetAddr:
             elif client.firmware.device == "fat":
                 nav_ins = [NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert client.last_async_response.status == Error.USER_DENIED
 
     def test_get_addr_too_long(self, client, backend):
@@ -265,12 +265,12 @@ class TestSignMsg:
                            NavIns(NavInsID.USE_CASE_CHOICE_REJECT),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_BACK),
+                           NavIns(NavInsID.USE_CASE_REVIEW_PREVIOUS),
                            NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_REJECT),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_short_rejected(self, client, backend, navigator, test_name):
         payload = b"abcd"
@@ -286,7 +286,7 @@ class TestSignMsg:
                            NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert client.last_async_response.status == Error.USER_DENIED
 
     def test_sign_msg_long(self, client, backend, navigator, test_name):
@@ -301,7 +301,7 @@ class TestSignMsg:
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_too_long(self, client, backend):
         payload = b"abcd"
@@ -326,7 +326,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_simple_no_data_rejected(self, client, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
@@ -342,7 +342,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert client.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_simple_data_confirmed(self, client, backend, navigator, test_name):
@@ -358,7 +358,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_receiver(self, client, backend, navigator, test_name):
         payload  = b'{"nonce":1234,"value":"'
@@ -378,7 +378,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_nonce(self, client, backend, navigator, test_name):
         # nonce is a 64-bit unsigned integer
@@ -393,7 +393,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_amount(self, client, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
@@ -407,7 +407,7 @@ class TestSignTxHash:
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_invalid_nonce(self, client, backend):
         payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
@@ -452,7 +452,7 @@ class TestSignMsgAuthToken:
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_refused(self, client, backend, navigator, test_name):
         payload:bytes = b""
@@ -470,7 +470,7 @@ class TestSignMsgAuthToken:
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING
-            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, first_instruction_wait=1.5, middle_instruction_wait=1.5, last_instruction_wait=1.5)
+            navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert client.last_async_response.status == Error.USER_DENIED
 
 
