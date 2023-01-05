@@ -40,12 +40,6 @@ static uint8_t set_result_auth_token(void) {
 
 #if defined(TARGET_FATSTACKS)
 
-typedef enum {
-  STATE_HEADER,
-  STATE_REVIEW,
-} sign_message_review_state_t;
-static sign_message_review_state_t state;
-
 static void start_review(void);
 static void ui_sign_message_auth_token_nbgl(void);
 static void rejectUseCaseChoice(void);
@@ -62,37 +56,23 @@ static const nbgl_pageInfoLongPress_t review_final_long_press = {
 
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
-        send_response(set_result_auth_token(), true);
+        send_response(set_result_auth_token(), true, false);
         nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
     } else {
         rejectUseCaseChoice();
     }
 }
 
-static void rejectChoice(bool confirm_rejection) {
-    if (confirm_rejection) {
-        send_response(0, false);
-        nbgl_useCaseStatus("MESSAGE\nREJECTED",false,ui_idle);
-    } else {
-        switch(state) {
-            case STATE_HEADER:
-                ui_sign_message_auth_token_nbgl();
-                break;
-            case STATE_REVIEW:
-                start_review();
-                break;
-            default:
-                PRINTF("This should not happen !\n");
-        }
-    }
+static void rejectChoice(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("message\nrejected",false,ui_idle);
 }
 
 static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject message?",NULL,"Yes, reject","Go back to message",rejectChoice);
+    nbgl_useCaseConfirm("Reject message?",NULL,"Yes, reject","Go back to message", rejectChoice);
 }
 
 static void start_review(void) {
-    state = STATE_REVIEW;
     layout.nbMaxLinesForValue = 0;
     layout.smallCaseForValue = true;
     layout.wrapping = true;
@@ -107,7 +87,6 @@ static void start_review(void) {
 }
 
 static void ui_sign_message_auth_token_nbgl(void) {
-    state = STATE_HEADER;
     nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
                             "Review message to\nsign on MultiversX\nnetwork",
                             "",
@@ -135,14 +114,14 @@ UX_STEP_NOCB(ux_auth_token_msg_flow_34_step,
              });
 UX_STEP_VALID(ux_auth_token_msg_flow_35_step,
               pb,
-              send_response(set_result_auth_token(), true),
+              send_response(set_result_auth_token(), true, true),
               {
                   &C_icon_validate_14,
                   "Authorize",
               });
 UX_STEP_VALID(ux_auth_token_msg_flow_36_step,
               pb,
-              send_response(0, false),
+              send_response(0, false, true),
               {
                   &C_icon_crossmark,
                   "Reject",

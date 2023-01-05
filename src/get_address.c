@@ -34,11 +34,10 @@ static uint8_t set_result_get_address(void) {
 
 static void callback_match(bool match) {
     if (match) {
-        send_response(set_result_get_address(), true);
+        send_response(set_result_get_address(), true, true);
     } else {
-        send_response(0, false);
+        send_response(0, false, true);
     }
-    ui_idle();
 }
 
 static void ui_get_public_key_nbgl(void) {
@@ -56,14 +55,14 @@ UX_STEP_NOCB(ux_display_public_flow_5_step,
              });
 UX_STEP_VALID(ux_display_public_flow_6_step,
               pb,
-              send_response(set_result_get_address(), true),
+              send_response(set_result_get_address(), true, true),
               {
                   &C_icon_validate_14,
                   "Approve",
               });
 UX_STEP_VALID(ux_display_public_flow_7_step,
               pb,
-              send_response(0, false),
+              send_response(0, false, true),
               {
                   &C_icon_crossmark,
                   "Reject",

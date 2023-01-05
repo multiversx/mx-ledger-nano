@@ -12,7 +12,7 @@
 
 uint32_t read_uint32_be(uint8_t* buffer);
 
-void send_response(uint8_t tx, bool approve);
+void send_response(uint8_t tx, bool approve, bool back_to_idle);
 
 void uint32_t_to_char_array(uint32_t const input, char* output);
 
