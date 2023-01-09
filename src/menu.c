@@ -11,7 +11,6 @@
 #include "nbgl_use_case.h"
 #endif
 
-
 #if defined(TARGET_FATSTACKS)
 
 static const char* const info_types[] = {"Version", APPNAME};
@@ -29,9 +28,7 @@ enum {
     SWITCH_CONTRACT_DATA_SET_TOKEN = FIRST_USER_TOKEN,
 };
 
-
-
-static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t *content) {
+static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t* content) {
     if (page == 0) {
         content->type = SWITCHES_LIST;
         content->switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
@@ -54,7 +51,7 @@ static void ui_menu_settings(void);
 static void settingsControlsCallback(int token, uint8_t index) {
     uint8_t new_setting;
     UNUSED(index);
-    switch(token) {
+    switch (token) {
         case SWITCH_CONTRACT_DATA_SET_TOKEN:
             G_switches[0].initState = !(G_switches[0].initState);
             if (G_switches[0].initState == OFF_STATE) {
@@ -62,7 +59,7 @@ static void settingsControlsCallback(int token, uint8_t index) {
             } else {
                 new_setting = CONTRACT_DATA_ENABLED;
             }
-            nvm_write((void *) &N_storage.setting_contract_data, &new_setting, 1);
+            nvm_write((void*) &N_storage.setting_contract_data, &new_setting, 1);
             ui_menu_settings();
             break;
         default:
@@ -81,11 +78,22 @@ static void ui_menu_settings(void) {
     } else {
         G_switches[0].initState = ON_STATE;
     }
-    nbgl_useCaseSettings(APPNAME" settings",0,2,false,ui_menu_main, settings_nav_callback, settingsControlsCallback);
+    nbgl_useCaseSettings(APPNAME " settings",
+                         0,
+                         2,
+                         false,
+                         ui_menu_main,
+                         settings_nav_callback,
+                         settingsControlsCallback);
 }
 
 static void ui_menu_main(void) {
-    nbgl_useCaseHome(APPNAME, &C_icon_multiversx_logo_64x64, "This app confirms actions on\nthe " APPNAME " network.", true, ui_menu_settings, quit_app_callback);
+    nbgl_useCaseHome(APPNAME,
+                     &C_icon_multiversx_logo_64x64,
+                     "This app confirms actions on\nthe " APPNAME " network.",
+                     true,
+                     ui_menu_settings,
+                     quit_app_callback);
 }
 
 #else
@@ -142,7 +150,6 @@ UX_FLOW(ux_idle_flow,
         &ux_idle_flow_3_step,
         &ux_idle_flow_4_step,
         FLOW_LOOP);
-
 
 // Contract data submenu:
 static void setting_contract_data_change(unsigned int contract_data) {
@@ -209,9 +216,7 @@ static void info_submenu_selector(unsigned int idx) {
 
 #endif
 
-
 void ui_idle(void) {
-
 #if defined(TARGET_FATSTACKS)
     ui_menu_main();
 #else

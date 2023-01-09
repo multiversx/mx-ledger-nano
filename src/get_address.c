@@ -15,7 +15,6 @@
 #include "nbgl_use_case.h"
 #endif
 
-
 static char address[FULL_ADDRESS_LENGTH];
 
 static uint8_t set_result_get_address(void) {
@@ -28,7 +27,6 @@ static uint8_t set_result_get_address(void) {
 
     return tx;
 }
-
 
 #if defined(TARGET_FATSTACKS)
 
@@ -74,7 +72,6 @@ UX_FLOW(ux_display_public_flow,
         &ux_display_public_flow_7_step);
 
 #endif
-
 
 void handle_get_address(uint8_t p1,
                         uint8_t p2,

@@ -20,7 +20,6 @@ tx_hash_context_t tx_hash_context;
 tx_context_t tx_context;
 bool should_display_esdt_flow;
 
-
 static uint8_t set_result_signature() {
     uint8_t tx = 0;
     const uint8_t sig_size = 64;
@@ -98,14 +97,13 @@ static bool is_esdt_transfer() {
            next_char_after_identifier_is_at_separator && same_chainid;
 }
 
-
 #if defined(TARGET_FATSTACKS)
 
 static void start_review(void);
 static void ui_sign_tx_hash_nbgl(void);
 static void rejectUseCaseChoice(void);
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t infos[5]; // 5 info max for ESDT and 5 info max for EGLD
+static nbgl_layoutTagValue_t infos[5];  // 5 info max for ESDT and 5 info max for EGLD
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\nMultiversX network?",
@@ -130,28 +128,22 @@ static void rejectChoice(void) {
 }
 
 static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject transaction?",NULL,"Yes, reject","Go back to transaction", rejectChoice);
+    nbgl_useCaseConfirm("Reject transaction?",
+                        NULL,
+                        "Yes, reject",
+                        "Go back to transaction",
+                        rejectChoice);
 }
 
 static void start_review(void) {
     uint8_t step = 0;
 
     if (should_display_esdt_flow) {
-        infos[step].item = "Token",
-        infos[step].value = esdt_info.ticker,
-        ++step;
-        infos[step].item = "Receiver",
-        infos[step].value = tx_context.receiver,
-        ++step;
-        infos[step].item = "Value",
-        infos[step].value = tx_context.amount,
-        ++step;
-        infos[step].item = "Fee",
-        infos[step].value = tx_context.fee,
-        ++step;
-        infos[step].item = "Network",
-        infos[step].value = tx_context.network,
-        ++step;
+        infos[step].item = "Token", infos[step].value = esdt_info.ticker, ++step;
+        infos[step].item = "Receiver", infos[step].value = tx_context.receiver, ++step;
+        infos[step].item = "Value", infos[step].value = tx_context.amount, ++step;
+        infos[step].item = "Fee", infos[step].value = tx_context.fee, ++step;
+        infos[step].item = "Network", infos[step].value = tx_context.network, ++step;
     } else {
         infos[step].item = "Receiver";
         infos[step].value = tx_context.receiver;
@@ -178,7 +170,10 @@ static void start_review(void) {
     layout.pairs = infos;
     layout.nbPairs = step;
 
-    nbgl_useCaseStaticReview(&layout, &review_final_long_press, "Reject transaction", review_final_callback);
+    nbgl_useCaseStaticReview(&layout,
+                             &review_final_long_press,
+                             "Reject transaction",
+                             review_final_callback);
 }
 
 static void ui_sign_tx_hash_nbgl(void) {
@@ -322,7 +317,6 @@ static void display_tx_sign_flow() {
 }
 
 #endif
-
 
 void init_tx_context() {
     tx_context.amount[0] = 0;

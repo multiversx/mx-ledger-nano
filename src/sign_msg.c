@@ -68,7 +68,7 @@ static void rejectChoice(void) {
 }
 
 static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject message?",NULL,"Yes, reject","Go back to message",rejectChoice);
+    nbgl_useCaseConfirm("Reject message?", NULL, "Yes, reject", "Go back to message", rejectChoice);
 }
 
 static void start_review(void) {
@@ -80,7 +80,10 @@ static void start_review(void) {
     infos[0].value = msg_context.strhash;
     layout.nbPairs = ARRAY_COUNT(infos);
 
-    nbgl_useCaseStaticReview(&layout, &review_final_long_press, "Reject message", review_final_callback);
+    nbgl_useCaseStaticReview(&layout,
+                             &review_final_long_press,
+                             "Reject message",
+                             review_final_callback);
 }
 
 static void ui_sign_message_nbgl(void) {
@@ -121,9 +124,7 @@ UX_FLOW(ux_sign_msg_flow,
         &ux_sign_msg_flow_15_step,
         &ux_sign_msg_flow_16_step);
 
-
 #endif
-
 
 static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;

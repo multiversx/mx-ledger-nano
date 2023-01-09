@@ -64,7 +64,6 @@ unsigned short io_exchange_al(unsigned char channel, unsigned short tx_len);
 void app_exit(void);
 void nv_app_state_init();
 
-
 void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
     unsigned short sw = 0;
     uint16_t ret;

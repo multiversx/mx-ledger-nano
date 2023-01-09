@@ -21,8 +21,7 @@ void convert_to_hex_str(char* destination,
                         const uint8_t* source,
                         size_t source_size);
 
-
 #ifdef HAVE_NBGL
-extern nbgl_page_t *pageContext;
+extern nbgl_page_t* pageContext;
 void releaseContext(void);
 #endif

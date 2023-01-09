@@ -65,11 +65,11 @@ static void review_final_callback(bool confirmed) {
 
 static void rejectChoice(void) {
     send_response(0, false, false);
-    nbgl_useCaseStatus("message\nrejected",false,ui_idle);
+    nbgl_useCaseStatus("message\nrejected", false, ui_idle);
 }
 
 static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject message?",NULL,"Yes, reject","Go back to message", rejectChoice);
+    nbgl_useCaseConfirm("Reject message?", NULL, "Yes, reject", "Go back to message", rejectChoice);
 }
 
 static void start_review(void) {
@@ -83,7 +83,10 @@ static void start_review(void) {
     infos[1].value = token_auth_context.token;
     layout.nbPairs = ARRAY_COUNT(infos);
 
-    nbgl_useCaseStaticReview(&layout, &review_final_long_press, "Reject message", review_final_callback);
+    nbgl_useCaseStaticReview(&layout,
+                             &review_final_long_press,
+                             "Reject message",
+                             review_final_callback);
 }
 
 static void ui_sign_message_auth_token_nbgl(void) {
@@ -134,7 +137,6 @@ UX_FLOW(ux_auth_token_msg_flow,
         &ux_auth_token_msg_flow_36_step);
 
 #endif
-
 
 static void init_auth_token_context(void) {
     bip32_account = 0;
