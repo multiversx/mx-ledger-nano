@@ -99,7 +99,7 @@ jobs:
         with:
           upload_url: ${{ steps.get_release_info.outputs.upload_url }}
           asset_path: bin/app.hex
-          asset_name: elrond-ledger-app-${{ github.event.inputs.Version }}.hex
+          asset_name: multiversx-ledger-app-${{ github.event.inputs.Version }}.hex
           asset_content_type: application/octet-stream 
 
   build-testApps-linux-and-mac:
@@ -152,7 +152,7 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testApp/testApp
-        asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_name: TestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
         asset_content_type: application/octet-stream
         
     - name: Upload Release Asset - TestMsgSign
@@ -162,7 +162,7 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testMsgSign/testMsgSign
-        asset_name: ElrondTestMsgSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_name: TestMsgSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
         asset_content_type: application/octet-stream
 
     - name: Upload Release Asset - TestTxHashSign
@@ -172,7 +172,7 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testTxHashSign/testTxHashSign
-        asset_name: ElrondTestTxHashSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
+        asset_name: TestTxHashSign_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}
         asset_content_type: application/octet-stream
   
   build-testApps-windows:
@@ -220,7 +220,7 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testApp/testApp.exe
-        asset_name: ElrondTestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}.exe
+        asset_name: TestApp_${{ matrix.runs-on }}_${{ github.event.inputs.Version }}.exe
         asset_content_type: application/octet-stream
         
     - name: Upload Release Asset - TestMsgSign
@@ -230,7 +230,7 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testMsgSign/testMsgSign.exe
-        asset_name: ElrondTestMsgSign_windows-latest_${{ github.event.inputs.Version }}.exe
+        asset_name: TestMsgSign_windows-latest_${{ github.event.inputs.Version }}.exe
         asset_content_type: application/octet-stream
 
     - name: Upload Release Asset - TestTxHashSign
@@ -240,5 +240,5 @@ jobs:
       with:
         upload_url: ${{ steps.get_release_info.outputs.upload_url }}
         asset_path: ./testApp/cmd/testTxHashSign/testTxHashSign.exe
-        asset_name: ElrondTestTxHashSign_windows-latest_${{ github.event.inputs.Version }}.exe
+        asset_name: TestTxHashSign_windows-latest_${{ github.event.inputs.Version }}.exe
         asset_content_type: application/octet-stream
