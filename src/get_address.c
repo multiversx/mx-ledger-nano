@@ -1,50 +1,45 @@
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
+#include "address_helpers.h"
 #include "bech32.h"
 #include "get_address.h"
 #include "get_private_key.h"
-#include "address_helpers.h"
 #include "globals.h"
 #include "os.h"
-#include "ux.h"
 #include "utils.h"
+#include "ux.h"
 
 static char address[FULL_ADDRESS_LENGTH];
 
 static uint8_t set_result_get_address();
 
 // UI interface for validating the address on screen
-UX_STEP_NOCB(
-    ux_display_public_flow_5_step, 
-    bnnn_paging, 
-    {
-        .title = "Address",
-        .text = address,
-    });
-UX_STEP_VALID(
-    ux_display_public_flow_6_step, 
-    pb, 
-    send_response(set_result_get_address(), true),
-    {
-        &C_icon_validate_14,
-        "Approve",
-    });
-UX_STEP_VALID(
-    ux_display_public_flow_7_step, 
-    pb, 
-    send_response(0, false),
-    {
-        &C_icon_crossmark,
-        "Reject",
-    });
+UX_STEP_NOCB(ux_display_public_flow_5_step,
+             bnnn_paging,
+             {
+                 .title = "Address",
+                 .text = address,
+             });
+UX_STEP_VALID(ux_display_public_flow_6_step,
+              pb,
+              send_response(set_result_get_address(), true),
+              {
+                  &C_icon_validate_14,
+                  "Approve",
+              });
+UX_STEP_VALID(ux_display_public_flow_7_step,
+              pb,
+              send_response(0, false),
+              {
+                  &C_icon_crossmark,
+                  "Reject",
+              });
 
 UX_FLOW(ux_display_public_flow,
-    &ux_display_public_flow_5_step,
-    &ux_display_public_flow_6_step,
-    &ux_display_public_flow_7_step
-);
-
+        &ux_display_public_flow_5_step,
+        &ux_display_public_flow_6_step,
+        &ux_display_public_flow_7_step);
 
 static uint8_t set_result_get_address() {
     uint8_t tx = 0;
@@ -57,7 +52,12 @@ static uint8_t set_result_get_address() {
     return tx;
 }
 
-void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t data_length, volatile unsigned int *flags, volatile unsigned int *tx) {
+void handle_get_address(uint8_t p1,
+                        uint8_t p2,
+                        uint8_t *data_buffer,
+                        uint16_t data_length,
+                        volatile unsigned int *flags,
+                        volatile unsigned int *tx) {
     uint8_t public_key[PUBLIC_KEY_LEN];
     uint32_t account, index;
 
@@ -72,7 +72,7 @@ void handle_get_address(uint8_t p1, uint8_t p2, uint8_t *data_buffer, uint16_t d
         THROW(ERR_INVALID_ARGUMENTS);
     }
 
-    switch(p2) {
+    switch (p2) {
         case P2_DISPLAY_BECH32:
             get_address_bech32_from_binary(public_key, address);
             break;

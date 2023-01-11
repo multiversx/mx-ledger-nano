@@ -24,18 +24,18 @@ APP_LOAD_PARAMS= --curve ed25519 --path "44'/508'" --appFlags 0x240 $(COMMON_LOA
 
 APPVERSION_M:=$(if $(APPVERSION_M),$(APPVERSION_M),1)
 APPVERSION_N:=$(if $(APPVERSION_N),$(APPVERSION_N),0)
-APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),18)
+APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),20)
 APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-APPNAME = "Elrond"
+APPNAME = "MultiversX"
 
 DEFINES += $(DEFINES_LIB)
 DEFINES += JSMN_STRICT=1
 
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
-	ICONNAME=icons/nanos_app_elrond.gif
+	ICONNAME=icons/nanos_app_multiversx.gif
 else
-	ICONNAME=icons/nanox_app_elrond.gif
+	ICONNAME=icons/nanox_app_multiversx.gif
 endif
 
 
