@@ -1,4 +1,5 @@
 pytest
-ragger[speculos]==0.8.1
+ragger==0.8.1
+speculos==0.1.158
 ragger[ledgerwallet]==0.8.1
 protobuf==3.20.3
