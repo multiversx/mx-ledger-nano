@@ -47,6 +47,9 @@ jobs:
 
     needs: nano_build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        device: ["nanos", "nanox", "nanosp"]
 
     steps:
       - name: Clone
@@ -67,9 +70,9 @@ jobs:
         run: |
           pip install --extra-index-url https://test.pypi.org/simple/ -r tests/requirements.txt
 
-      - name: Run speculos tests
+      - name: Run test for device ${{ matrix.device }}
         run: |
-          pytest -v --tb=short ./tests
+          pytest -v --tb=short ./tests --device ${{ matrix.device }}
 
 
   job_scan_build:
