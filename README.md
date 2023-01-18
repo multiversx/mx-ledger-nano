@@ -1,8 +1,8 @@
-# MultiversX App for the Ledger Nano
+# MultiversX App for the Ledger Devices
 
 ## Introduction
 
-This is the official MultiversX wallet app for the [Ledger Nano S](https://www.ledgerwallet.com/products/ledger-nano-s).
+This is the official MultiversX wallet app for the [Ledger Devices](https://www.ledger.com/).
 
 ## Prerequisites
 
