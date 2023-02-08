@@ -9,6 +9,8 @@ typedef struct {
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
     char token[MAX_DISPLAY_DATA_SIZE];
+    uint8_t num_dots;
+    char auth_body[2 * MAX_DISPLAY_DATA_SIZE];
 } token_auth_context_t;
 
 static token_auth_context_t token_auth_context;
@@ -60,6 +62,35 @@ void init_auth_token_context(void) {
 void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
     if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
         return;
+    }
+
+    if(token_auth_context.num_dots < 2) {
+    /*
+        A valid auth token looks like this:
+        ZXJkFmY3Nlan.....zVyeWWN0OHdlanFrY.
+        YkcjdkNzQxOD.....VzFpNNU56TTVNRFo5.
+        69aa3ee210c9.....3e5e7f41bd6a23208
+
+        The second part (after decoding) contains the hostname and the TTL of the token. If this format is not met, the auth token will be displayed as it is.
+        This for loop is used to count the number of dots (.) occurring in the auth token. If the number of dots is less than 2, the auth token will be displayed as it is.
+    */
+        for(uint8_t i = 0; i < data_length; i++) {
+           if (data_buffer[i] == '.') {
+               token_auth_context.num_dots++;
+               if (token_auth_context.num_dots == 1) {
+                    size_t len = strlen(token_auth_context.token);
+                    if(len > 200) { // extract constant
+                        memset(token_auth_context.auth_body, '\0', sizeof(token_auth_context.auth_body));
+                        break;
+                    }
+                    token_auth_context.auth_body[len] = data_buffer[i];
+                    token_auth_context.auth_body[len + 1] = '\0';
+               }
+               if(token_auth_context.num_dots == 2) {
+                   break; // if the second dot is found during the iteration, break the loop
+               }
+           }
+        }
     }
 
     int num_chars_to_show = data_length;
@@ -237,6 +268,16 @@ void handle_auth_token(uint8_t p1,
         THROW(ERR_SIGNATURE_FAILED);
     }
 
+    char* display;
+    if (compute_token_display(token_auth_context.auth_body, display) != -1) {
+        size_t display_len = strlen(display);
+        if(display_len > 100) {
+            display[display_len-1] = '.';
+            display[display_len-2] = '.';
+            display[display_len-3] = '.';
+        }
+        memmove(token_auth_context.token, display, display_len);
+    }
     app_state = APP_STATE_IDLE;
     ux_flow_init(0, ux_auth_token_msg_flow, NULL);
     *flags |= IO_ASYNCH_REPLY;

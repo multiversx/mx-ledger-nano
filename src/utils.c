@@ -51,3 +51,41 @@ void convert_to_hex_str(char* destination,
     }
     destination[i * 2] = '\0';
 }
+
+
+int compute_token_display(const char *input, char *display) {
+    if(strlen(input) == 0) {
+        return -1;
+    }
+    // Decode the input string
+    char decoded[200]; // TODO: extract constant
+    if (!base64decode(decoded, input, strlen(input))) {
+        return -1;
+    }
+
+    // Extract the hostname and time to live
+    int dot1 = -1, dot2 = -1;
+    int len = strlen(decoded);
+    for (int i = 0; i < len; i++) {
+        if (decoded[i] == '.') {
+            if (dot1 == -1) {
+                dot1 = i;
+            } else {
+                dot2 = i;
+                break;
+            }
+        }
+    }
+    if (dot1 == -1 || dot2 == -1) {
+        return -1;
+    }
+    decoded[dot1] = '\0';
+
+    char hostname[100]; // TODO: extract constant
+    int ttl; // TODO: extract constant
+    memmove(hostname, decoded, dot1 + 1);
+    ttl = atoi(decoded + dot2 + 1);
+
+    display = printf("Logging into %s for %d seconds", hostname, ttl);
+    return 0;
+}
