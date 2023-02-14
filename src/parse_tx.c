@@ -105,7 +105,7 @@ bool gas_to_fee(uint64_t gas_limit,
     // tx fee formula
     // gas_units_for_move_balance = (min_gas_limit + len(data)*gas_per_data_byte)
     // tx_fee = gas_units_for_move_balance * gas_price + (gas_limit -
-    // gas_unit_for_move_balance) * gas_price_modifier * gas_limit the difference
+    // gas_unit_for_move_balance) * gas_price_modifier * gas_limit. the difference
     // is that instead of multiplying with gas_price_modifier we divide by
     // 1/gas_price_modifier and the constant is marked as GAS_PRICE_DIVIER
 
