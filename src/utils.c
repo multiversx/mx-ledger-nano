@@ -217,10 +217,10 @@ int compute_token_display(const char* input, char* display) {
                 memmove(ttl_display, "N/A time", 8);
                 ttl_display[8] = '\0';
             } else {
+                memmove(ttl, input + i - ttl_len, ttl_len);
+                ttl[ttl_len] = '\0';
                 seconds_to_time(ttl, ttl_display, 40);
             }
-            memmove(ttl, input + i - ttl_len, ttl_len);
-            ttl[ttl_len] = '\0';
             break;
         }
     }
