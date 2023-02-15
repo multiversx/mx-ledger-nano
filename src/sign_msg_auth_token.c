@@ -84,7 +84,9 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
             if (token_auth_context.dot_count == 1) {
                 if (strlen(token_auth_context.auth_body) > 100) {
                     token_auth_context.stop_hostname_ttl_fetch = true;
-                    memset(token_auth_context.auth_hostname, 0, sizeof(token_auth_context.auth_hostname));
+                    memset(token_auth_context.auth_hostname,
+                           0,
+                           sizeof(token_auth_context.auth_hostname));
                     break;
                 }
 
@@ -297,7 +299,9 @@ void handle_auth_token(uint8_t p1,
     }
 
     char display[100];
-    int ret_code = compute_token_display(token_auth_context.auth_hostname, token_auth_context.auth_ttl, display);
+    int ret_code = compute_token_display(token_auth_context.auth_hostname,
+                                         token_auth_context.auth_ttl,
+                                         display);
     if (ret_code == 0) {
         size_t display_len = strlen(display);
         if (display_len > 100) {
