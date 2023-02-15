@@ -141,99 +141,78 @@ void seconds_to_time(char* input, char* output, size_t max_size) {
     memmove(output + strlen(input), " sec", 8);
 }
 
-int compute_token_display(const char* input, char* display) {
+int compute_token_display(const char* received_hostname, const char* received_ttl, char* display) {
     /*
-        Tries to decode the auth token to extract the hostname and the ttl. Returns -1 if the token
-       is invalid. Example:
-        bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
-            ^                                                                         ^
-        hostname                                                                    ttl
-
-        will write into display: "Authorizing localhost for 5min"
+        Receives the hostname as base64 and ttl as number of seconds and computes the token display.
+        If successful, will write into display something like: "Authorizing host.com for 5min"
     */
 
-    if (strlen(input) == 0) {
+    if (strlen(received_hostname) == 0) {
         return -1;
     }
 
-    char hostname[36];
-    char encoded_hostname[100];
-    char ttl[10];
-
-    int second_dot_position = 0;
-    int dot_count = 0;
-    int hostname_len = 0;
-    int ttl_len = 0;
+    char hostname_display[36];
+    int received_hostname_len = strlen(received_hostname);
+    char encoded_hostname[received_hostname_len];
+    memmove(encoded_hostname, received_hostname, received_hostname_len);
 
     char ttl_display[40];
 
-    for (int i = 0; input[i]; i++) {
-        if (input[i] != '.') {
-            continue;
+    // since the received base64 field does not include padding, manually add it
+    int padding_count = strlen(encoded_hostname) % 4;
+    if (padding_count != 0) {
+        for (int j = 0; j < padding_count; j++) {
+            encoded_hostname[received_hostname_len + j] = '=';
         }
-        dot_count++;
-        if (dot_count == 1) {
-            hostname_len = i;
-            memmove(encoded_hostname, input, hostname_len);
-            encoded_hostname[hostname_len] = '\0';
-
-            int padding_count = strlen(encoded_hostname) % 4;
-            if (padding_count != 0) {
-                for (int j = 0; j < padding_count; j++) {
-                    encoded_hostname[hostname_len + j] = '=';
-                }
-                encoded_hostname[hostname_len + padding_count] = '\0';
-            }
-            size_t encoded_len = strlen(encoded_hostname);
-            if (encoded_len > 36) {
-                encoded_len = 36;
-            }
-            if (!base64decode(hostname, encoded_hostname, encoded_len)) {
-                memmove(display, "l64", 3);
-                return -1;
-            }
-            size_t decoded_hostname_len = strlen(hostname);
-            for (int j = strlen(hostname) - 1; j > 0; j--) {
-                if (hostname[j] != BASE_64_INVALID_CHAR) {
-                    break;
-                }
-                decoded_hostname_len--;
-            }
-            if (decoded_hostname_len < strlen(hostname)) {
-                memmove(hostname, hostname, decoded_hostname_len);
-                hostname[decoded_hostname_len] = '\0';
-            }
-            if (encoded_len < strlen(encoded_hostname)) {
-                int hostname_length = strlen(hostname);
-                hostname[hostname_length - 1] = '.';
-                hostname[hostname_length - 2] = '.';
-                hostname[hostname_length - 3] = '.';
-            }
-        } else if (dot_count == 2) {
-            second_dot_position = i;
-        } else if (dot_count == 3) {
-            ttl_len = i - second_dot_position - 1;
-            if (ttl_len > 10) {
-                memmove(ttl_display, "N/A time", 8);
-                ttl_display[8] = '\0';
-            } else {
-                memmove(ttl, input + i - ttl_len, ttl_len);
-                ttl[ttl_len] = '\0';
-                seconds_to_time(ttl, ttl_display, 40);
-            }
-            break;
-        }
+        encoded_hostname[received_hostname_len + padding_count] = '\0';
     }
 
-    if (dot_count < 3) {
+    // limit the hostname display size
+    int hostname_max_length = strlen(encoded_hostname);
+    if (hostname_max_length > 36) {
+        hostname_max_length = 36;
+    }
+
+    // try to decode the base64 field
+    if (!base64decode(hostname_display, encoded_hostname, hostname_max_length)) {
         return -1;
     }
 
+    // base64decode function can return '?' characters. we'll remove them
+    size_t decoded_hostname_len = strlen(hostname_display);
+    for (int j = strlen(hostname_display) - 1; j > 0; j--) {
+        if (hostname_display[j] != BASE_64_INVALID_CHAR) {
+            break;
+        }
+        decoded_hostname_len--;
+    }
+    if (decoded_hostname_len < strlen(hostname_display)) {
+        memmove(hostname_display, hostname_display, decoded_hostname_len);
+        hostname_display[decoded_hostname_len] = '\0';
+    }
+
+    // if the hostname is longer than wanted, add "..." at the end
+    if (hostname_max_length < strlen(encoded_hostname)) {
+        int hostname_length = strlen(hostname_display);
+        hostname_display[hostname_length - 1] = '.';
+        hostname_display[hostname_length - 2] = '.';
+        hostname_display[hostname_length - 3] = '.';
+    }
+
+    // convert the ttl to a display string
+    if (strlen(received_ttl) == 0) {
+        memmove(ttl_display, "N/A time", 8);
+        ttl_display[8] = '\0';
+    } else {
+        seconds_to_time(received_ttl, ttl_display, 40);
+    }
+
+    // build the final display string
     memmove(display, "Authorizing ", 12);
-    memmove(display + 12, hostname, strlen(hostname));
-    memmove(display + 12 + strlen(hostname), " for ", 5);
-    memmove(display + 12 + strlen(hostname) + 5, ttl_display, strlen(ttl_display));
-    display[12 + strlen(hostname) + 5 + strlen(ttl_display)] = '\0';
+    memmove(display + 12, hostname_display, strlen(hostname_display));
+    memmove(display + 12 + strlen(hostname_display), " for ", 5);
+    memmove(display + 12 + strlen(hostname_display) + 5, ttl_display, strlen(ttl_display));
+    display[12 + strlen(hostname_display) + 5 + strlen(ttl_display)] = '\0';
 
     return 0;
 }

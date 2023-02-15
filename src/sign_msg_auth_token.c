@@ -11,6 +11,10 @@ typedef struct {
     char token[MAX_DISPLAY_DATA_SIZE];
     uint8_t num_dots;
     char auth_body[2 * MAX_DISPLAY_DATA_SIZE];
+    char auth_hostname[100];
+    char auth_ttl[10];
+    int dot_count;
+    bool stop_hostname_ttl_fetch;
 } token_auth_context_t;
 
 static token_auth_context_t token_auth_context;
@@ -59,20 +63,62 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
-    if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
+void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
+    if (token_auth_context.stop_hostname_ttl_fetch) {
         return;
     }
 
+    /*
+    An auth token looks like this. We need to parse the first and the third element and save them
+    bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
+    */
     // store inside token_auth_context.auth_body the entire auth token so it can be decoded later
     for (uint8_t i = 0; i < data_length; i++) {
-        size_t len = strlen(token_auth_context.token);
-        if (len > 200) {  // extract constant
-            memset(token_auth_context.auth_body, '\0', sizeof(token_auth_context.auth_body));
-            break;
+        if (data_buffer[i] != '.') {
+            if (token_auth_context.dot_count != 1) {
+                token_auth_context.auth_body[strlen(token_auth_context.auth_body)] = data_buffer[i];
+                token_auth_context.auth_body[strlen(token_auth_context.auth_body) + 1] = '\0';
+            }
+        } else {
+            token_auth_context.dot_count++;
+            if (token_auth_context.dot_count == 1) {
+                if (strlen(token_auth_context.auth_body) > 100) {
+                    token_auth_context.stop_hostname_ttl_fetch = true;
+                    memset(token_auth_context.auth_hostname, 0, sizeof(token_auth_context.auth_hostname));
+                    break;
+                }
+
+                memmove(token_auth_context.auth_hostname,
+                        token_auth_context.auth_body,
+                        strlen(token_auth_context.auth_body));
+                memset(token_auth_context.auth_body, 0, sizeof(token_auth_context.auth_body));
+            }
+
+            if (token_auth_context.dot_count == 2) {
+                continue;
+            }
+
+            if (token_auth_context.dot_count == 3) {
+                if (strlen(token_auth_context.auth_body) > 10) {
+                    token_auth_context.stop_hostname_ttl_fetch = true;
+                    memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
+                    break;
+                }
+
+                memmove(token_auth_context.auth_ttl,
+                        token_auth_context.auth_body,
+                        strlen(token_auth_context.auth_body));
+                memset(token_auth_context.auth_body, 0, sizeof(token_auth_context.auth_body));
+                token_auth_context.stop_hostname_ttl_fetch = true;
+            }
         }
-        token_auth_context.auth_body[strlen(token_auth_context.auth_body)] = data_buffer[i];
-        token_auth_context.auth_body[strlen(token_auth_context.auth_body) + 1] = '\0';
+    }
+}
+
+void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
+    handle_auth_token_data(data_buffer, data_length);
+    if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
+        return;
     }
 
     int num_chars_to_show = data_length;
@@ -251,7 +297,7 @@ void handle_auth_token(uint8_t p1,
     }
 
     char display[100];
-    int ret_code = compute_token_display(token_auth_context.auth_body, display);
+    int ret_code = compute_token_display(token_auth_context.auth_hostname, token_auth_context.auth_ttl, display);
     if (ret_code == 0) {
         size_t display_len = strlen(display);
         if (display_len > 100) {
