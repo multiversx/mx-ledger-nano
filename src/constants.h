@@ -61,6 +61,8 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define MAX_UINT32_LEN              10  // len(f"{0xffffffff:d}")
 #define MAX_UINT64_LEN              20  // len(f"{0xffffffffffffffff:d}")
 #define MAX_UINT128_LEN             39  // len(f"{0xffffffffffffffffffffffffffffffff:d}")
+#define MAX_AUTH_TOKEN_HOSTNAME_LEN 36
+#define MAX_AUTH_TOKEN_TTL_LEN      40
 #define PRETTY_SIZE                 (2 + MAX_TICKER_LEN)  // additional space for "0." and " eGLD"
 #define GAS_PER_DATA_BYTE           1500
 #define GAS_PRICE_DIVIDER           100

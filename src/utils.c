@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "menu.h"
 #include "os.h"
+#include "base64.h"
 
 // read_uint32_be reads 4 bytes from the buffer and returns an uint32_t with big
 // endian encoding
@@ -52,7 +53,7 @@ void convert_to_hex_str(char* destination,
     destination[i * 2] = '\0';
 }
 
-void int_to_char_array(const int input, char* result, size_t max_size) {
+void int_to_char_array(const int input, char* result, int max_size) {
     /*
         Converts an integer to a char array. Example: 123 -> ['1', '2', '3']
     */
@@ -78,7 +79,7 @@ void int_to_char_array(const int input, char* result, size_t max_size) {
     result[current_result_index] = '\0';
 }
 
-int myAtoi(char* str) {
+int myAtoi(const char* str) {
     int res = 0;
 
     for (int i = 0; str[i] != '\0'; ++i) res = res * 10 + str[i] - '0';
@@ -86,7 +87,7 @@ int myAtoi(char* str) {
     return res;
 }
 
-void seconds_to_time(char* input, char* output, size_t max_size) {
+void seconds_to_time(const char* input, char* output, int max_size) {
     /*
         Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
        34 sec."; 12345 -> "3h 25min 45 sec."
@@ -151,12 +152,13 @@ int compute_token_display(const char* received_hostname, const char* received_tt
         return -1;
     }
 
-    char hostname_display[36];
+    // limit the display size of the display and ttl
+    char hostname_display[MAX_AUTH_TOKEN_HOSTNAME_LEN + 1];
+    char ttl_display[MAX_AUTH_TOKEN_TTL_LEN + 1];
+
     int received_hostname_len = strlen(received_hostname);
     char encoded_hostname[received_hostname_len];
     memmove(encoded_hostname, received_hostname, received_hostname_len);
-
-    char ttl_display[40];
 
     // since the received base64 field does not include padding, manually add it
     int padding_count = strlen(encoded_hostname) % 4;
@@ -169,8 +171,8 @@ int compute_token_display(const char* received_hostname, const char* received_tt
 
     // limit the hostname display size
     int hostname_max_length = strlen(encoded_hostname);
-    if (hostname_max_length > 36) {
-        hostname_max_length = 36;
+    if (hostname_max_length > MAX_AUTH_TOKEN_HOSTNAME_LEN) {
+        hostname_max_length = MAX_AUTH_TOKEN_HOSTNAME_LEN;
     }
 
     // try to decode the base64 field
@@ -192,7 +194,7 @@ int compute_token_display(const char* received_hostname, const char* received_tt
     }
 
     // if the hostname is longer than wanted, add "..." at the end
-    if (hostname_max_length < strlen(encoded_hostname)) {
+    if (hostname_max_length < (int) (strlen(encoded_hostname))) {
         int hostname_length = strlen(hostname_display);
         hostname_display[hostname_length - 1] = '.';
         hostname_display[hostname_length - 2] = '.';
@@ -204,7 +206,7 @@ int compute_token_display(const char* received_hostname, const char* received_tt
         memmove(ttl_display, "N/A time", 8);
         ttl_display[8] = '\0';
     } else {
-        seconds_to_time(received_ttl, ttl_display, 40);
+        seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_LEN);
     }
 
     // build the final display string
