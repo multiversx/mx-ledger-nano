@@ -481,6 +481,54 @@ class TestSignMsgAuthToken:
                     ROOT_SCREENSHOT_PATH,
                     test_name)
 
+    def test_sign_msg_auth_token_too_long_payload(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"a"*1024
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_invalid_ttl(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.invalid.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_long_ttl(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.606060657.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
 class TestState:
 
     def test_invalid_state(self, backend):

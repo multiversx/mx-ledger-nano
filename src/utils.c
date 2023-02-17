@@ -21,6 +21,10 @@ void send_response(uint8_t tx, bool approve) {
     ui_idle();
 }
 
+bool is_digit(char c) {
+    return c >= '0' && c <= '9';
+}
+
 // TODO: refactor this function
 void uint32_t_to_char_array(uint32_t const input, char* output) {
     uint32_t const base = 10;
@@ -82,7 +86,12 @@ void int_to_char_array(const int input, char* result, int max_size) {
 int myAtoi(const char* str) {
     int res = 0;
 
-    for (int i = 0; str[i] != '\0'; ++i) res = res * 10 + str[i] - '0';
+    for (int i = 0; str[i] != '\0'; ++i) {
+        if (!is_digit(str[i])) {
+            return 0;
+        }
+        res = res * 10 + str[i] - '0';
+    }
 
     return res;
 }
@@ -94,6 +103,11 @@ void seconds_to_time(const char* input, char* output, int max_size) {
     */
     int h, m, s;
     int num_seconds = myAtoi(input);
+    if(num_seconds == 0) { // invalid TTL
+        memmove(output, "N/A time", 8);
+        output[8] = '\0';
+        return;
+    }
 
     char temp_output[max_size];
     int current_temp_output_index = 0;
@@ -109,6 +123,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         current_temp_output_index += strlen(hours_char_arr);
         memmove(temp_output + current_temp_output_index, "h ", 2);
         current_temp_output_index += 2;
+        temp_output[current_temp_output_index] = '\0';
     }
     if (m > 0) {
         char minutes_char_arr[10];
@@ -119,6 +134,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         current_temp_output_index += strlen(minutes_char_arr);
         memmove(temp_output + current_temp_output_index, "min ", 4);
         current_temp_output_index += 4;
+        temp_output[current_temp_output_index] = '\0';
     }
 
     if (s > 0) {
@@ -130,6 +146,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         current_temp_output_index += strlen(seconds_char_arr);
         memmove(temp_output + current_temp_output_index, "sec.", 4);
         current_temp_output_index += 4;
+        temp_output[current_temp_output_index] = '\0';
     }
 
     if (current_temp_output_index < max_size) {
@@ -139,17 +156,61 @@ void seconds_to_time(const char* input, char* output, int max_size) {
     }
 
     memmove(output, input, strlen(input));
-    memmove(output + strlen(input), " sec", 8);
+    memmove(output + strlen(input), " sec", 4);
+    output[strlen(input) + 4] = '\0';
 }
 
-int compute_token_display(const char* received_hostname, const char* received_ttl, char* display) {
+int build_authorizing_message(char* display,
+                              const char* hostname_display,
+                              const char* ttl_display,
+                              size_t max_display_length) {
+    // add "Authorizing "
+    char authorizing[13] = "Authorizing ";
+    authorizing[12] = '\0';
+    size_t current_len = strlen(authorizing);
+    if (current_len > max_display_length) {
+        return AUTH_TOKEN_INVALID_RET_CODE;
+    }
+    memmove(display, authorizing, strlen(authorizing));
+
+    // add hostname
+    if (current_len + strlen(hostname_display) > max_display_length) {
+        return AUTH_TOKEN_INVALID_RET_CODE;
+    }
+    memmove(display + current_len, hostname_display, strlen(hostname_display));
+    current_len += strlen(hostname_display);
+
+    // add " for "
+    char for_token[6] = " for ";
+    for_token[5] = '\0';
+    if (current_len + strlen(for_token) > max_display_length) {
+        return AUTH_TOKEN_INVALID_RET_CODE;
+    }
+    memmove(display + current_len, for_token, strlen(for_token));
+    current_len += strlen(for_token);
+
+    // add ttl
+    if (current_len + strlen(ttl_display) > max_display_length) {
+        return AUTH_TOKEN_INVALID_RET_CODE;
+    }
+    memmove(display + current_len, ttl_display, strlen(ttl_display));
+    current_len += strlen(ttl_display);
+
+    display[current_len] = '\0';
+    return 0;
+}
+
+int compute_token_display(const char* received_hostname,
+                          const char* received_ttl,
+                          char* display,
+                          size_t max_display_length) {
     /*
         Receives the hostname as base64 and ttl as number of seconds and computes the token display.
         If successful, will write into display something like: "Authorizing host.com for 5min"
     */
 
     if (strlen(received_hostname) == 0) {
-        return -1;
+        return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
     // limit the display size of the display and ttl
@@ -177,10 +238,10 @@ int compute_token_display(const char* received_hostname, const char* received_tt
 
     // try to decode the base64 field
     if (!base64decode(hostname_display, encoded_hostname, hostname_max_length)) {
-        return -1;
+        return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
-    // base64decode function can return '?' characters. we'll remove them
+    // base64decode function can return '?' characters at the end. we'll remove them
     size_t decoded_hostname_len = strlen(hostname_display);
     for (int j = strlen(hostname_display) - 1; j > 0; j--) {
         if (hostname_display[j] != BASE_64_INVALID_CHAR) {
@@ -209,12 +270,5 @@ int compute_token_display(const char* received_hostname, const char* received_tt
         seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_LEN);
     }
 
-    // build the final display string
-    memmove(display, "Authorizing ", 12);
-    memmove(display + 12, hostname_display, strlen(hostname_display));
-    memmove(display + 12 + strlen(hostname_display), " for ", 5);
-    memmove(display + 12 + strlen(hostname_display) + 5, ttl_display, strlen(ttl_display));
-    display[12 + strlen(hostname_display) + 5 + strlen(ttl_display)] = '\0';
-
-    return 0;
+    return build_authorizing_message(display, hostname_display, ttl_display, max_display_length);
 }

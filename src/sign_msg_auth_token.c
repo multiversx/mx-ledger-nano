@@ -10,9 +10,9 @@ typedef struct {
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
     char token[MAX_DISPLAY_DATA_SIZE];
     uint8_t num_dots;
-    char auth_body[2 * MAX_DISPLAY_DATA_SIZE];
-    char auth_hostname[100];
-    char auth_ttl[10];
+    char auth_token_buffer[AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN];
+    char auth_hostname[AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN];
+    char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_LEN];
     int dot_count;
     bool stop_hostname_ttl_fetch;
 } token_auth_context_t;
@@ -63,37 +63,73 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
+void extract_hostname() {
+    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN) {
+        token_auth_context.stop_hostname_ttl_fetch = true;
+        memset(token_auth_context.auth_hostname, 0, sizeof(token_auth_context.auth_hostname));
+        return;
+    }
+
+    memmove(token_auth_context.auth_hostname,
+            token_auth_context.auth_token_buffer,
+            strlen(token_auth_context.auth_token_buffer));
+    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
+}
+
+void extract_ttl() {
+    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_TTL_MAX_LEN) {
+        token_auth_context.stop_hostname_ttl_fetch = true;
+        memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
+        return;
+    }
+
+    memmove(token_auth_context.auth_ttl,
+            token_auth_context.auth_token_buffer,
+            strlen(token_auth_context.auth_token_buffer));
+    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
+    // since we've gathered the hostname and the ttl, we can stop the processing
+    token_auth_context.stop_hostname_ttl_fetch = true;
+}
+
 void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
     if (token_auth_context.stop_hostname_ttl_fetch) {
         return;
     }
 
     /*
+    This function parses the auth token char by char and extracts the hostname and ttl.
     An auth token looks like this. We need to parse the first and the third element and save them
+
+    Example:
     bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
+         ^                                                                         ^
+      localhost                                                                 300 sec
     */
-    // store inside token_auth_context.auth_body the entire auth token so it can be decoded later
     for (uint8_t i = 0; i < data_length; i++) {
         if (data_buffer[i] != '.') {
-            if (token_auth_context.dot_count != 1) {
-                token_auth_context.auth_body[strlen(token_auth_context.auth_body)] = data_buffer[i];
-                token_auth_context.auth_body[strlen(token_auth_context.auth_body) + 1] = '\0';
+            if (token_auth_context.dot_count == 1) {
+                // ignore the second part of the token since we are not interested in it
+                continue;
             }
+
+            if (strlen(token_auth_context.auth_token_buffer) >=
+                AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN) {
+                // we've reached the max length of the hostname
+                token_auth_context.stop_hostname_ttl_fetch = true;
+                return;
+            }
+            // add the current char to the buffer
+            token_auth_context.auth_token_buffer[strlen(token_auth_context.auth_token_buffer)] =
+                data_buffer[i];
+            token_auth_context.auth_token_buffer[strlen(token_auth_context.auth_token_buffer) + 1] =
+                '\0';
         } else {
             token_auth_context.dot_count++;
             if (token_auth_context.dot_count == 1) {
-                if (strlen(token_auth_context.auth_body) > 100) {
-                    token_auth_context.stop_hostname_ttl_fetch = true;
-                    memset(token_auth_context.auth_hostname,
-                           0,
-                           sizeof(token_auth_context.auth_hostname));
-                    break;
+                extract_hostname();
+                if (token_auth_context.stop_hostname_ttl_fetch) {
+                    return;
                 }
-
-                memmove(token_auth_context.auth_hostname,
-                        token_auth_context.auth_body,
-                        strlen(token_auth_context.auth_body));
-                memset(token_auth_context.auth_body, 0, sizeof(token_auth_context.auth_body));
             }
 
             if (token_auth_context.dot_count == 2) {
@@ -101,17 +137,10 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
             }
 
             if (token_auth_context.dot_count == 3) {
-                if (strlen(token_auth_context.auth_body) > 10) {
-                    token_auth_context.stop_hostname_ttl_fetch = true;
-                    memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
-                    break;
+                extract_ttl();
+                if (token_auth_context.stop_hostname_ttl_fetch) {
+                    return;
                 }
-
-                memmove(token_auth_context.auth_ttl,
-                        token_auth_context.auth_body,
-                        strlen(token_auth_context.auth_body));
-                memset(token_auth_context.auth_body, 0, sizeof(token_auth_context.auth_body));
-                token_auth_context.stop_hostname_ttl_fetch = true;
             }
         }
     }
@@ -298,18 +327,14 @@ void handle_auth_token(uint8_t p1,
         THROW(ERR_SIGNATURE_FAILED);
     }
 
-    char display[100];
+    char display[AUTH_TOKEN_DISPLAY_MAX_LEN];
     int ret_code = compute_token_display(token_auth_context.auth_hostname,
                                          token_auth_context.auth_ttl,
-                                         display);
-    if (ret_code == 0) {
-        size_t display_len = strlen(display);
-        if (display_len > 100) {
-            display[display_len - 1] = '.';
-            display[display_len - 2] = '.';
-            display[display_len - 3] = '.';
-        }
-        memmove(token_auth_context.token, display, 100);
+                                         display,
+                                         AUTH_TOKEN_DISPLAY_MAX_LEN);
+    if (ret_code != AUTH_TOKEN_INVALID_RET_CODE) {
+        memmove(token_auth_context.token, display, strlen(display));
+        token_auth_context.token[strlen(display)] = '\0';
     }
 
     app_state = APP_STATE_IDLE;
