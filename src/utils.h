@@ -14,7 +14,10 @@ bool is_digit(char c);
 
 void uint32_t_to_char_array(uint32_t const input, char* output);
 
-int compute_token_display(const char* encoded_hostname, const char* ttl, char* display, size_t max_display_length);
+int compute_token_display(const char* encoded_hostname,
+                          const char* ttl,
+                          char* display,
+                          size_t max_display_length);
 
 void convert_to_hex_str(char* destination,
                         size_t destination_size,

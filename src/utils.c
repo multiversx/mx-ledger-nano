@@ -103,7 +103,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
     */
     int h, m, s;
     int num_seconds = myAtoi(input);
-    if(num_seconds == 0) { // invalid TTL
+    if (num_seconds == 0) {  // invalid TTL
         memmove(output, "N/A time", 8);
         output[8] = '\0';
         return;
