@@ -433,11 +433,11 @@ class TestSignMsgAuthToken:
                     ROOT_SCREENSHOT_PATH,
                     test_name)
 
-    def test_sign_msg_auth_token_too_long_hostname_regular_text_ok(self, backend, navigator, test_name):
+    def test_sign_msg_auth_token_too_long_origin_regular_text_ok(self, backend, navigator, test_name):
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
-        # The hostname is too long, so the original token will be displayed
+        # The origin is too long, so the original token will be displayed
         token = b"eGV4Y2hhbmdlLmNvbXhleGNoYW5nZS5jb214ZXhjaGFuZ2UuY29teGV4Y2hhbmdlLmNvbQeGV4Y2hhbmdlLmNvbXhleGNoYW5nZS5jb214ZXhjaGFuZ2UuY29teGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
@@ -449,11 +449,11 @@ class TestSignMsgAuthToken:
                     ROOT_SCREENSHOT_PATH,
                     test_name)
 
-    def test_sign_msg_auth_token_long_hostname_should_trim_ok(self, backend, navigator, test_name):
+    def test_sign_msg_auth_token_long_origin_should_trim_ok(self, backend, navigator, test_name):
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
-        # The hostname is too long, so the original token will be displayed
+        # The origin is too long, so the original token will be displayed
         token = b"bG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9u.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
@@ -469,7 +469,7 @@ class TestSignMsgAuthToken:
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
-        # The hostname is too long, so the original token will be displayed
+        # The origin is too long, so the original token will be displayed
         token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.60000000000000000.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
         payload += (len(token)).to_bytes(4, "big")
         payload += token

@@ -10,11 +10,11 @@ typedef struct {
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
     char token[MAX_DISPLAY_DATA_SIZE];
     uint8_t num_dots;
-    char auth_token_buffer[AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN];
-    char auth_hostname[AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN];
+    char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
+    char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
     char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_LEN];
     int dot_count;
-    bool stop_hostname_ttl_fetch;
+    bool stop_origin_ttl_fetch;
 } token_auth_context_t;
 
 static token_auth_context_t token_auth_context;
@@ -63,14 +63,14 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-void extract_hostname() {
-    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN) {
-        token_auth_context.stop_hostname_ttl_fetch = true;
-        memset(token_auth_context.auth_hostname, 0, sizeof(token_auth_context.auth_hostname));
+void extract_origin() {
+    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
+        token_auth_context.stop_origin_ttl_fetch = true;
+        memset(token_auth_context.auth_origin, 0, sizeof(token_auth_context.auth_origin));
         return;
     }
 
-    memmove(token_auth_context.auth_hostname,
+    memmove(token_auth_context.auth_origin,
             token_auth_context.auth_token_buffer,
             strlen(token_auth_context.auth_token_buffer));
     memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
@@ -78,7 +78,7 @@ void extract_hostname() {
 
 void extract_ttl() {
     if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_TTL_MAX_LEN) {
-        token_auth_context.stop_hostname_ttl_fetch = true;
+        token_auth_context.stop_origin_ttl_fetch = true;
         memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
         return;
     }
@@ -87,17 +87,17 @@ void extract_ttl() {
             token_auth_context.auth_token_buffer,
             strlen(token_auth_context.auth_token_buffer));
     memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
-    // since we've gathered the hostname and the ttl, we can stop the processing
-    token_auth_context.stop_hostname_ttl_fetch = true;
+    // since we've gathered the origin and the ttl, we can stop the processing
+    token_auth_context.stop_origin_ttl_fetch = true;
 }
 
 void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
-    if (token_auth_context.stop_hostname_ttl_fetch) {
+    if (token_auth_context.stop_origin_ttl_fetch) {
         return;
     }
 
     /*
-    This function parses the auth token char by char and extracts the hostname and ttl.
+    This function parses the auth token char by char and extracts the origin and ttl.
     An auth token looks like this. We need to parse the first and the third element and save them
 
     Example:
@@ -112,10 +112,9 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
                 continue;
             }
 
-            if (strlen(token_auth_context.auth_token_buffer) >=
-                AUTH_TOKEN_ENCODED_HOSTNAME_MAX_LEN) {
-                // we've reached the max length of the hostname
-                token_auth_context.stop_hostname_ttl_fetch = true;
+            if (strlen(token_auth_context.auth_token_buffer) >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
+                // we've reached the max length of the origin
+                token_auth_context.stop_origin_ttl_fetch = true;
                 return;
             }
             // add the current char to the buffer
@@ -126,8 +125,8 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
         } else {
             token_auth_context.dot_count++;
             if (token_auth_context.dot_count == 1) {
-                extract_hostname();
-                if (token_auth_context.stop_hostname_ttl_fetch) {
+                extract_origin();
+                if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
             }
@@ -138,7 +137,7 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
 
             if (token_auth_context.dot_count == 3) {
                 extract_ttl();
-                if (token_auth_context.stop_hostname_ttl_fetch) {
+                if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
             }
@@ -328,7 +327,7 @@ void handle_auth_token(uint8_t p1,
     }
 
     char display[AUTH_TOKEN_DISPLAY_MAX_LEN];
-    int ret_code = compute_token_display(token_auth_context.auth_hostname,
+    int ret_code = compute_token_display(token_auth_context.auth_origin,
                                          token_auth_context.auth_ttl,
                                          display,
                                          AUTH_TOKEN_DISPLAY_MAX_LEN);

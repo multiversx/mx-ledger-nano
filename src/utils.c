@@ -161,7 +161,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
 }
 
 int build_authorizing_message(char* display,
-                              const char* hostname_display,
+                              const char* origin_display,
                               const char* ttl_display,
                               size_t max_display_length) {
     // add "Authorizing "
@@ -173,12 +173,12 @@ int build_authorizing_message(char* display,
     }
     memmove(display, authorizing, strlen(authorizing));
 
-    // add hostname
-    if (current_len + strlen(hostname_display) > max_display_length) {
+    // add origin
+    if (current_len + strlen(origin_display) > max_display_length) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
-    memmove(display + current_len, hostname_display, strlen(hostname_display));
-    current_len += strlen(hostname_display);
+    memmove(display + current_len, origin_display, strlen(origin_display));
+    current_len += strlen(origin_display);
 
     // add " for "
     char for_token[6] = " for ";
@@ -200,66 +200,66 @@ int build_authorizing_message(char* display,
     return 0;
 }
 
-int compute_token_display(const char* received_hostname,
+int compute_token_display(const char* received_origin,
                           const char* received_ttl,
                           char* display,
                           size_t max_display_length) {
     /*
-        Receives the hostname as base64 and ttl as number of seconds and computes the token display.
+        Receives the origin as base64 and ttl as number of seconds and computes the token display.
         If successful, will write into display something like: "Authorizing host.com for 5min"
     */
 
-    if (strlen(received_hostname) == 0) {
+    if (strlen(received_origin) == 0) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
     // limit the display size of the display and ttl
-    char hostname_display[MAX_AUTH_TOKEN_HOSTNAME_LEN + 1];
+    char origin_display[MAX_AUTH_TOKEN_ORIGIN_LEN + 1];
     char ttl_display[MAX_AUTH_TOKEN_TTL_LEN + 1];
 
-    int received_hostname_len = strlen(received_hostname);
-    char encoded_hostname[received_hostname_len];
-    memmove(encoded_hostname, received_hostname, received_hostname_len);
+    int received_origin_len = strlen(received_origin);
+    char encoded_origin[received_origin_len];
+    memmove(encoded_origin, received_origin, received_origin_len);
 
     // since the received base64 field does not include padding, manually add it
-    int padding_count = strlen(encoded_hostname) % 4;
+    int padding_count = strlen(encoded_origin) % 4;
     if (padding_count != 0) {
         for (int j = 0; j < padding_count; j++) {
-            encoded_hostname[received_hostname_len + j] = '=';
+            encoded_origin[received_origin_len + j] = '=';
         }
-        encoded_hostname[received_hostname_len + padding_count] = '\0';
+        encoded_origin[received_origin_len + padding_count] = '\0';
     }
 
-    // limit the hostname display size
-    int hostname_max_length = strlen(encoded_hostname);
-    if (hostname_max_length > MAX_AUTH_TOKEN_HOSTNAME_LEN) {
-        hostname_max_length = MAX_AUTH_TOKEN_HOSTNAME_LEN;
+    // limit the origin display size
+    int origin_max_length = strlen(encoded_origin);
+    if (origin_max_length > MAX_AUTH_TOKEN_ORIGIN_LEN) {
+        origin_max_length = MAX_AUTH_TOKEN_ORIGIN_LEN;
     }
 
     // try to decode the base64 field
-    if (!base64decode(hostname_display, encoded_hostname, hostname_max_length)) {
+    if (!base64decode(origin_display, encoded_origin, origin_max_length)) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
     // base64decode function can return '?' characters at the end. we'll remove them
-    size_t decoded_hostname_len = strlen(hostname_display);
-    for (int j = strlen(hostname_display) - 1; j > 0; j--) {
-        if (hostname_display[j] != BASE_64_INVALID_CHAR) {
+    size_t decoded_origin_len = strlen(origin_display);
+    for (int j = strlen(origin_display) - 1; j > 0; j--) {
+        if (origin_display[j] != BASE_64_INVALID_CHAR) {
             break;
         }
-        decoded_hostname_len--;
+        decoded_origin_len--;
     }
-    if (decoded_hostname_len < strlen(hostname_display)) {
-        memmove(hostname_display, hostname_display, decoded_hostname_len);
-        hostname_display[decoded_hostname_len] = '\0';
+    if (decoded_origin_len < strlen(origin_display)) {
+        memmove(origin_display, origin_display, decoded_origin_len);
+        origin_display[decoded_origin_len] = '\0';
     }
 
-    // if the hostname is longer than wanted, add "..." at the end
-    if (hostname_max_length < (int) (strlen(encoded_hostname))) {
-        int hostname_length = strlen(hostname_display);
-        hostname_display[hostname_length - 1] = '.';
-        hostname_display[hostname_length - 2] = '.';
-        hostname_display[hostname_length - 3] = '.';
+    // if the origin is longer than wanted, add "..." at the end
+    if (origin_max_length < (int) (strlen(encoded_origin))) {
+        int origin_length = strlen(origin_display);
+        origin_display[origin_length - 1] = '.';
+        origin_display[origin_length - 2] = '.';
+        origin_display[origin_length - 3] = '.';
     }
 
     // convert the ttl to a display string
@@ -270,5 +270,5 @@ int compute_token_display(const char* received_hostname,
         seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_LEN);
     }
 
-    return build_authorizing_message(display, hostname_display, ttl_display, max_display_length);
+    return build_authorizing_message(display, origin_display, ttl_display, max_display_length);
 }
