@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from ragger.firmware import Firmware
 from ragger.backend import SpeculosBackend, LedgerCommBackend, LedgerWalletBackend
-from ragger.navigator import NanoNavigator, FatstacksNavigator
+from ragger.navigator import NanoNavigator, StaxNavigator
 from ragger.utils import app_path_from_app_name
 
 
@@ -16,7 +16,7 @@ BACKENDS = ["speculos", "ledgercomm", "ledgerwallet"]
 FIRMWARES = [Firmware('nanos', '2.1'),
              Firmware('nanox', '2.0.2'),
              Firmware('nanosp', '1.0.3'),
-             Firmware('fat', '1.0'),
+             Firmware('stax', '1.0'),
              ]
 
 
@@ -110,8 +110,8 @@ def client(backend, firmware, display):
 def navigator(client, firmware, golden_run):
     if firmware.device.startswith("nano"):
         return NanoNavigator(client, firmware, golden_run)
-    elif firmware.device.startswith("fat"):
-        return FatstacksNavigator(client, firmware, golden_run)
+    elif firmware.device.startswith("stax"):
+        return StaxNavigator(client, firmware, golden_run)
     else:
         return None
         # raise ValueError(f"Device '{firmware.device}' is unsupported.")

@@ -23,7 +23,7 @@ include $(BOLOS_SDK)/Makefile.defines
 APP_LOAD_PARAMS = --curve ed25519
 ifeq ($(TARGET_NAME), TARGET_NANOX)
 APP_LOAD_PARAMS += --appFlags 0x240  # APPLICATION_FLAG_BOLOS_SETTINGS
-else ifeq ($(TARGET_NAME), TARGET_FATSTACKS)
+else ifeq ($(TARGET_NAME), TARGET_STAX)
 APP_LOAD_PARAMS += --appFlags 0x240  # APPLICATION_FLAG_BOLOS_SETTINGS
 else
 APP_LOAD_PARAMS += --appFlags 0x040
@@ -44,7 +44,7 @@ DEFINES += JSMN_STRICT=1
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 	ICONNAME = icons/nanos_app_multiversx.gif
-else ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
+else ifeq ($(TARGET_NAME),TARGET_STAX)
 	ICONNAME = icons/stax_app_multiversx.gif
 else
 	ICONNAME = icons/nanox_app_multiversx.gif
@@ -62,7 +62,7 @@ all: default
 
 DEFINES   += OS_IO_SEPROXYHAL
 DEFINES   += HAVE_SPRINTF
-ifneq ($(TARGET_NAME),TARGET_FATSTACKS)
+ifneq ($(TARGET_NAME),TARGET_STAX)
 DEFINES   += HAVE_BAGL
 endif
 
@@ -84,15 +84,16 @@ DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 DEFINES       += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000 HAVE_BLE_APDU
-else ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
+else ifeq ($(TARGET_NAME),TARGET_STAX)
 DEFINES       += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000 HAVE_BLE_APDU
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
 DEFINES       += HAVE_UX_FLOW
 DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
-else ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
+else ifeq ($(TARGET_NAME),TARGET_STAX)
 DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=300
+DEFINES       += HAVE_NBGL
 DEFINES       += NBGL_QRCODE
 else
 DEFINES       += HAVE_UX_FLOW
@@ -153,16 +154,16 @@ APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/uint256
 
-ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
+ifeq ($(TARGET_NAME),TARGET_STAX)
 SDK_SOURCE_PATH  += lib_nbgl/src
-SDK_SOURCE_PATH  += lib_ux_fatstacks
+SDK_SOURCE_PATH  += lib_ux_stax
 else
 SDK_SOURCE_PATH  += lib_ux
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
-else ifeq ($(TARGET_NAME),TARGET_FATSTACKS)
+else ifeq ($(TARGET_NAME),TARGET_STAX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 endif
 

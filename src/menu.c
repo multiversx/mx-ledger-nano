@@ -11,7 +11,7 @@
 #include "nbgl_use_case.h"
 #endif
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
 
 static const char* const info_types[] = {"Version", APPNAME};
 static const char* const info_contents[] = {APPVERSION, "(c) 2022 Ledger"};
@@ -217,7 +217,7 @@ static void info_submenu_selector(unsigned int idx) {
 #endif
 
 void ui_idle(void) {
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
     ui_menu_main();
 #else
     // reserve a display stack slot if none yet

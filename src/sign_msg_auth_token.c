@@ -38,7 +38,7 @@ static uint8_t set_result_auth_token(void) {
     return tx;
 }
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
 
 static void start_review(void);
 static void ui_sign_message_auth_token_nbgl(void);
@@ -311,7 +311,7 @@ void handle_auth_token(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
     ui_sign_message_auth_token_nbgl();
 #else
     ux_flow_init(0, ux_auth_token_msg_flow, NULL);

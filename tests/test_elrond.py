@@ -119,7 +119,7 @@ class TestMenu:
                        NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "fat":
+        elif client.firmware.device == "stax":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.USE_CASE_SETTINGS_NEXT),
                        NavIns(NavInsID.USE_CASE_SETTINGS_PREVIOUS),
@@ -165,7 +165,7 @@ class TestGetAppConfiguration:
                        NavIns(NavInsID.BOTH_CLICK),
                        NavIns(NavInsID.LEFT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "fat":
+        elif client.firmware.device == "stax":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.TOUCH, (350,115)),
                        NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
@@ -180,7 +180,7 @@ class TestGetAppConfiguration:
                        NavIns(NavInsID.BOTH_CLICK),
                        NavIns(NavInsID.RIGHT_CLICK),
                        NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "fat":
+        elif client.firmware.device == "stax":
             nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
                        NavIns(NavInsID.TOUCH, (350,115)),
                        NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
@@ -207,7 +207,7 @@ class TestGetAddr:
                 nav_ins = create_simple_nav_instructions(4)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [
                            # NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_SHOW_QR),
                            NavIns(NavInsID.TOUCH, (200,346)),
@@ -225,7 +225,7 @@ class TestGetAddr:
                 nav_ins = create_simple_nav_instructions(5)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
@@ -259,7 +259,7 @@ class TestSignMsg:
                 nav_ins = create_simple_nav_instructions(4)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 # Navigate a bit through rejection screens before confirming
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_REJECT),
@@ -280,7 +280,7 @@ class TestSignMsg:
                 nav_ins = create_simple_nav_instructions(5)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
@@ -297,7 +297,7 @@ class TestSignMsg:
                 nav_ins = create_simple_nav_instructions(4)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
@@ -321,7 +321,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(6)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -335,7 +335,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(7)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -353,7 +353,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(7)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -373,7 +373,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(8)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -388,7 +388,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(6)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -402,7 +402,7 @@ class TestSignTxHash:
                 nav_ins = create_simple_nav_instructions(7)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
@@ -448,7 +448,7 @@ class TestSignMsgAuthToken:
                 nav_ins = create_simple_nav_instructions(5)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_TAP),
                            NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
@@ -466,7 +466,7 @@ class TestSignMsgAuthToken:
                 nav_ins = create_simple_nav_instructions(6)
             elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "fat":
+            elif client.firmware.device == "stax":
                 nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
                            NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
             client.raise_policy = RaisePolicy.RAISE_NOTHING

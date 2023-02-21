@@ -37,7 +37,7 @@ static uint8_t set_result_signature() {
     return tx;
 }
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
 
 static void start_review(void);
 static void ui_sign_message_nbgl(void);
@@ -233,7 +233,7 @@ void handle_sign_msg(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
     ui_sign_message_nbgl();
 #else
     ux_flow_init(0, ux_sign_msg_flow, NULL);

@@ -97,7 +97,7 @@ static bool is_esdt_transfer() {
            next_char_after_identifier_is_at_separator && same_chainid;
 }
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
 
 static void start_review(void);
 static void ui_sign_tx_hash_nbgl(void);
@@ -380,7 +380,7 @@ void handle_sign_tx_hash(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_FATSTACKS)
+#if defined(TARGET_STAX)
     ui_sign_tx_hash_nbgl();
 #else
     if (should_display_esdt_flow) {
