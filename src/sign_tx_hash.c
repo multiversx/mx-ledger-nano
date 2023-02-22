@@ -115,7 +115,9 @@ static const nbgl_pageInfoLongPress_t review_final_long_press = {
 
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
-        send_response(set_result_signature(), true, false);
+        int tx = set_result_signature();
+        io_seproxyhal_io_heartbeat();
+        send_response(tx, true, false);
         nbgl_useCaseStatus("TRANSACTION\nSIGNED", true, ui_idle);
     } else {
         rejectUseCaseChoice();
