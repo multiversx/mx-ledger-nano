@@ -83,48 +83,48 @@ ROOT_SCREENSHOT_PATH = Path(__file__).parent.resolve()
 
 
 @contextmanager
-def send_async_sign_message(client, ins, payload: bytes) -> Generator[None, None, None]:
+def send_async_sign_message(backend, ins, payload: bytes) -> Generator[None, None, None]:
     payload_splited = [payload[x:x + MAX_SIZE] for x in range(0, len(payload), MAX_SIZE)]
     p1 = P1.FIRST
     if len(payload_splited) > 1:
         for p in payload_splited[:-1]:
-            client.exchange(CLA, ins, p1, 0, p)
+            backend.exchange(CLA, ins, p1, 0, p)
             p1 = P1.MORE
 
-    with client.exchange_async(CLA,
-                               ins,
-                               p1,
-                               0,
-                               payload_splited[-1]):
+    with backend.exchange_async(CLA,
+                                ins,
+                                p1,
+                                0,
+                                payload_splited[-1]):
         yield
 
 
 class TestMenu:
 
-    def test_menu(self, client, backend, navigator, test_name):
-        if client.firmware.device.startswith("nano"):
-            nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "stax":
-            nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_NEXT),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_PREVIOUS),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT),
-                       NavIns(NavInsID.USE_CASE_HOME_QUIT)]
+    def test_menu(self, backend, navigator, test_name):
+        if backend.firmware.device.startswith("nano"):
+            nav_ins = [NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK]
+        elif backend.firmware.device == "stax":
+            nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                       NavInsID.USE_CASE_SETTINGS_NEXT,
+                       NavInsID.USE_CASE_SETTINGS_PREVIOUS,
+                       NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
+                       NavInsID.USE_CASE_HOME_QUIT]
 
         with pytest.raises(exceptions.ConnectionError):
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins, screen_change_before_first_instruction=False)
@@ -132,8 +132,8 @@ class TestMenu:
 
 class TestGetAppVersion:
 
-    def test_get_app_version(self, client, backend):
-        data = client.exchange(CLA, Ins.GET_APP_VERSION, P1.FIRST, 0, b"").data
+    def test_get_app_version(self, backend):
+        data = backend.exchange(CLA, Ins.GET_APP_VERSION, P1.FIRST, 0, b"").data
         version = data.decode("ascii").split('.')
         assert version[0] == str(LEDGER_MAJOR_VERSION)
         assert version[1] == str(LEDGER_MINOR_VERSION)
@@ -142,8 +142,8 @@ class TestGetAppVersion:
 
 class TestGetAppConfiguration:
 
-    def test_get_app_configuration(self, client, backend):
-        data = client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data
+    def test_get_app_configuration(self, backend):
+        data = backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data
         assert len(data) == 14
         assert data[0] == 0 or data[0] == 1                 # N_storage.setting_contract_data
         # data[1] is not to be taken into account anymore
@@ -154,213 +154,213 @@ class TestGetAppConfiguration:
         # data[6:10] is the bip32_account
         # data[10:14] is the bip32_address_index
 
-    def test_toggle_contract_data(self, client, backend, navigator, test_name):
+    def test_toggle_contract_data(self, backend, navigator, test_name):
         # init enabled
-        assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
+        assert backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
 
         # switch to disabled
-        if client.firmware.device.startswith("nano"):
-            nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.LEFT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "stax":
-            nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
+        if backend.firmware.device.startswith("nano"):
+            nav_ins = [NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.LEFT_CLICK,
+                       NavInsID.BOTH_CLICK]
+        elif backend.firmware.device == "stax":
+            nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
                        NavIns(NavInsID.TOUCH, (350,115)),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
+                       NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_0", nav_ins, screen_change_before_first_instruction=False)
-        assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 0
+        assert backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 0
 
         # switch back to enabled
-        if client.firmware.device.startswith("nano"):
-            nav_ins = [NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK),
-                       NavIns(NavInsID.RIGHT_CLICK),
-                       NavIns(NavInsID.BOTH_CLICK)]
-        elif client.firmware.device == "stax":
-            nav_ins = [NavIns(NavInsID.USE_CASE_HOME_SETTINGS),
+        if backend.firmware.device.startswith("nano"):
+            nav_ins = [NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK]
+        elif backend.firmware.device == "stax":
+            nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
                        NavIns(NavInsID.TOUCH, (350,115)),
-                       NavIns(NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT)]
+                       NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_1", nav_ins, screen_change_before_first_instruction=False)
-        assert client.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
+        assert backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
 
 
 class TestGetAddr:
 
-    def test_get_addr_non_confirm(self, client, backend):
+    def test_get_addr_non_confirm(self, backend):
         account = 1
         index = 1
         payload = account.to_bytes(4, "big") + index.to_bytes(4, "big")
-        data = client.exchange(CLA, Ins.GET_ADDR, P1.NON_CONFIRM, P2.DISPLAY_HEX, payload).data
+        data = backend.exchange(CLA, Ins.GET_ADDR, P1.NON_CONFIRM, P2.DISPLAY_HEX, payload).data
         assert re.match("^@[0-9a-f]{64}$", data.decode("ascii"))
 
-    def test_get_addr_confirm_ok(self, client, backend, navigator, test_name):
+    def test_get_addr_confirm_ok(self, backend, navigator, test_name):
         account = 1
         index = 1
         payload = account.to_bytes(4, "big") + index.to_bytes(4, "big")
-        with client.exchange_async(CLA, Ins.GET_ADDR, P1.CONFIRM, P2.DISPLAY_HEX, payload):
-            if client.firmware.device == "nanos":
+        with backend.exchange_async(CLA, Ins.GET_ADDR, P1.CONFIRM, P2.DISPLAY_HEX, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "stax":
+            elif backend.firmware.device == "stax":
                 nav_ins = [
-                           # NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_SHOW_QR),
+                           # NavInsID.USE_CASE_ADDRESS_CONFIRMATION_SHOW_QR,
                            NavIns(NavInsID.TOUCH, (200,346)),
-                           NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_EXIT_QR),
-                           NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CONFIRM)]
+                           NavInsID.USE_CASE_ADDRESS_CONFIRMATION_EXIT_QR,
+                           NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert re.match("^@[0-9a-f]{64}$", client.last_async_response.data.decode("ascii"))
+        assert re.match("^@[0-9a-f]{64}$", backend.last_async_response.data.decode("ascii"))
 
-    def test_get_addr_confirm_refused(self, client, backend, navigator, test_name):
+    def test_get_addr_confirm_refused(self, backend, navigator, test_name):
         account = 1
         index = 1
         payload = account.to_bytes(4, "big") + index.to_bytes(4, "big")
-        with client.exchange_async(CLA, Ins.GET_ADDR, P1.CONFIRM, P2.DISPLAY_HEX, payload):
-            if client.firmware.device == "nanos":
+        with backend.exchange_async(CLA, Ins.GET_ADDR, P1.CONFIRM, P2.DISPLAY_HEX, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL)]
-            client.raise_policy = RaisePolicy.RAISE_NOTHING
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL]
+            backend.raise_policy = RaisePolicy.RAISE_NOTHING
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert client.last_async_response.status == Error.USER_DENIED
+        assert backend.last_async_response.status == Error.USER_DENIED
 
-    def test_get_addr_too_long(self, client, backend):
+    def test_get_addr_too_long(self, backend):
         payload = int(0).to_bytes(4, "big") * 3
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        rapdu = client.exchange(CLA, Ins.GET_ADDR, P1.NON_CONFIRM, P2.DISPLAY_HEX, payload)
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        rapdu = backend.exchange(CLA, Ins.GET_ADDR, P1.NON_CONFIRM, P2.DISPLAY_HEX, payload)
         assert rapdu.status == Error.INVALID_ARGUMENTS
 
 
 class TestSignTx:
 
-    def test_sign_tx_deprecated(self, client, backend):
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        rapdu = client.exchange(CLA, Ins.SIGN_TX, 0, 0, b"")
+    def test_sign_tx_deprecated(self, backend):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        rapdu = backend.exchange(CLA, Ins.SIGN_TX, 0, 0, b"")
         assert rapdu.status == Error.SIGN_TX_DEPRECATED
 
 
 class TestSignMsg:
 
-    def test_sign_msg_invalid_len(self, client, backend):
-        client.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, b"\x00\xff\xff\xff")
+    def test_sign_msg_invalid_len(self, backend):
+        backend.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, b"\x00\xff\xff\xff")
 
-    def test_sign_msg_short_ok(self, client, backend, navigator, test_name):
+    def test_sign_msg_short_ok(self, backend, navigator, test_name):
         payload = b"abcd"
         payload = len(payload).to_bytes(4, "big") + payload
-        with send_async_sign_message(client, Ins.SIGN_MSG, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "stax":
+            elif backend.firmware.device == "stax":
                 # Navigate a bit through rejection screens before confirming
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
-                           NavIns(NavInsID.USE_CASE_CHOICE_REJECT),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_PREVIOUS),
-                           NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
-                           NavIns(NavInsID.USE_CASE_CHOICE_REJECT),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+                nav_ins = [NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_PREVIOUS,
+                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_msg_short_rejected(self, client, backend, navigator, test_name):
+    def test_sign_msg_short_rejected(self, backend, navigator, test_name):
         payload = b"abcd"
         payload = len(payload).to_bytes(4, "big") + payload
-        with send_async_sign_message(client, Ins.SIGN_MSG, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
-                           NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
-            client.raise_policy = RaisePolicy.RAISE_NOTHING
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_CONFIRM]
+            backend.raise_policy = RaisePolicy.RAISE_NOTHING
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert client.last_async_response.status == Error.USER_DENIED
+        assert backend.last_async_response.status == Error.USER_DENIED
 
-    def test_sign_msg_long(self, client, backend, navigator, test_name):
+    def test_sign_msg_long(self, backend, navigator, test_name):
         payload = b"a" * 512
         payload = len(payload).to_bytes(4, "big") + payload
-        with send_async_sign_message(client, Ins.SIGN_MSG, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(2)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_msg_too_long(self, client, backend):
+    def test_sign_msg_too_long(self, backend):
         payload = b"abcd"
         payload = (len(payload) - 1).to_bytes(4, "big") + payload
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        rapdu = client.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, payload)
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        rapdu = backend.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, payload)
         assert rapdu.status == Error.MESSAGE_TOO_LONG
 
 
 class TestSignTxHash:
     # TODO: add test for esdt flow
 
-    def test_sign_tx_valid_simple_no_data_confirmed(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_simple_no_data_confirmed(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(6)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_simple_no_data_rejected(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_simple_no_data_rejected(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(7)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
-                           NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
-            client.raise_policy = RaisePolicy.RAISE_NOTHING
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_CONFIRM]
+            backend.raise_policy = RaisePolicy.RAISE_NOTHING
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert client.last_async_response.status == Error.USER_DENIED
+        assert backend.last_async_response.status == Error.USER_DENIED
 
-    def test_sign_tx_valid_simple_data_confirmed(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
         # TODO: use actual data value that makes sense
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"data":"test"}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(7)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_large_receiver(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_large_receiver(self, backend, navigator, test_name):
         payload  = b'{"nonce":1234,"value":"'
         payload += b'1' * 31
         payload += b'","receiver":"'
@@ -368,124 +368,124 @@ class TestSignTxHash:
         payload += b'","sender":"'
         payload += b's' * 63
         payload += b'","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(8)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_large_nonce(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_large_nonce(self, backend, navigator, test_name):
         # nonce is a 64-bit unsigned integer
         payload = b'{"nonce":18446744073709551615,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(6)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_large_amount(self, client, backend, navigator, test_name):
+    def test_sign_tx_valid_large_amount(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(7)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_invalid_nonce(self, client, backend):
+    def test_sign_tx_invalid_nonce(self, backend):
         payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             # error return expected
             pass
-        assert client.last_async_response.status == Error.INVALID_MESSAGE
+        assert backend.last_async_response.status == Error.INVALID_MESSAGE
 
-    def test_sign_tx_invalid_amount(self, client, backend):
+    def test_sign_tx_invalid_amount(self, backend):
         payload = b'{"nonce":1234,"value":"A5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             # error return expected
             pass
-        assert client.last_async_response.status == Error.INVALID_AMOUNT
+        assert backend.last_async_response.status == Error.INVALID_AMOUNT
 
-    def test_sign_tx_invalid_fee(self, client, backend):
+    def test_sign_tx_invalid_fee(self, backend):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":2000000000000000000000,"gasLimit":20000000000000000,"chainID":"1","version":2}'
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        with send_async_sign_message(client, Ins.SIGN_TX_HASH, payload):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             # error return expected
             pass
-        assert client.last_async_response.status == Error.INVALID_FEE
+        assert backend.last_async_response.status == Error.INVALID_FEE
 
 
 class TestSignMsgAuthToken:
 
-    def test_sign_msg_auth_token_ok(self, client, backend, navigator, test_name):
+    def test_sign_msg_auth_token_ok(self, backend, navigator, test_name):
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
         token = b"BLOB"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
-        with send_async_sign_message(client, Ins.SIGN_MSG_AUTH_TOKEN, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(5)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(3)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_TAP),
-                           NavIns(NavInsID.USE_CASE_REVIEW_CONFIRM)]
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_msg_auth_token_refused(self, client, backend, navigator, test_name):
+    def test_sign_msg_auth_token_refused(self, backend, navigator, test_name):
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
         token = b"BLOB"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
-        with send_async_sign_message(client, Ins.SIGN_MSG_AUTH_TOKEN, payload):
-            if client.firmware.device == "nanos":
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device == "nanos":
                 nav_ins = create_simple_nav_instructions(6)
-            elif client.firmware.device == "nanox" or client.firmware.device == "nanosp":
+            elif backend.firmware.device == "nanox" or backend.firmware.device == "nanosp":
                 nav_ins = create_simple_nav_instructions(4)
-            elif client.firmware.device == "stax":
-                nav_ins = [NavIns(NavInsID.USE_CASE_REVIEW_REJECT),
-                           NavIns(NavInsID.USE_CASE_CHOICE_CONFIRM)]
-            client.raise_policy = RaisePolicy.RAISE_NOTHING
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_CONFIRM]
+            backend.raise_policy = RaisePolicy.RAISE_NOTHING
             navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert client.last_async_response.status == Error.USER_DENIED
+        assert backend.last_async_response.status == Error.USER_DENIED
 
 
 class TestState:
 
-    def test_invalid_state(self, client, backend):
+    def test_invalid_state(self, backend):
         """Ensures there is no state confusion between tx and message signatures"""
 
         tx = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
 
         payload = int(1).to_bytes(4, "big")
-        client.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, payload)
+        backend.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, payload)
 
-        client.exchange(CLA, Ins.SIGN_TX_HASH, P1.FIRST, 0, tx[:-1])
+        backend.exchange(CLA, Ins.SIGN_TX_HASH, P1.FIRST, 0, tx[:-1])
 
-        client.raise_policy = RaisePolicy.RAISE_NOTHING
-        rapdu = client.exchange(CLA, Ins.SIGN_MSG, P1.MORE, 0, tx[-1:])
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        rapdu = backend.exchange(CLA, Ins.SIGN_MSG, P1.MORE, 0, tx[-1:])
         assert rapdu.status == Error.INVALID_MESSAGE
