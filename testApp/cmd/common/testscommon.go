@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	ProxyHost          = "https://testnet-gateway.elrond.com"
+	ProxyHost          = "https://testnet-gateway.multiversx.com"
 	Hrp                = "erd"
 	MainnetId          = "1"
 	SignMessagePrepend = "\x17Elrond Signed Message:\n"
