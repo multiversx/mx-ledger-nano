@@ -61,7 +61,7 @@ void int_to_char_array(const int input, char* result, int max_size) {
     /*
         Converts an integer to a char array. Example: 123 -> ['1', '2', '3']
     */
-    char digits[max_size];
+    char digits[MAX_INT_NUM_DIGITS];
     int current_digit_index = 0;
     int input_copy = input;
     while (input_copy > 0) {
@@ -72,7 +72,10 @@ void int_to_char_array(const int input, char* result, int max_size) {
     }
 
     if (current_digit_index + 1 > max_size) {
-        memmove(result, "N/A", 3);
+        const char na_str[] = "N/A";
+        if (max_size > (int) (strlen(na_str))) {
+            memmove(result, na_str, strlen(na_str) + 1);
+        }
         return;
     }
 
@@ -83,10 +86,10 @@ void int_to_char_array(const int input, char* result, int max_size) {
     result[current_result_index] = '\0';
 }
 
-int myAtoi(const char* str) {
+int atoi(const char* str) {
     int res = 0;
 
-    for (int i = 0; str[i] != '\0'; ++i) {
+    for (int i = 0; str[i] != '\0'; i++) {
         if (!is_digit(str[i])) {
             return 0;
         }
@@ -96,57 +99,63 @@ int myAtoi(const char* str) {
     return res;
 }
 
+void append_to_str(const char* source, char* destination, int* index, int max_size) {
+    /*
+        Append the source to destination, at a given index, if the max size is not reached
+        It does not care about the '\0' char (it should be handled by caller)
+    */
+    if (*index > max_size || (int) (strlen(destination) + *index) > (int) (max_size)) {
+        return;
+    }
+
+    memmove(destination + *index, source, strlen(source));
+    *index += strlen(source);
+}
+
 void seconds_to_time(const char* input, char* output, int max_size) {
     /*
         Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
        34 sec."; 12345 -> "3h 25min 45 sec."
     */
     int h, m, s;
-    int num_seconds = myAtoi(input);
+    int num_seconds = atoi(input);
     if (num_seconds == 0) {  // invalid TTL
-        memmove(output, "N/A time", 8);
-        output[8] = '\0';
+        const char na_str[] = "N/A time";
+        if (max_size > (int) (strlen(na_str))) {
+            memmove(output, na_str, strlen(na_str) + 1);
+        }
         return;
     }
 
     char temp_output[max_size];
     int current_temp_output_index = 0;
+    int max_int_char_array_len = MAX_INT_NUM_DIGITS + 1;  // add one for the '0' char
 
     h = num_seconds / 3600;
     m = (num_seconds - (3600 * h)) / 60;
     s = (num_seconds - (3600 * h) - (m * 60));
 
     if (h > 0) {
-        char hours_char_arr[10];
-        int_to_char_array(h, hours_char_arr, 10);
-        memmove(temp_output, hours_char_arr, strlen(hours_char_arr));
-        current_temp_output_index += strlen(hours_char_arr);
-        memmove(temp_output + current_temp_output_index, "h ", 2);
-        current_temp_output_index += 2;
-        temp_output[current_temp_output_index] = '\0';
+        char hours_char_arr[max_int_char_array_len];
+        int_to_char_array(h, hours_char_arr, max_int_char_array_len);
+
+        append_to_str(hours_char_arr, temp_output, &current_temp_output_index, max_size);
+        append_to_str("h ", temp_output, &current_temp_output_index, max_size);
     }
     if (m > 0) {
-        char minutes_char_arr[10];
-        int_to_char_array(m, minutes_char_arr, 10);
-        memmove(temp_output + current_temp_output_index,
-                minutes_char_arr,
-                strlen(minutes_char_arr));
-        current_temp_output_index += strlen(minutes_char_arr);
-        memmove(temp_output + current_temp_output_index, "min ", 4);
-        current_temp_output_index += 4;
-        temp_output[current_temp_output_index] = '\0';
+        char minutes_char_arr[max_int_char_array_len];
+        int_to_char_array(m, minutes_char_arr, max_int_char_array_len);
+
+        append_to_str(minutes_char_arr, temp_output, &current_temp_output_index, max_size);
+        append_to_str("min ", temp_output, &current_temp_output_index, max_size);
     }
 
     if (s > 0) {
-        char seconds_char_arr[10];
-        int_to_char_array(s, seconds_char_arr, 10);
-        memmove(temp_output + current_temp_output_index,
-                seconds_char_arr,
-                strlen(seconds_char_arr));
-        current_temp_output_index += strlen(seconds_char_arr);
-        memmove(temp_output + current_temp_output_index, "sec.", 4);
-        current_temp_output_index += 4;
-        temp_output[current_temp_output_index] = '\0';
+        char seconds_char_arr[max_int_char_array_len];
+        int_to_char_array(s, seconds_char_arr, max_int_char_array_len);
+
+        append_to_str(seconds_char_arr, temp_output, &current_temp_output_index, max_size);
+        append_to_str("sec.", temp_output, &current_temp_output_index, max_size);
     }
 
     if (current_temp_output_index < max_size) {
@@ -155,48 +164,36 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         return;
     }
 
-    memmove(output, input, strlen(input));
-    memmove(output + strlen(input), " sec", 4);
-    output[strlen(input) + 4] = '\0';
+    const char sec_str[] = " sec";
+    if (max_size > (int) (strlen(input) + strlen(sec_str))) {
+        memmove(output, input, strlen(input));
+        memmove(output + strlen(input), sec_str, strlen(sec_str) + 1);
+    }
 }
 
 int build_authorizing_message(char* display,
                               const char* origin_display,
                               const char* ttl_display,
                               size_t max_display_length) {
-    // add "Authorizing "
-    char authorizing[13] = "Authorizing ";
-    authorizing[12] = '\0';
-    size_t current_len = strlen(authorizing);
-    if (current_len > max_display_length) {
-        return AUTH_TOKEN_INVALID_RET_CODE;
-    }
-    memmove(display, authorizing, strlen(authorizing));
+    const char* elements[] = {
+        "Authorizing ",
+        origin_display,
+        " for ",
+        ttl_display,
+    };
 
-    // add origin
-    if (current_len + strlen(origin_display) > max_display_length) {
-        return AUTH_TOKEN_INVALID_RET_CODE;
-    }
-    memmove(display + current_len, origin_display, strlen(origin_display));
-    current_len += strlen(origin_display);
+    int num_elements = sizeof(elements) / sizeof(char*);
+    int i;
+    int final_string_index = 0;
+    for (i = 0; i < num_elements; i++) {
+        if (!((final_string_index + strlen(elements[i]) < max_display_length))) {
+            return AUTH_TOKEN_INVALID_RET_CODE;
+        }
 
-    // add " for "
-    char for_token[6] = " for ";
-    for_token[5] = '\0';
-    if (current_len + strlen(for_token) > max_display_length) {
-        return AUTH_TOKEN_INVALID_RET_CODE;
+        memmove(display + final_string_index, elements[i], strlen(elements[i]));
+        final_string_index += strlen(elements[i]);
     }
-    memmove(display + current_len, for_token, strlen(for_token));
-    current_len += strlen(for_token);
-
-    // add ttl
-    if (current_len + strlen(ttl_display) > max_display_length) {
-        return AUTH_TOKEN_INVALID_RET_CODE;
-    }
-    memmove(display + current_len, ttl_display, strlen(ttl_display));
-    current_len += strlen(ttl_display);
-
-    display[current_len] = '\0';
+    display[final_string_index] = '\0';
     return 0;
 }
 
@@ -222,8 +219,9 @@ int compute_token_display(const char* received_origin,
     memmove(encoded_origin, received_origin, received_origin_len);
 
     // since the received base64 field does not include padding, manually add it
-    int padding_count = strlen(encoded_origin) % 4;
-    if (padding_count != 0) {
+    int mod_four = strlen(encoded_origin) % 4;
+    if (mod_four != 0) {
+        int padding_count = 4 - mod_four;
         for (int j = 0; j < padding_count; j++) {
             encoded_origin[received_origin_len + j] = '=';
         }
@@ -239,6 +237,13 @@ int compute_token_display(const char* received_origin,
     // try to decode the base64 field
     if (!base64decode(origin_display, encoded_origin, origin_max_length)) {
         return AUTH_TOKEN_INVALID_RET_CODE;
+    }
+
+    // don't allow tokens that start with a given prefix to be signed
+    if (strncmp(origin_display,
+                AUTH_TOKEN_INVALID_ORIGIN_PREFIX,
+                strlen(AUTH_TOKEN_INVALID_ORIGIN_PREFIX)) == 0) {
+        return AUTH_TOKEN_BAD_REQUEST_RET_CODE;
     }
 
     // base64decode function can return '?' characters at the end. we'll remove them

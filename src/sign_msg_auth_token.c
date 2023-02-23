@@ -3,13 +3,16 @@
 #include "get_private_key.h"
 #include "utils.h"
 
+#define PARSED_TOKEN_ORIGIN    (token_auth_context.dot_count == 1)
+#define PARSED_TOKEN_BLOCKHASH (token_auth_context.dot_count == 2)
+#define PARSED_TOKEN_TTL       (token_auth_context.dot_count == 3)
+
 typedef struct {
     char address[BECH32_ADDRESS_LEN];
     uint32_t len;
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
-    char token[MAX_DISPLAY_DATA_SIZE];
-    uint8_t num_dots;
+    char token[AUTH_TOKEN_DISPLAY_MAX_LEN];
     char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
     char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
     char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_LEN];
@@ -60,35 +63,32 @@ void init_auth_token_context(void) {
     bip32_account = 0;
     bip32_address_index = 0;
 
+    token_auth_context.len = 0;
+    token_auth_context.dot_count = 0;
+    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
+    memset(token_auth_context.auth_origin, 0, sizeof(token_auth_context.auth_origin));
+    memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
+    memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
+    memset(token_auth_context.hash, 0, sizeof(token_auth_context.hash));
+    memset(token_auth_context.address, 0, sizeof(token_auth_context.address));
+    token_auth_context.stop_origin_ttl_fetch = false;
+
     app_state = APP_STATE_IDLE;
 }
 
-void extract_origin() {
-    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
-        token_auth_context.stop_origin_ttl_fetch = true;
-        memset(token_auth_context.auth_origin, 0, sizeof(token_auth_context.auth_origin));
+void move_value_from_buffer(char *buffer,
+                            char *destination,
+                            bool *should_stop_processing,
+                            uint8_t max_len) {
+    if (strlen(buffer) > max_len) {
+        *should_stop_processing = true;
+        memset(destination, 0, sizeof(*destination));
         return;
     }
 
-    memmove(token_auth_context.auth_origin,
-            token_auth_context.auth_token_buffer,
-            strlen(token_auth_context.auth_token_buffer));
-    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
-}
-
-void extract_ttl() {
-    if (strlen(token_auth_context.auth_token_buffer) > AUTH_TOKEN_ENCODED_TTL_MAX_LEN) {
-        token_auth_context.stop_origin_ttl_fetch = true;
-        memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
-        return;
-    }
-
-    memmove(token_auth_context.auth_ttl,
-            token_auth_context.auth_token_buffer,
-            strlen(token_auth_context.auth_token_buffer));
-    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
-    // since we've gathered the origin and the ttl, we can stop the processing
-    token_auth_context.stop_origin_ttl_fetch = true;
+    memmove(destination, buffer, strlen(buffer));
+    memset(buffer, 0, sizeof(*buffer));
+    should_stop_processing = false;
 }
 
 void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
@@ -112,31 +112,37 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
                 continue;
             }
 
-            if (strlen(token_auth_context.auth_token_buffer) >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
+            size_t buffer_len = strlen(token_auth_context.auth_token_buffer);
+
+            if (buffer_len >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN - 2) {
                 // we've reached the max length of the origin
                 token_auth_context.stop_origin_ttl_fetch = true;
                 return;
             }
             // add the current char to the buffer
-            token_auth_context.auth_token_buffer[strlen(token_auth_context.auth_token_buffer)] =
-                data_buffer[i];
-            token_auth_context.auth_token_buffer[strlen(token_auth_context.auth_token_buffer) + 1] =
-                '\0';
+            token_auth_context.auth_token_buffer[buffer_len] = data_buffer[i];
+            token_auth_context.auth_token_buffer[buffer_len + 1] = '\0';
         } else {
             token_auth_context.dot_count++;
-            if (token_auth_context.dot_count == 1) {
-                extract_origin();
+            if (PARSED_TOKEN_ORIGIN) {
+                move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       token_auth_context.auth_origin,
+                                       &token_auth_context.stop_origin_ttl_fetch,
+                                       AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
             }
 
-            if (token_auth_context.dot_count == 2) {
+            if (PARSED_TOKEN_BLOCKHASH) {
                 continue;
             }
 
-            if (token_auth_context.dot_count == 3) {
-                extract_ttl();
+            if (PARSED_TOKEN_TTL) {
+                move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       token_auth_context.auth_ttl,
+                                       &token_auth_context.stop_origin_ttl_fetch,
+                                       AUTH_TOKEN_ENCODED_TTL_MAX_LEN);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
@@ -147,14 +153,14 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
 
 void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
     handle_auth_token_data(data_buffer, data_length);
-    if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
+    if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_LEN) {
         return;
     }
 
     int num_chars_to_show = data_length;
     bool should_append_ellipsis = false;
-    if (data_length >= MAX_DISPLAY_DATA_SIZE) {
-        num_chars_to_show = MAX_DISPLAY_DATA_SIZE;
+    if (data_length >= AUTH_TOKEN_DISPLAY_MAX_LEN) {
+        num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_LEN;
         should_append_ellipsis = true;
     }
 
@@ -165,7 +171,7 @@ void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_le
         // add "..." at the end to show that the data field is actually longer
         char ellipsis[] = "...";
         int ellipsisLen = strlen(ellipsis);
-        memmove(token_auth_context.token + MAX_DISPLAY_DATA_SIZE - ellipsisLen,
+        memmove(token_auth_context.token + AUTH_TOKEN_DISPLAY_MAX_LEN - ellipsisLen,
                 ellipsis,
                 ellipsisLen);
         return;
@@ -331,6 +337,9 @@ void handle_auth_token(uint8_t p1,
                                          token_auth_context.auth_ttl,
                                          display,
                                          AUTH_TOKEN_DISPLAY_MAX_LEN);
+    if (ret_code == AUTH_TOKEN_BAD_REQUEST_RET_CODE) {
+        THROW(ERR_INVALID_MESSAGE);
+    }
     if (ret_code != AUTH_TOKEN_INVALID_RET_CODE) {
         memmove(token_auth_context.token, display, strlen(display));
         token_auth_context.token[strlen(display)] = '\0';

@@ -67,6 +67,9 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN 100
 #define AUTH_TOKEN_ENCODED_TTL_MAX_LEN    10
 #define AUTH_TOKEN_INVALID_RET_CODE       -1
+#define AUTH_TOKEN_BAD_REQUEST_RET_CODE   -2
+#define AUTH_TOKEN_INVALID_ORIGIN_PREFIX  "multiversx://" // TODO: check the the origin does not begin with this string
+#define MAX_INT_NUM_DIGITS                10
 #define PRETTY_SIZE                       (2 + MAX_TICKER_LEN)  // additional space for "0." and " eGLD"
 #define GAS_PER_DATA_BYTE                 1500
 #define GAS_PRICE_DIVIDER                 100
