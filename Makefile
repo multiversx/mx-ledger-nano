@@ -154,10 +154,7 @@ APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/uint256
 
-ifeq ($(TARGET_NAME),TARGET_STAX)
-SDK_SOURCE_PATH  += lib_nbgl/src
-SDK_SOURCE_PATH  += lib_ux_stax
-else
+ifneq ($(TARGET_NAME),TARGET_STAX)
 SDK_SOURCE_PATH  += lib_ux
 endif
 

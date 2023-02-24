@@ -26,10 +26,6 @@
 #include "sign_tx_hash.h"
 #include "utils.h"
 
-#ifdef HAVE_NBGL
-#include "nbgl_page.h"
-#endif
-
 #define CLA                       0xED
 #define INS_GET_APP_VERSION       0x01
 #define INS_GET_APP_CONFIGURATION 0x02
@@ -53,8 +49,6 @@ esdt_info_t esdt_info;
 
 #ifdef HAVE_BAGL
 void io_seproxyhal_display(const bagl_element_t *element);
-#else
-nbgl_page_t *pageContext;
 #endif
 
 void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx);

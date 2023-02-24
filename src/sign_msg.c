@@ -66,7 +66,7 @@ static void review_final_callback(bool confirmed) {
 
 static void rejectChoice(void) {
     send_response(0, false, false);
-    nbgl_useCaseStatus("message\nrejected", false, ui_idle);
+    nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
 }
 
 static void rejectUseCaseChoice(void) {

@@ -2,17 +2,6 @@
 #include "menu.h"
 #include "os.h"
 
-#ifdef HAVE_NBGL
-#include "nbgl_page.h"
-
-void releaseContext(void) {
-    if (pageContext != NULL) {
-        nbgl_pageRelease(pageContext);
-        pageContext = NULL;
-    }
-}
-#endif
-
 // read_uint32_be reads 4 bytes from the buffer and returns an uint32_t with big
 // endian encoding
 uint32_t read_uint32_be(uint8_t* buffer) {

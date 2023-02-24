@@ -4,10 +4,6 @@
 #include "utils.h"
 
 #ifdef HAVE_NBGL
-#include "nbgl_fonts.h"
-#include "nbgl_front.h"
-#include "nbgl_debug.h"
-#include "nbgl_page.h"
 #include "nbgl_use_case.h"
 #endif
 
@@ -17,7 +13,6 @@ static const char* const info_types[] = {"Version", APPNAME};
 static const char* const info_contents[] = {APPVERSION, "(c) 2022 Ledger"};
 
 static void quit_app_callback(void) {
-    releaseContext();
     os_sched_exit(-1);
 }
 
@@ -60,10 +55,9 @@ static void settingsControlsCallback(int token, uint8_t index) {
                 new_setting = CONTRACT_DATA_ENABLED;
             }
             nvm_write((void*) &N_storage.setting_contract_data, &new_setting, 1);
-            ui_menu_settings();
             break;
         default:
-            PRINTF("Should not happen !");
+            PRINTF("Should not happen !\n");
             break;
     }
 }
