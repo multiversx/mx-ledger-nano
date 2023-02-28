@@ -454,7 +454,7 @@ class TestSignMsgAuthToken:
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
         # The origin is too long, so the original token will be displayed
-        token = b"bG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9u.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        token = b"bG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmc.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):

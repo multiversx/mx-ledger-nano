@@ -102,9 +102,9 @@ int atoi(const char* str) {
 void append_to_str(const char* source, char* destination, int* index, int max_size) {
     /*
         Append the source to destination, at a given index, if the max size is not reached
-        It does not care about the '\0' char (it should be handled by caller)
+        It does not add the '\0' char (should be handled by caller)
     */
-    if (*index > max_size || (int) (strlen(destination) + *index) > (int) (max_size)) {
+    if (*index > max_size || (int) (strlen(source) + *index) > (int) (max_size)) {
         return;
     }
 
@@ -115,7 +115,7 @@ void append_to_str(const char* source, char* destination, int* index, int max_si
 void seconds_to_time(const char* input, char* output, int max_size) {
     /*
         Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
-       34 sec."; 12345 -> "3h 25min 45 sec."
+       34 sec."; 12345 -> "3h 25min 45 sec.". If more than 24h, will display accordingly
     */
     int h, m, s;
     int num_seconds = atoi(input);
@@ -135,6 +135,13 @@ void seconds_to_time(const char* input, char* output, int max_size) {
     m = (num_seconds - (3600 * h)) / 60;
     s = (num_seconds - (3600 * h) - (m * 60));
 
+    if (h > 24) {
+        const char more_than_24_msg[] = "more than one day";
+        if (max_size > (int) (strlen(more_than_24_msg))) {
+            memmove(output, more_than_24_msg, strlen(more_than_24_msg) + 1);
+        }
+        return;
+    }
     if (h > 0) {
         char hours_char_arr[max_int_char_array_len];
         int_to_char_array(h, hours_char_arr, max_int_char_array_len);
@@ -168,6 +175,37 @@ void seconds_to_time(const char* input, char* output, int max_size) {
     if (max_size > (int) (strlen(input) + strlen(sec_str))) {
         memmove(output, input, strlen(input));
         memmove(output + strlen(input), sec_str, strlen(sec_str) + 1);
+    }
+}
+
+int min(int x, int y) {
+    return x < y ? x : y;
+}
+
+int replacement_index(int allowed_len, int truncate_str_len) {
+    return (allowed_len - truncate_str_len) / 2;
+}
+
+void truncate_if_needed(const char* source, int max_src_len, char* dest, int max_dest_len) {
+    const int len_src = min(max_src_len, (int) strlen(source));
+    const char truncate_replacement[] = "...";
+    const int truncate_str_len = sizeof(truncate_replacement) - 1;
+
+    if (len_src <= max_dest_len) {
+        memmove(dest, source, len_src);
+        dest[len_src] = 0;
+    } else {
+        int truncate_index = replacement_index(max_dest_len, truncate_str_len);
+        int remaining_chars_from_src = max_dest_len - truncate_index - truncate_str_len;
+        int index_after_replacement = truncate_index + truncate_str_len;
+        int remaining_source_index = len_src - remaining_chars_from_src;
+
+        memmove(dest, source, (size_t) truncate_index);
+        memmove(&dest[truncate_index], truncate_replacement, truncate_str_len);
+        memmove(&dest[index_after_replacement],
+                &source[remaining_source_index],
+                remaining_chars_from_src);
+        dest[max_dest_len] = 0;
     }
 }
 
@@ -210,13 +248,17 @@ int compute_token_display(const char* received_origin,
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
+    char decoded_origin_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN + 1];
+
     // limit the display size of the display and ttl
     char origin_display[MAX_AUTH_TOKEN_ORIGIN_LEN + 1];
     char ttl_display[MAX_AUTH_TOKEN_TTL_LEN + 1];
 
     int received_origin_len = strlen(received_origin);
-    char encoded_origin[received_origin_len];
+    char encoded_origin[received_origin_len +
+                        4];  // 4 more chars for the '\0' plus the '=' padding that has to be added
     memmove(encoded_origin, received_origin, received_origin_len);
+    encoded_origin[received_origin_len] = '\0';
 
     // since the received base64 field does not include padding, manually add it
     int mod_four = strlen(encoded_origin) % 4;
@@ -229,43 +271,40 @@ int compute_token_display(const char* received_origin,
     }
 
     // limit the origin display size
-    int origin_max_length = strlen(encoded_origin);
-    if (origin_max_length > MAX_AUTH_TOKEN_ORIGIN_LEN) {
-        origin_max_length = MAX_AUTH_TOKEN_ORIGIN_LEN;
+    int encoded_origin_max_length = strlen(encoded_origin);
+    if (encoded_origin_max_length > AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
+        encoded_origin_max_length = AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN;
     }
 
     // try to decode the base64 field
-    if (!base64decode(origin_display, encoded_origin, origin_max_length)) {
+    if (!base64decode(decoded_origin_buffer, encoded_origin, encoded_origin_max_length)) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
     // don't allow tokens that start with a given prefix to be signed
-    if (strncmp(origin_display,
+    if (strncmp(decoded_origin_buffer,
                 AUTH_TOKEN_INVALID_ORIGIN_PREFIX,
                 strlen(AUTH_TOKEN_INVALID_ORIGIN_PREFIX)) == 0) {
         return AUTH_TOKEN_BAD_REQUEST_RET_CODE;
     }
 
     // base64decode function can return '?' characters at the end. we'll remove them
-    size_t decoded_origin_len = strlen(origin_display);
-    for (int j = strlen(origin_display) - 1; j > 0; j--) {
-        if (origin_display[j] != BASE_64_INVALID_CHAR) {
+    size_t decoded_origin_len = strlen(decoded_origin_buffer);
+    for (int j = strlen(decoded_origin_buffer) - 1; j > 0; j--) {
+        if (decoded_origin_buffer[j] != BASE_64_INVALID_CHAR) {
             break;
         }
         decoded_origin_len--;
     }
-    if (decoded_origin_len < strlen(origin_display)) {
-        memmove(origin_display, origin_display, decoded_origin_len);
-        origin_display[decoded_origin_len] = '\0';
+    if (decoded_origin_len < strlen(decoded_origin_buffer)) {
+        memmove(decoded_origin_buffer, decoded_origin_buffer, decoded_origin_len);
+        decoded_origin_buffer[decoded_origin_len] = '\0';
     }
 
-    // if the origin is longer than wanted, add "..." at the end
-    if (origin_max_length < (int) (strlen(encoded_origin))) {
-        int origin_length = strlen(origin_display);
-        origin_display[origin_length - 1] = '.';
-        origin_display[origin_length - 2] = '.';
-        origin_display[origin_length - 3] = '.';
-    }
+    truncate_if_needed(decoded_origin_buffer,
+                       strlen(decoded_origin_buffer),
+                       origin_display,
+                       MAX_AUTH_TOKEN_ORIGIN_LEN);
 
     // convert the ttl to a display string
     if (strlen(received_ttl) == 0) {
