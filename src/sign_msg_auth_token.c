@@ -5,10 +5,6 @@
 #include "menu.h"
 
 #ifdef HAVE_NBGL
-#include "nbgl_fonts.h"
-#include "nbgl_front.h"
-#include "nbgl_debug.h"
-#include "nbgl_page.h"
 #include "nbgl_use_case.h"
 #endif
 
@@ -40,14 +36,11 @@ static uint8_t set_result_auth_token(void) {
 
 #if defined(TARGET_STAX)
 
-static void start_review(void);
-static void ui_sign_message_auth_token_nbgl(void);
-static void rejectUseCaseChoice(void);
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t infos[2];
+static nbgl_layoutTagValue_t pairs_list[2];
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
-    .text = "Sign message on\nMultiversX network?",
+    .text = "Sign message on\n" APPNAME " network?",
     .icon = &C_icon_multiversx_logo_64x64,
     .longPressText = "Hold to sign",
     .longPressToken = 0,
@@ -57,33 +50,23 @@ static const nbgl_pageInfoLongPress_t review_final_long_press = {
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
         int tx = set_result_auth_token();
-        io_seproxyhal_io_heartbeat();
         send_response(tx, true, false);
         nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
     } else {
-        rejectUseCaseChoice();
+        nbgl_reject_message_choice();
     }
-}
-
-static void rejectChoice(void) {
-    send_response(0, false, false);
-    nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
-}
-
-static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject message?", NULL, "Yes, reject", "Go back to message", rejectChoice);
 }
 
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
     layout.smallCaseForValue = true;
     layout.wrapping = true;
-    layout.pairs = infos;
-    infos[0].item = "Address";
-    infos[0].value = token_auth_context.address;
-    infos[1].item = "Auth Token";
-    infos[1].value = token_auth_context.token;
-    layout.nbPairs = ARRAY_COUNT(infos);
+    layout.pairs = pairs_list;
+    pairs_list[0].item = "Address";
+    pairs_list[0].value = token_auth_context.address;
+    pairs_list[1].item = "Auth Token";
+    pairs_list[1].value = token_auth_context.token;
+    layout.nbPairs = ARRAY_COUNT(pairs_list);
 
     nbgl_useCaseStaticReview(&layout,
                              &review_final_long_press,
@@ -93,11 +76,11 @@ static void start_review(void) {
 
 static void ui_sign_message_auth_token_nbgl(void) {
     nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                            "Review message to\nsign on MultiversX\nnetwork",
+                            "Review message to\nsign on " APPNAME "\nnetwork",
                             "",
                             "Reject message",
                             start_review,
-                            rejectUseCaseChoice);
+                            nbgl_reject_message_choice);
 }
 
 #else

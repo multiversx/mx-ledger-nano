@@ -14,7 +14,6 @@ Please refer to the usage file for all available options
 
 from contextlib import contextmanager
 from typing import List, Generator, Dict
-from time import sleep
 from requests import exceptions
 
 import base64
@@ -23,7 +22,6 @@ import json
 import pytest
 import re
 import sys
-import time
 from enum import IntEnum
 from pathlib import Path
 

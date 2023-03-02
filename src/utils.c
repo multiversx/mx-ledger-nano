@@ -2,6 +2,10 @@
 #include "menu.h"
 #include "os.h"
 
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
+
 // read_uint32_be reads 4 bytes from the buffer and returns an uint32_t with big
 // endian encoding
 uint32_t read_uint32_be(uint8_t* buffer) {
@@ -59,3 +63,33 @@ void convert_to_hex_str(char* destination,
     }
     destination[i * 2] = '\0';
 }
+
+#if defined(TARGET_STAX)
+
+static void message_rejection(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
+}
+
+void nbgl_reject_message_choice(void) {
+    nbgl_useCaseConfirm("Reject message?",
+                        NULL,
+                        "Yes, reject",
+                        "Go back to message",
+                        message_rejection);
+}
+
+static void transaction_rejection(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Transaction\nrejected", false, ui_idle);
+}
+
+void nbgl_reject_transaction_choice(void) {
+    nbgl_useCaseConfirm("Reject transaction?",
+                        NULL,
+                        "Yes, reject",
+                        "Go back to transaction",
+                        transaction_rejection);
+}
+
+#endif

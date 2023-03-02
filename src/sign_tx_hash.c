@@ -9,10 +9,6 @@
 #include "menu.h"
 
 #ifdef HAVE_NBGL
-#include "nbgl_fonts.h"
-#include "nbgl_front.h"
-#include "nbgl_debug.h"
-#include "nbgl_page.h"
 #include "nbgl_use_case.h"
 #endif
 
@@ -99,14 +95,11 @@ static bool is_esdt_transfer() {
 
 #if defined(TARGET_STAX)
 
-static void start_review(void);
-static void ui_sign_tx_hash_nbgl(void);
-static void rejectUseCaseChoice(void);
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t infos[5];  // 5 info max for ESDT and 5 info max for EGLD
+static nbgl_layoutTagValue_t pairs_list[5];  // 5 info max for ESDT and 5 info max for EGLD
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
-    .text = "Sign transaction on\nMultiversX network?",
+    .text = "Sign transaction on\n" APPNAME " network?",
     .icon = &C_icon_multiversx_logo_64x64,
     .longPressText = "Hold to sign",
     .longPressToken = 0,
@@ -116,60 +109,46 @@ static const nbgl_pageInfoLongPress_t review_final_long_press = {
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
         int tx = set_result_signature();
-        io_seproxyhal_io_heartbeat();
         send_response(tx, true, false);
         nbgl_useCaseStatus("TRANSACTION\nSIGNED", true, ui_idle);
     } else {
-        rejectUseCaseChoice();
+        nbgl_reject_transaction_choice();
     }
-}
-
-static void rejectChoice(void) {
-    send_response(0, false, false);
-    nbgl_useCaseStatus("Transaction\nrejected", false, ui_idle);
-}
-
-static void rejectUseCaseChoice(void) {
-    nbgl_useCaseConfirm("Reject transaction?",
-                        NULL,
-                        "Yes, reject",
-                        "Go back to transaction",
-                        rejectChoice);
 }
 
 static void start_review(void) {
     uint8_t step = 0;
 
     if (should_display_esdt_flow) {
-        infos[step].item = "Token", infos[step].value = esdt_info.ticker, ++step;
-        infos[step].item = "Receiver", infos[step].value = tx_context.receiver, ++step;
-        infos[step].item = "Value", infos[step].value = tx_context.amount, ++step;
-        infos[step].item = "Fee", infos[step].value = tx_context.fee, ++step;
-        infos[step].item = "Network", infos[step].value = tx_context.network, ++step;
+        pairs_list[step].item = "Token", pairs_list[step].value = esdt_info.ticker, ++step;
+        pairs_list[step].item = "Value", pairs_list[step].value = tx_context.amount, ++step;
+        pairs_list[step].item = "Receiver", pairs_list[step].value = tx_context.receiver, ++step;
+        pairs_list[step].item = "Fee", pairs_list[step].value = tx_context.fee, ++step;
+        pairs_list[step].item = "Network", pairs_list[step].value = tx_context.network, ++step;
     } else {
-        infos[step].item = "Receiver";
-        infos[step].value = tx_context.receiver;
+        pairs_list[step].item = "Receiver";
+        pairs_list[step].value = tx_context.receiver;
         ++step;
-        infos[step].item = "Amount";
-        infos[step].value = tx_context.amount;
+        pairs_list[step].item = "Amount";
+        pairs_list[step].value = tx_context.amount;
         ++step;
-        infos[step].item = "Fee";
-        infos[step].value = tx_context.fee;
+        pairs_list[step].item = "Fee";
+        pairs_list[step].value = tx_context.fee;
         ++step;
         if (tx_context.data_size > 0) {
-            infos[step].item = "Data";
-            infos[step].value = tx_context.data;
+            pairs_list[step].item = "Data";
+            pairs_list[step].value = tx_context.data;
             ++step;
         }
-        infos[step].item = "Network";
-        infos[step].value = tx_context.network;
+        pairs_list[step].item = "Network";
+        pairs_list[step].value = tx_context.network;
         ++step;
     }
 
     layout.nbMaxLinesForValue = 0;
     layout.smallCaseForValue = true;
     layout.wrapping = true;
-    layout.pairs = infos;
+    layout.pairs = pairs_list;
     layout.nbPairs = step;
 
     nbgl_useCaseStaticReview(&layout,
@@ -181,18 +160,18 @@ static void start_review(void) {
 static void ui_sign_tx_hash_nbgl(void) {
     if (should_display_esdt_flow) {
         nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                                "Review transaction to\nsend ESDT on\nMultiversX network",
+                                "Review transaction to\nsend ESDT on\n" APPNAME " network",
                                 "",
                                 "Reject transaction",
                                 start_review,
-                                rejectUseCaseChoice);
+                                nbgl_reject_transaction_choice);
     } else {
         nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                                "Review transaction to\nsend EGLD on\nMultiversX network",
+                                "Review transaction to\nsend EGLD on\n" APPNAME " network",
                                 "",
                                 "Reject transaction",
                                 start_review,
-                                rejectUseCaseChoice);
+                                nbgl_reject_transaction_choice);
     }
 }
 

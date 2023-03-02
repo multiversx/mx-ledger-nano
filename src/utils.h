@@ -16,3 +16,10 @@ void convert_to_hex_str(char* destination,
                         size_t destination_size,
                         const uint8_t* source,
                         size_t source_size);
+
+#if defined(TARGET_STAX)
+
+void nbgl_reject_message_choice(void);
+void nbgl_reject_transaction_choice(void);
+
+#endif

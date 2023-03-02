@@ -10,7 +10,7 @@
 #if defined(TARGET_STAX)
 
 static const char* const info_types[] = {"Version", APPNAME};
-static const char* const info_contents[] = {APPVERSION, "(c) 2022 Ledger"};
+static const char* const info_contents[] = {APPVERSION, "(c) 2023 Ledger"};
 
 static void quit_app_callback(void) {
     os_sched_exit(-1);
@@ -18,11 +18,13 @@ static void quit_app_callback(void) {
 
 #define NB_SETTINGS_SWITCHES 1
 static nbgl_layoutSwitch_t G_switches[NB_SETTINGS_SWITCHES];
+#define CONTRACT_DATA_IDX 0
 
 enum {
     SWITCH_CONTRACT_DATA_SET_TOKEN = FIRST_USER_TOKEN,
 };
 
+#define SETTINGS_PAGE_NUMBER 2
 static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t* content) {
     if (page == 0) {
         content->type = SWITCHES_LIST;
@@ -43,13 +45,13 @@ static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t* content) {
 static void ui_menu_main(void);
 static void ui_menu_settings(void);
 
-static void settingsControlsCallback(int token, uint8_t index) {
+static void settings_controls_callback(int token, uint8_t index) {
     uint8_t new_setting;
     UNUSED(index);
     switch (token) {
         case SWITCH_CONTRACT_DATA_SET_TOKEN:
-            G_switches[0].initState = !(G_switches[0].initState);
-            if (G_switches[0].initState == OFF_STATE) {
+            G_switches[CONTRACT_DATA_IDX].initState = !(G_switches[CONTRACT_DATA_IDX].initState);
+            if (G_switches[CONTRACT_DATA_IDX].initState == OFF_STATE) {
                 new_setting = CONTRACT_DATA_DISABLED;
             } else {
                 new_setting = CONTRACT_DATA_ENABLED;
@@ -63,22 +65,22 @@ static void settingsControlsCallback(int token, uint8_t index) {
 }
 
 static void ui_menu_settings(void) {
-    G_switches[0].text = "Contract data";
-    G_switches[0].subText = "Enable contract data";
-    G_switches[0].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
-    G_switches[0].tuneId = TUNE_TAP_CASUAL;
+    G_switches[CONTRACT_DATA_IDX].text = "Contract data";
+    G_switches[CONTRACT_DATA_IDX].subText = "Enable contract data";
+    G_switches[CONTRACT_DATA_IDX].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
+    G_switches[CONTRACT_DATA_IDX].tuneId = TUNE_TAP_CASUAL;
     if (N_storage.setting_contract_data == CONTRACT_DATA_DISABLED) {
-        G_switches[0].initState = OFF_STATE;
+        G_switches[CONTRACT_DATA_IDX].initState = OFF_STATE;
     } else {
-        G_switches[0].initState = ON_STATE;
+        G_switches[CONTRACT_DATA_IDX].initState = ON_STATE;
     }
     nbgl_useCaseSettings(APPNAME " settings",
                          0,
-                         2,
+                         SETTINGS_PAGE_NUMBER,
                          false,
                          ui_menu_main,
                          settings_nav_callback,
-                         settingsControlsCallback);
+                         settings_controls_callback);
 }
 
 static void ui_menu_main(void) {

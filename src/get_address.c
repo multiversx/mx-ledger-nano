@@ -32,9 +32,11 @@ static uint8_t set_result_get_address(void) {
 
 static void callback_match(bool match) {
     if (match) {
-        send_response(set_result_get_address(), true, true);
+        send_response(set_result_get_address(), true, false);
+        nbgl_useCaseStatus("ADDRESS\nVERIFIED", true, ui_idle);
     } else {
-        send_response(0, false, true);
+        send_response(0, false, false);
+        nbgl_useCaseStatus("Address verification\ncancelled", false, ui_idle);
     }
 }
 
