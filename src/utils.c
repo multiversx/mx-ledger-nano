@@ -57,10 +57,17 @@ void convert_to_hex_str(char* destination,
     destination[i * 2] = '\0';
 }
 
+/*
+    Converts an integer to a char array. Example: 123 -> ['1', '2', '3']
+*/
 void int_to_char_array(const int input, char* result, int max_size) {
-    /*
-        Converts an integer to a char array. Example: 123 -> ['1', '2', '3']
-    */
+    if (input == 0) {
+        if (max_size > 2) {  // the '0' char + the null terminator
+            result[0] = '0';
+            result[1] = '\0';
+            return;
+        }
+    }
     char digits[MAX_INT_NUM_DIGITS];
     int current_digit_index = 0;
     int input_copy = input;
@@ -71,7 +78,7 @@ void int_to_char_array(const int input, char* result, int max_size) {
         input_copy = div;
     }
 
-    if (current_digit_index + 1 > max_size) {
+    if (current_digit_index >= max_size) {
         const char na_str[] = "N/A";
         if (max_size > (int) (strlen(na_str))) {
             memmove(result, na_str, strlen(na_str) + 1);
@@ -99,12 +106,12 @@ int atoi(const char* str) {
     return res;
 }
 
+/*
+   Append the source to destination, at a given index, if the max size is not reached
+   It does not add the '\0' char (should be handled by caller)
+*/
 void append_to_str(const char* source, char* destination, int* index, int max_size) {
-    /*
-        Append the source to destination, at a given index, if the max size is not reached
-        It does not add the '\0' char (should be handled by caller)
-    */
-    if (*index > max_size || (int) (strlen(source) + *index) > (int) (max_size)) {
+    if ((int) (strlen(source) + *index) > (int) (max_size)) {
         return;
     }
 
@@ -112,11 +119,11 @@ void append_to_str(const char* source, char* destination, int* index, int max_si
     *index += strlen(source);
 }
 
+/*
+   Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
+   34 sec."; 12345 -> "3h 25min 45 sec.". If more than 24h, will display "more than one day"
+*/
 void seconds_to_time(const char* input, char* output, int max_size) {
-    /*
-        Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
-       34 sec."; 12345 -> "3h 25min 45 sec.". If more than 24h, will display accordingly
-    */
     int h, m, s;
     int num_seconds = atoi(input);
     if (num_seconds == 0) {  // invalid TTL
@@ -183,18 +190,22 @@ int min(int x, int y) {
 }
 
 int replacement_index(int allowed_len, int truncate_str_len) {
-    return (allowed_len - truncate_str_len) / 2;
+    int index = (allowed_len - truncate_str_len) / 2;
+    if (index < 0) {
+        return 0;
+    }
+
+    return index;
 }
 
 void truncate_if_needed(const char* source, int max_src_len, char* dest, int max_dest_len) {
     const int len_src = min(max_src_len, (int) strlen(source));
-    const char truncate_replacement[] = "...";
-    const int truncate_str_len = sizeof(truncate_replacement) - 1;
-
     if (len_src <= max_dest_len) {
         memmove(dest, source, len_src);
         dest[len_src] = 0;
     } else {
+        const char truncate_replacement[] = "...";
+        const int truncate_str_len = sizeof(truncate_replacement) - 1;
         int truncate_index = replacement_index(max_dest_len, truncate_str_len);
         int remaining_chars_from_src = max_dest_len - truncate_index - truncate_str_len;
         int index_after_replacement = truncate_index + truncate_str_len;
@@ -224,7 +235,7 @@ int build_authorizing_message(char* display,
     int i;
     int final_string_index = 0;
     for (i = 0; i < num_elements; i++) {
-        if (!((final_string_index + strlen(elements[i]) < max_display_length))) {
+        if (final_string_index + strlen(elements[i]) >= max_display_length) {
             return AUTH_TOKEN_INVALID_RET_CODE;
         }
 
@@ -235,49 +246,45 @@ int build_authorizing_message(char* display,
     return 0;
 }
 
+/*
+    Receives the origin as base64 and ttl as number of seconds and computes the token display.
+    If successful, will write into display something like: "Authorizing host.com for 5min"
+*/
 int compute_token_display(const char* received_origin,
                           const char* received_ttl,
                           char* display,
                           size_t max_display_length) {
-    /*
-        Receives the origin as base64 and ttl as number of seconds and computes the token display.
-        If successful, will write into display something like: "Authorizing host.com for 5min"
-    */
-
     if (strlen(received_origin) == 0) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
-    char decoded_origin_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN + 1];
+    char decoded_origin_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
 
     // limit the display size of the display and ttl
-    char origin_display[MAX_AUTH_TOKEN_ORIGIN_LEN + 1];
-    char ttl_display[MAX_AUTH_TOKEN_TTL_LEN + 1];
+    char origin_display[MAX_AUTH_TOKEN_ORIGIN_SIZE];
+    char ttl_display[MAX_AUTH_TOKEN_TTL_SIZE];
 
     int received_origin_len = strlen(received_origin);
-    char encoded_origin[received_origin_len +
-                        4];  // 4 more chars for the '\0' plus the '=' padding that has to be added
-    memmove(encoded_origin, received_origin, received_origin_len);
-    encoded_origin[received_origin_len] = '\0';
+    int max_size_encoded_origin =
+        AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + 3;  // add 3 more possible padding chars
+    int encoded_origin_size = min(received_origin_len, max_size_encoded_origin);
+
+    char encoded_origin[max_size_encoded_origin];
+    memmove(encoded_origin, received_origin, encoded_origin_size);
+    encoded_origin[encoded_origin_size] = '\0';
 
     // since the received base64 field does not include padding, manually add it
-    int mod_four = strlen(encoded_origin) % 4;
-    if (mod_four != 0) {
-        int padding_count = 4 - mod_four;
+    int modifier = strlen(encoded_origin) % 4;
+    if (modifier != 0) {
+        int padding_count = 4 - modifier;
         for (int j = 0; j < padding_count; j++) {
             encoded_origin[received_origin_len + j] = '=';
         }
         encoded_origin[received_origin_len + padding_count] = '\0';
     }
 
-    // limit the origin display size
-    int encoded_origin_max_length = strlen(encoded_origin);
-    if (encoded_origin_max_length > AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN) {
-        encoded_origin_max_length = AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN;
-    }
-
     // try to decode the base64 field
-    if (!base64decode(decoded_origin_buffer, encoded_origin, encoded_origin_max_length)) {
+    if (!base64decode(decoded_origin_buffer, encoded_origin, strlen(encoded_origin))) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
@@ -304,14 +311,14 @@ int compute_token_display(const char* received_origin,
     truncate_if_needed(decoded_origin_buffer,
                        strlen(decoded_origin_buffer),
                        origin_display,
-                       MAX_AUTH_TOKEN_ORIGIN_LEN);
+                       MAX_AUTH_TOKEN_ORIGIN_SIZE);
 
     // convert the ttl to a display string
     if (strlen(received_ttl) == 0) {
-        memmove(ttl_display, "N/A time", 8);
-        ttl_display[8] = '\0';
+        const char undefined_ttl[] = "N/A time";
+        memmove(ttl_display, undefined_ttl, strlen(undefined_ttl) + 1);
     } else {
-        seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_LEN);
+        seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_SIZE);
     }
 
     return build_authorizing_message(display, origin_display, ttl_display, max_display_length);

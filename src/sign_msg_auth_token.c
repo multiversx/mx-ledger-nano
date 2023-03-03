@@ -13,9 +13,9 @@ typedef struct {
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
     char token[AUTH_TOKEN_DISPLAY_MAX_LEN];
-    char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
-    char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN];
-    char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_LEN];
+    char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
+    char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
+    char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_SIZE];
     int dot_count;
     bool stop_origin_ttl_fetch;
 } token_auth_context_t;
@@ -77,17 +77,19 @@ void init_auth_token_context(void) {
 }
 
 void move_value_from_buffer(char *buffer,
+                            int buffer_size,
                             char *destination,
+                            int destination_size,
                             bool *should_stop_processing,
-                            uint8_t max_len) {
-    if (strlen(buffer) > max_len) {
+                            int max_size) {
+    if ((int) (strlen(buffer)) >= max_size) {
         *should_stop_processing = true;
-        memset(destination, 0, sizeof(*destination));
+        memset(destination, 0, destination_size);
         return;
     }
 
     memmove(destination, buffer, strlen(buffer));
-    memset(buffer, 0, sizeof(*buffer));
+    memset(buffer, 0, buffer_size);
     should_stop_processing = false;
 }
 
@@ -114,7 +116,7 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
 
             size_t buffer_len = strlen(token_auth_context.auth_token_buffer);
 
-            if (buffer_len >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN - 2) {
+            if (buffer_len >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE - 2) {
                 // we've reached the max length of the origin
                 token_auth_context.stop_origin_ttl_fetch = true;
                 return;
@@ -126,9 +128,11 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
             token_auth_context.dot_count++;
             if (PARSED_TOKEN_ORIGIN) {
                 move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       sizeof(token_auth_context.auth_token_buffer),
                                        token_auth_context.auth_origin,
+                                       sizeof(token_auth_context.auth_origin),
                                        &token_auth_context.stop_origin_ttl_fetch,
-                                       AUTH_TOKEN_ENCODED_ORIGIN_MAX_LEN);
+                                       AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
@@ -140,9 +144,11 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
 
             if (PARSED_TOKEN_TTL) {
                 move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       sizeof(token_auth_context.auth_token_buffer),
                                        token_auth_context.auth_ttl,
+                                       sizeof(token_auth_context.auth_ttl),
                                        &token_auth_context.stop_origin_ttl_fetch,
-                                       AUTH_TOKEN_ENCODED_TTL_MAX_LEN);
+                                       AUTH_TOKEN_ENCODED_TTL_MAX_SIZE);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
@@ -337,12 +343,11 @@ void handle_auth_token(uint8_t p1,
                                          token_auth_context.auth_ttl,
                                          display,
                                          AUTH_TOKEN_DISPLAY_MAX_LEN);
-    if (ret_code == AUTH_TOKEN_BAD_REQUEST_RET_CODE) {
-        THROW(ERR_INVALID_MESSAGE);
-    }
-    if (ret_code != AUTH_TOKEN_INVALID_RET_CODE) {
+    if (ret_code == 0) {
         memmove(token_auth_context.token, display, strlen(display));
         token_auth_context.token[strlen(display)] = '\0';
+    } else if (ret_code == AUTH_TOKEN_BAD_REQUEST_RET_CODE) {
+        THROW(ERR_INVALID_MESSAGE);
     }
 
     app_state = APP_STATE_IDLE;
