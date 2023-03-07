@@ -12,7 +12,7 @@ typedef struct {
     uint32_t len;
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
-    char token[AUTH_TOKEN_DISPLAY_MAX_LEN];
+    char token[AUTH_TOKEN_DISPLAY_MAX_SIZE];
     char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
     char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
     char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_SIZE];
@@ -80,17 +80,17 @@ void move_value_from_buffer(char *buffer,
                             int buffer_size,
                             char *destination,
                             int destination_size,
-                            bool *should_stop_processing,
-                            int max_size) {
-    if ((int) (strlen(buffer)) >= max_size) {
+                            bool *should_stop_processing) {
+    if ((int) (strlen(buffer)) >= destination_size) {
         *should_stop_processing = true;
         memset(destination, 0, destination_size);
+        memset(buffer, 0, buffer_size);
         return;
     }
 
     memmove(destination, buffer, strlen(buffer));
     memset(buffer, 0, buffer_size);
-    should_stop_processing = false;
+    *should_stop_processing = false;
 }
 
 void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
@@ -131,8 +131,7 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
                                        sizeof(token_auth_context.auth_token_buffer),
                                        token_auth_context.auth_origin,
                                        sizeof(token_auth_context.auth_origin),
-                                       &token_auth_context.stop_origin_ttl_fetch,
-                                       AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE);
+                                       &token_auth_context.stop_origin_ttl_fetch);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
@@ -147,8 +146,7 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
                                        sizeof(token_auth_context.auth_token_buffer),
                                        token_auth_context.auth_ttl,
                                        sizeof(token_auth_context.auth_ttl),
-                                       &token_auth_context.stop_origin_ttl_fetch,
-                                       AUTH_TOKEN_ENCODED_TTL_MAX_SIZE);
+                                       &token_auth_context.stop_origin_ttl_fetch);
                 if (token_auth_context.stop_origin_ttl_fetch) {
                     return;
                 }
@@ -159,14 +157,14 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
 
 void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
     handle_auth_token_data(data_buffer, data_length);
-    if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_LEN) {
+    if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         return;
     }
 
     int num_chars_to_show = data_length;
     bool should_append_ellipsis = false;
-    if (data_length >= AUTH_TOKEN_DISPLAY_MAX_LEN) {
-        num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_LEN;
+    if (data_length >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
+        num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_SIZE;
         should_append_ellipsis = true;
     }
 
@@ -177,7 +175,7 @@ void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_le
         // add "..." at the end to show that the data field is actually longer
         char ellipsis[] = "...";
         int ellipsisLen = strlen(ellipsis);
-        memmove(token_auth_context.token + AUTH_TOKEN_DISPLAY_MAX_LEN - ellipsisLen,
+        memmove(token_auth_context.token + AUTH_TOKEN_DISPLAY_MAX_SIZE - ellipsisLen,
                 ellipsis,
                 ellipsisLen);
         return;
@@ -338,11 +336,11 @@ void handle_auth_token(uint8_t p1,
         THROW(ERR_SIGNATURE_FAILED);
     }
 
-    char display[AUTH_TOKEN_DISPLAY_MAX_LEN];
+    char display[AUTH_TOKEN_DISPLAY_MAX_SIZE];
     int ret_code = compute_token_display(token_auth_context.auth_origin,
                                          token_auth_context.auth_ttl,
                                          display,
-                                         AUTH_TOKEN_DISPLAY_MAX_LEN);
+                                         AUTH_TOKEN_DISPLAY_MAX_SIZE);
     if (ret_code == 0) {
         memmove(token_auth_context.token, display, strlen(display));
         token_auth_context.token[strlen(display)] = '\0';

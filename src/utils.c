@@ -62,7 +62,7 @@ void convert_to_hex_str(char* destination,
 */
 void int_to_char_array(const int input, char* result, int max_size) {
     if (input == 0) {
-        if (max_size > 2) {  // the '0' char + the null terminator
+        if (max_size >= 2) {  // the '0' char + the null terminator
             result[0] = '0';
             result[1] = '\0';
             return;
@@ -111,12 +111,20 @@ int atoi(const char* str) {
    It does not add the '\0' char (should be handled by caller)
 */
 void append_to_str(const char* source, char* destination, int* index, int max_size) {
-    if ((int) (strlen(source) + *index) > (int) (max_size)) {
+    if ((int) (strlen(source) + *index) >= (int) (max_size)) {
         return;
     }
 
     memmove(destination + *index, source, strlen(source));
     *index += strlen(source);
+}
+
+void append_time(char* output, int* index, int max_size, int value, const char* tag) {
+    char buffer[max_size];
+    int_to_char_array(value, buffer, max_size);
+
+    append_to_str(buffer, output, index, max_size);
+    append_to_str(tag, output, index, max_size);
 }
 
 /*
@@ -136,7 +144,7 @@ void seconds_to_time(const char* input, char* output, int max_size) {
 
     char temp_output[max_size];
     int current_temp_output_index = 0;
-    int max_int_char_array_len = MAX_INT_NUM_DIGITS + 1;  // add one for the '0' char
+    int max_int_char_array_size = MAX_INT_NUM_DIGITS + 1;  // add one for the '0' char
 
     h = num_seconds / 3600;
     m = (num_seconds - (3600 * h)) / 60;
@@ -150,26 +158,14 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         return;
     }
     if (h > 0) {
-        char hours_char_arr[max_int_char_array_len];
-        int_to_char_array(h, hours_char_arr, max_int_char_array_len);
-
-        append_to_str(hours_char_arr, temp_output, &current_temp_output_index, max_size);
-        append_to_str("h ", temp_output, &current_temp_output_index, max_size);
+        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, h, "h ");
     }
     if (m > 0) {
-        char minutes_char_arr[max_int_char_array_len];
-        int_to_char_array(m, minutes_char_arr, max_int_char_array_len);
-
-        append_to_str(minutes_char_arr, temp_output, &current_temp_output_index, max_size);
-        append_to_str("min ", temp_output, &current_temp_output_index, max_size);
+        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, m, "min ");
     }
 
     if (s > 0) {
-        char seconds_char_arr[max_int_char_array_len];
-        int_to_char_array(s, seconds_char_arr, max_int_char_array_len);
-
-        append_to_str(seconds_char_arr, temp_output, &current_temp_output_index, max_size);
-        append_to_str("sec.", temp_output, &current_temp_output_index, max_size);
+        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, s, "sec.");
     }
 
     if (current_temp_output_index < max_size) {
@@ -223,7 +219,7 @@ void truncate_if_needed(const char* source, int max_src_len, char* dest, int max
 int build_authorizing_message(char* display,
                               const char* origin_display,
                               const char* ttl_display,
-                              size_t max_display_length) {
+                              size_t max_display_size) {
     const char* elements[] = {
         "Authorizing ",
         origin_display,
@@ -235,7 +231,7 @@ int build_authorizing_message(char* display,
     int i;
     int final_string_index = 0;
     for (i = 0; i < num_elements; i++) {
-        if (final_string_index + strlen(elements[i]) >= max_display_length) {
+        if (final_string_index + strlen(elements[i]) >= max_display_size) {
             return AUTH_TOKEN_INVALID_RET_CODE;
         }
 
@@ -253,7 +249,7 @@ int build_authorizing_message(char* display,
 int compute_token_display(const char* received_origin,
                           const char* received_ttl,
                           char* display,
-                          size_t max_display_length) {
+                          size_t max_display_size) {
     if (strlen(received_origin) == 0) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
@@ -321,5 +317,5 @@ int compute_token_display(const char* received_origin,
         seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_SIZE);
     }
 
-    return build_authorizing_message(display, origin_display, ttl_display, max_display_length);
+    return build_authorizing_message(display, origin_display, ttl_display, max_display_size);
 }

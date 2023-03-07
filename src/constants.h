@@ -63,7 +63,7 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define MAX_UINT128_LEN                    39  // len(f"{0xffffffffffffffffffffffffffffffff:d}")
 #define MAX_AUTH_TOKEN_ORIGIN_SIZE         37
 #define MAX_AUTH_TOKEN_TTL_SIZE            41
-#define AUTH_TOKEN_DISPLAY_MAX_LEN         100
+#define AUTH_TOKEN_DISPLAY_MAX_SIZE        100
 #define AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE 101
 #define AUTH_TOKEN_ENCODED_TTL_MAX_SIZE    11
 #define AUTH_TOKEN_INVALID_RET_CODE        -1
