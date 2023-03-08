@@ -120,6 +120,10 @@ void append_to_str(const char* source, char* destination, int* index, int max_si
 }
 
 void append_time(char* output, int* index, int max_size, int value, const char* tag) {
+    if (value == 0) {
+        return;
+    }
+
     char buffer[max_size];
     int_to_char_array(value, buffer, max_size);
 
@@ -157,16 +161,9 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         }
         return;
     }
-    if (h > 0) {
-        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, h, "h ");
-    }
-    if (m > 0) {
-        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, m, "min ");
-    }
-
-    if (s > 0) {
-        append_time(temp_output, &current_temp_output_index, max_int_char_array_size, s, "sec.");
-    }
+    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, h, "h ");
+    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, m, "min ");
+    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, s, "sec.");
 
     if (current_temp_output_index < max_size) {
         memmove(output, temp_output, current_temp_output_index);
@@ -260,23 +257,26 @@ int compute_token_display(const char* received_origin,
     char origin_display[MAX_AUTH_TOKEN_ORIGIN_SIZE];
     char ttl_display[MAX_AUTH_TOKEN_TTL_SIZE];
 
-    int received_origin_len = strlen(received_origin);
-    int max_size_encoded_origin =
-        AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + 3;  // add 3 more possible padding chars
-    int encoded_origin_size = min(received_origin_len, max_size_encoded_origin);
+    int received_origin_size = strlen(received_origin) + 1;
+    int max_padding_chars_count = 3;
+    char encoded_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + max_padding_chars_count];
 
-    char encoded_origin[max_size_encoded_origin];
-    memmove(encoded_origin, received_origin, encoded_origin_size);
-    encoded_origin[encoded_origin_size] = '\0';
+    int encoded_origin_size = received_origin_size;
+    if (encoded_origin_size > AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE) {
+        encoded_origin_size = AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE;
+    }
+
+    memmove(encoded_origin, received_origin, encoded_origin_size - 1);
+    encoded_origin[encoded_origin_size - 1] = '\0';
 
     // since the received base64 field does not include padding, manually add it
     int modifier = strlen(encoded_origin) % 4;
     if (modifier != 0) {
         int padding_count = 4 - modifier;
         for (int j = 0; j < padding_count; j++) {
-            encoded_origin[received_origin_len + j] = '=';
+            encoded_origin[encoded_origin_size - 1 + j] = '=';
         }
-        encoded_origin[received_origin_len + padding_count] = '\0';
+        encoded_origin[encoded_origin_size - 1 + padding_count] = '\0';
     }
 
     // try to decode the base64 field

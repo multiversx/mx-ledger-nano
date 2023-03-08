@@ -59,10 +59,7 @@ UX_FLOW(ux_auth_token_msg_flow,
         &ux_auth_token_msg_flow_35_step,
         &ux_auth_token_msg_flow_36_step);
 
-void init_auth_token_context(void) {
-    bip32_account = 0;
-    bip32_address_index = 0;
-
+void clean_token_fields(void) {
     token_auth_context.len = 0;
     token_auth_context.dot_count = 0;
     memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
@@ -72,6 +69,13 @@ void init_auth_token_context(void) {
     memset(token_auth_context.hash, 0, sizeof(token_auth_context.hash));
     memset(token_auth_context.address, 0, sizeof(token_auth_context.address));
     token_auth_context.stop_origin_ttl_fetch = false;
+}
+
+void init_auth_token_context(void) {
+    bip32_account = 0;
+    bip32_address_index = 0;
+
+    clean_token_fields();
 
     app_state = APP_STATE_IDLE;
 }
@@ -245,7 +249,7 @@ void handle_auth_token(uint8_t p1,
        the first bulk, while the entire token can come in multiple bulks
     */
     if (p1 == P1_FIRST) {
-        memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
+        clean_token_fields();
         token_auth_context.token[0] = '\0';
         char token_length_str[11];
 
