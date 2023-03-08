@@ -266,17 +266,18 @@ int compute_token_display(const char* received_origin,
         encoded_origin_size = AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE;
     }
 
-    memmove(encoded_origin, received_origin, encoded_origin_size - 1);
-    encoded_origin[encoded_origin_size - 1] = '\0';
+    int encoded_origin_len = encoded_origin_size - 1;
+    memmove(encoded_origin, received_origin, encoded_origin_len);
+    encoded_origin[encoded_origin_len] = '\0';
 
     // since the received base64 field does not include padding, manually add it
     int modifier = strlen(encoded_origin) % 4;
     if (modifier != 0) {
         int padding_count = 4 - modifier;
         for (int j = 0; j < padding_count; j++) {
-            encoded_origin[encoded_origin_size - 1 + j] = '=';
+            encoded_origin[encoded_origin_len + j] = '=';
         }
-        encoded_origin[encoded_origin_size - 1 + padding_count] = '\0';
+        encoded_origin[encoded_origin_len + padding_count] = '\0';
     }
 
     // try to decode the base64 field
