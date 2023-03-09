@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "sign_tx_hash.h"
+#include "utils.h"
 
 typedef struct {
     char receiver[FULL_ADDRESS_LENGTH];

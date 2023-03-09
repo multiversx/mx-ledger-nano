@@ -403,6 +403,146 @@ class TestSignMsgAuthToken:
                                                           test_name)
         assert backend.last_async_response.status == Error.USER_DENIED
 
+    def test_sign_msg_auth_token_localhost_5min_ok(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        token = b"bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_xexchange_24h_ok(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.86400.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_too_long_origin_regular_text_ok(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        # The origin is too long, so the original token will be displayed
+        token = b"eGV4Y2hhbmdlLmNvbXhleGNoYW5nZS5jb214ZXhjaGFuZ2UuY29teGV4Y2hhbmdlLmNvbQeGV4Y2hhbmdlLmNvbXhleGNoYW5nZS5jb214ZXhjaGFuZ2UuY29teGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_long_origin_should_trim_ok(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        # The origin is too long, so the original token will be displayed
+        token = b"bG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmdsb25nbG9uZ2xvbmc.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.127.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_too_long_ttl_ok(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        # The origin is too long, so the original token will be displayed
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.60000000000000000.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_too_long_payload(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"a"*1024
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_invalid_ttl(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.invalid.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+    def test_sign_msg_auth_token_long_ttl(self, backend, navigator, test_name):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+
+        token = b"eGV4Y2hhbmdlLmNvbQ.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.606060657.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
+                    [NavIns(NavInsID.BOTH_CLICK)],
+                    "Authorize",
+                    ROOT_SCREENSHOT_PATH,
+                    test_name)
+
+
+    def test_sign_msg_auth_token_invalid_prefix(self, backend):
+        payload:bytes = b""
+        payload += (0).to_bytes(4, "big") # account index
+        payload += (0).to_bytes(4, "big") # address index
+        
+        token = b"bXVsdGl2ZXJzeDovL29yaWdpbg.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.606060657.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9"
+        payload += (len(token)).to_bytes(4, "big")
+        payload += token
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
+            # error return expected
+            pass
+        assert backend.last_async_response.status == Error.INVALID_MESSAGE
 
 class TestState:
 

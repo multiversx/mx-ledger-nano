@@ -104,7 +104,7 @@ To remove the app from the device, run:
 
 Creating a PR against `master` or `develop` will trigger some workflows that will:
 - check the successful build for multiple environments
-- run `clang-format11` for checking linter issues
+- run `clang-format11` for checking linter issues (example: `./clang-format11.0.0 -i utils.c`)
 - look for spelling issues 
 - run static code analyzer
 
