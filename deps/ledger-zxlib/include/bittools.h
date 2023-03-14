@@ -30,7 +30,8 @@ int convert_bits(uint8_t *out,
                  int outbits,
                  const uint8_t *in,
                  size_t inlen,
-                 int inbits, int pad);
+                 int inbits,
+                 int pad);
 
 #ifdef __cplusplus
 }

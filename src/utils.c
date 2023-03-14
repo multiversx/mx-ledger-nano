@@ -3,22 +3,34 @@
 #include "os.h"
 #include "base64.h"
 
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
+
 // read_uint32_be reads 4 bytes from the buffer and returns an uint32_t with big
 // endian encoding
 uint32_t read_uint32_be(uint8_t* buffer) {
     return (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | (buffer[3]);
 }
 
-void send_response(uint8_t tx, bool approve) {
-    uint16_t response = MSG_OK;
+void send_response(uint8_t tx, bool approve, bool back_to_idle) {
+    uint16_t response;
 
-    if (!approve) response = ERR_USER_DENIED;
+    if (approve) {
+        response = MSG_OK;
+    } else {
+        response = ERR_USER_DENIED;
+    }
+
     G_io_apdu_buffer[tx++] = response >> 8;
     G_io_apdu_buffer[tx++] = response & 0xff;
     // Send back the response, do not restart the event loop
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
-    // Display back the original UX
-    ui_idle();
+
+    if (back_to_idle) {
+        // Display back the original UX
+        ui_idle();
+    }
 }
 
 bool is_digit(char c) {
@@ -320,3 +332,33 @@ int compute_token_display(const char* received_origin,
 
     return build_authorizing_message(display, origin_display, ttl_display, max_display_size);
 }
+
+#if defined(TARGET_STAX)
+
+static void message_rejection(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
+}
+
+void nbgl_reject_message_choice(void) {
+    nbgl_useCaseConfirm("Reject message?",
+                        NULL,
+                        "Yes, reject",
+                        "Go back to message",
+                        message_rejection);
+}
+
+static void transaction_rejection(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Transaction\nrejected", false, ui_idle);
+}
+
+void nbgl_reject_transaction_choice(void) {
+    nbgl_useCaseConfirm("Reject transaction?",
+                        NULL,
+                        "Yes, reject",
+                        "Go back to transaction",
+                        transaction_rejection);
+}
+
+#endif
