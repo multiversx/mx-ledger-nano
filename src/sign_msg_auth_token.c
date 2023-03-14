@@ -154,10 +154,10 @@ static void init_auth_token_context(void) {
 }
 
 static void move_value_from_buffer(char *buffer,
-                            int buffer_size,
-                            char *destination,
-                            int destination_size,
-                            bool *should_stop_processing) {
+                                   int buffer_size,
+                                   char *destination,
+                                   int destination_size,
+                                   bool *should_stop_processing) {
     if ((int) (strlen(buffer)) >= destination_size) {
         *should_stop_processing = true;
         memset(destination, 0, destination_size);

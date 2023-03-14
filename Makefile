@@ -89,6 +89,8 @@ else
     DEFINES += IO_SEPROXYHAL_BUFFER_SIZE_B=300
 endif
 
+$(info "########" TARGET_NAME is $(value TARGET_NAME))
+
 ifeq ($(TARGET_NAME),TARGET_STAX)
     DEFINES += NBGL_QRCODE
 else
@@ -102,6 +104,8 @@ else
         DEFINES += HAVE_BAGL_FONT_OPEN_SANS_LIGHT_16PX
     endif
 endif
+
+$(info "########" DEFINES is $(value DEFINES))
 
 # Enabling debug PRINTF
 DEBUG = 0
