@@ -510,6 +510,11 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_xexchange_24h_ok(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -525,6 +530,11 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_origin_regular_text_ok(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -541,6 +551,12 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_long_origin_should_trim_ok(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -557,6 +573,12 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_ttl_ok(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -573,6 +595,11 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_payload(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -589,6 +616,12 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_invalid_ttl(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -605,6 +638,11 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_long_ttl(self, backend, navigator, test_name):
         payload:bytes = b""
@@ -621,6 +659,11 @@ class TestSignMsgAuthToken:
                     "Authorize",
                     ROOT_SCREENSHOT_PATH,
                     test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
 
     def test_sign_msg_auth_token_invalid_prefix(self, backend):
