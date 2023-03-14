@@ -72,7 +72,7 @@ void convert_to_hex_str(char* destination,
 /*
     Converts an integer to a char array. Example: 123 -> ['1', '2', '3']
 */
-void int_to_char_array(const int input, char* result, int max_size) {
+static void int_to_char_array(const int input, char* result, int max_size) {
     if (input == 0) {
         if (max_size >= 2) {  // the '0' char + the null terminator
             result[0] = '0';

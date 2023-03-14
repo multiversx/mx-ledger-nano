@@ -85,7 +85,7 @@ static void start_review(void) {
 
 static void ui_sign_message_auth_token_nbgl(void) {
     nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                            "Review message to\nsign on " APPNAME "\nnetwork",
+                            "Review auth token to\nsign on " APPNAME "\nnetwork",
                             "",
                             "Reject message",
                             start_review,
@@ -132,8 +132,7 @@ UX_FLOW(ux_auth_token_msg_flow,
 
 #endif
 
-static void init_auth_token_context(void) {
-void clean_token_fields(void) {
+static void clean_token_fields(void) {
     token_auth_context.len = 0;
     token_auth_context.dot_count = 0;
     memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
@@ -145,7 +144,7 @@ void clean_token_fields(void) {
     token_auth_context.stop_origin_ttl_fetch = false;
 }
 
-void init_auth_token_context(void) {
+static void init_auth_token_context(void) {
     bip32_account = 0;
     bip32_address_index = 0;
 
@@ -154,7 +153,7 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-void move_value_from_buffer(char *buffer,
+static void move_value_from_buffer(char *buffer,
                             int buffer_size,
                             char *destination,
                             int destination_size,
@@ -171,14 +170,15 @@ void move_value_from_buffer(char *buffer,
     *should_stop_processing = false;
 }
 
-void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
+static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
     if (token_auth_context.stop_origin_ttl_fetch) {
         return;
     }
 
     /*
     This function parses the auth token char by char and extracts the origin and ttl.
-    An auth token looks like this. We need to parse the first and the third element and save them
+    An auth token looks like this. We need to parse the first and the third element and save
+    them
 
     Example:
     bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
