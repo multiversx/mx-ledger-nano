@@ -4,6 +4,9 @@
 #include "utils.h"
 #include "ux.h"
 
+// Not applicatble for Stax
+#if !defined(TARGET_STAX)
+
 static unsigned int app_version_ui_button(unsigned int button_mask,
                                           unsigned int button_mask_counter);
 
@@ -119,3 +122,5 @@ static unsigned int app_version_ui_button(unsigned int button_mask,
 void view_app_version() {
     UX_DISPLAY(app_version_ui, NULL);
 }
+
+#endif
