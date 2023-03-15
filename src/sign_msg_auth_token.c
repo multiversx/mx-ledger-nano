@@ -2,6 +2,11 @@
 #include "address_helpers.h"
 #include "get_private_key.h"
 #include "utils.h"
+#include "menu.h"
+
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
 
 #define PARSED_TOKEN_ORIGIN    (token_auth_context.dot_count == 1)
 #define PARSED_TOKEN_BLOCKHASH (token_auth_context.dot_count == 2)
@@ -22,8 +27,74 @@ typedef struct {
 
 static token_auth_context_t token_auth_context;
 
-static uint8_t set_result_auth_token(void);
-bool sign_auth_token(void);
+static uint8_t set_result_auth_token(void) {
+    uint8_t tx = 0;
+    char complete_response[strlen(token_auth_context.address) +
+                           MESSAGE_SIGNATURE_LEN];  // <addresssignature>
+    memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
+    memmove(complete_response + strlen(token_auth_context.address),
+            token_auth_context.signature,
+            MESSAGE_SIGNATURE_LEN);
+    const uint8_t response_size = strlen(token_auth_context.address) + MESSAGE_SIGNATURE_LEN;
+
+    G_io_apdu_buffer[tx++] = response_size;
+    memmove(G_io_apdu_buffer + tx, complete_response, response_size);
+    tx += response_size;
+    return tx;
+}
+
+#if defined(TARGET_STAX)
+
+static nbgl_layoutTagValueList_t layout;
+static nbgl_layoutTagValue_t pairs_list[2];
+
+static const nbgl_pageInfoLongPress_t review_final_long_press = {
+    .text = "Sign message on\n" APPNAME " network?",
+    .icon = &C_icon_multiversx_logo_64x64,
+    .longPressText = "Hold to sign",
+    .longPressToken = 0,
+    .tuneId = TUNE_TAP_CASUAL,
+};
+
+static void review_final_callback(bool confirmed) {
+    if (confirmed) {
+        int tx = set_result_auth_token();
+        send_response(tx, true, false);
+        nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
+    } else {
+        nbgl_reject_message_choice();
+    }
+}
+
+static void start_review(void) {
+    layout.nbMaxLinesForValue = 0;
+    layout.smallCaseForValue = true;
+    layout.wrapping = true;
+    layout.pairs = pairs_list;
+    pairs_list[0].item = "Address";
+    pairs_list[0].value = token_auth_context.address;
+    pairs_list[1].item = "Auth Token";
+    pairs_list[1].value = token_auth_context.token;
+    layout.nbPairs = ARRAY_COUNT(pairs_list);
+
+    nbgl_useCaseStaticReview(&layout,
+                             &review_final_long_press,
+                             "Reject message",
+                             review_final_callback);
+}
+
+static void ui_sign_message_auth_token_nbgl(void) {
+    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
+                            "Review auth token to\nsign on " APPNAME "\nnetwork",
+                            "",
+                            "Reject message",
+                            start_review,
+                            nbgl_reject_message_choice);
+}
+
+#else
+
+static bool sign_auth_token(void);
 
 // UI for confirming the message hash on screen
 UX_STEP_NOCB(ux_auth_token_msg_flow_33_step,
@@ -40,14 +111,14 @@ UX_STEP_NOCB(ux_auth_token_msg_flow_34_step,
              });
 UX_STEP_VALID(ux_auth_token_msg_flow_35_step,
               pb,
-              send_response(set_result_auth_token(), true),
+              send_response(set_result_auth_token(), true, true),
               {
                   &C_icon_validate_14,
                   "Authorize",
               });
 UX_STEP_VALID(ux_auth_token_msg_flow_36_step,
               pb,
-              send_response(0, false),
+              send_response(0, false, true),
               {
                   &C_icon_crossmark,
                   "Reject",
@@ -59,7 +130,9 @@ UX_FLOW(ux_auth_token_msg_flow,
         &ux_auth_token_msg_flow_35_step,
         &ux_auth_token_msg_flow_36_step);
 
-void clean_token_fields(void) {
+#endif
+
+static void clean_token_fields(void) {
     token_auth_context.len = 0;
     token_auth_context.dot_count = 0;
     memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
@@ -71,7 +144,7 @@ void clean_token_fields(void) {
     token_auth_context.stop_origin_ttl_fetch = false;
 }
 
-void init_auth_token_context(void) {
+static void init_auth_token_context(void) {
     bip32_account = 0;
     bip32_address_index = 0;
 
@@ -80,11 +153,11 @@ void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-void move_value_from_buffer(char *buffer,
-                            int buffer_size,
-                            char *destination,
-                            int destination_size,
-                            bool *should_stop_processing) {
+static void move_value_from_buffer(char *buffer,
+                                   int buffer_size,
+                                   char *destination,
+                                   int destination_size,
+                                   bool *should_stop_processing) {
     if ((int) (strlen(buffer)) >= destination_size) {
         *should_stop_processing = true;
         memset(destination, 0, destination_size);
@@ -97,14 +170,15 @@ void move_value_from_buffer(char *buffer,
     *should_stop_processing = false;
 }
 
-void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
+static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
     if (token_auth_context.stop_origin_ttl_fetch) {
         return;
     }
 
     /*
     This function parses the auth token char by char and extracts the origin and ttl.
-    An auth token looks like this. We need to parse the first and the third element and save them
+    An auth token looks like this. We need to parse the first and the third element and save
+    them
 
     Example:
     bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
@@ -159,7 +233,7 @@ void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
     }
 }
 
-void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
+static void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
     handle_auth_token_data(data_buffer, data_length);
     if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         return;
@@ -186,23 +260,7 @@ void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_le
     }
 }
 
-static uint8_t set_result_auth_token(void) {
-    uint8_t tx = 0;
-    char complete_response[strlen(token_auth_context.address) +
-                           MESSAGE_SIGNATURE_LEN];  // <addresssignature>
-    memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
-    memmove(complete_response + strlen(token_auth_context.address),
-            token_auth_context.signature,
-            MESSAGE_SIGNATURE_LEN);
-    const uint8_t response_size = strlen(token_auth_context.address) + MESSAGE_SIGNATURE_LEN;
-
-    G_io_apdu_buffer[tx++] = response_size;
-    memmove(G_io_apdu_buffer + tx, complete_response, response_size);
-    tx += response_size;
-    return tx;
-}
-
-bool sign_auth_token(void) {
+static bool sign_auth_token(void) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
 
@@ -246,7 +304,7 @@ void handle_auth_token(uint8_t p1,
            4 bytes           4 bytes           4 bytes     <token length> bytes
 
         the account and address indexes, alongside token length are computed in
-       the first bulk, while the entire token can come in multiple bulks
+        the first bulk, while the entire token can come in multiple bulks
     */
     if (p1 == P1_FIRST) {
         clean_token_fields();
@@ -353,6 +411,11 @@ void handle_auth_token(uint8_t p1,
     }
 
     app_state = APP_STATE_IDLE;
+
+#if defined(TARGET_STAX)
+    ui_sign_message_auth_token_nbgl();
+#else
     ux_flow_init(0, ux_auth_token_msg_flow, NULL);
+#endif
     *flags |= IO_ASYNCH_REPLY;
 }
