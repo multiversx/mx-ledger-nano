@@ -12,7 +12,7 @@
 #include "globals.h"
 #endif
 
-static void extract_esdt_value();
+static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length);
 static void set_network(const char *chain_id);
 static void set_message_in_amount(const char *message);
 
@@ -243,7 +243,7 @@ uint16_t verify_data(bool *valid) {
             return ERR_INVALID_MESSAGE;
         }
         if (strncmp(tx_context.data, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0) {
-            extract_esdt_value();
+            extract_esdt_value(tx_hash_context.current_value, tx_hash_context.current_value_len);
         }
         compute_data_size(tx_hash_context.data_field_size);
         *valid = true;
@@ -251,14 +251,12 @@ uint16_t verify_data(bool *valid) {
     return MSG_OK;
 }
 
-static void extract_esdt_value() {
-    if (tx_hash_context.current_value_len == 0) {
+static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length) {
+    if (encoded_data_length == 0) {
         return;
     }
-    char data_field[tx_hash_context.current_value_len];
-    if (!base64decode(data_field,
-                      tx_hash_context.current_value,
-                      tx_hash_context.current_value_len)) {
+    char data_field[MAX_ESDT_TRANSFER_DATA_SIZE];
+    if (!base64decode(data_field, encoded_data_field, encoded_data_length)) {
         return;
     }
 

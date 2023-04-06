@@ -13,7 +13,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         esdt_info_heap = malloc(sizeof(*esdt_info_heap));
     }
 
-    handle_provide_ESDT_info(data, size, esdt_info_heap);
+    handle_provide_ESDT_info(data, size);
 
     return 0;
 }

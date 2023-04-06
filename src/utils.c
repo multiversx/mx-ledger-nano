@@ -131,12 +131,13 @@ void append_to_str(const char* source, char* destination, int* index, int max_si
     *index += strlen(source);
 }
 
-void append_time(char* output, int* index, int max_size, int value, const char* tag) {
+void append_time(char* output, int* index, int value, const char* tag) {
     if (value == 0) {
         return;
     }
 
-    char buffer[max_size];
+    char buffer[MAX_INT_NUM_DIGITS + 1];
+    const int max_size = MAX_INT_NUM_DIGITS + 1;
     int_to_char_array(value, buffer, max_size);
 
     append_to_str(buffer, output, index, max_size);
@@ -158,9 +159,8 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         return;
     }
 
-    char temp_output[max_size];
+    char temp_output[MAX_AUTH_TOKEN_TTL_SIZE];
     int current_temp_output_index = 0;
-    int max_int_char_array_size = MAX_INT_NUM_DIGITS + 1;  // add one for the '0' char
 
     h = num_seconds / 3600;
     m = (num_seconds - (3600 * h)) / 60;
@@ -173,9 +173,9 @@ void seconds_to_time(const char* input, char* output, int max_size) {
         }
         return;
     }
-    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, h, "h ");
-    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, m, "min ");
-    append_time(temp_output, &current_temp_output_index, max_int_char_array_size, s, "sec.");
+    append_time(temp_output, &current_temp_output_index, h, "h ");
+    append_time(temp_output, &current_temp_output_index, m, "min ");
+    append_time(temp_output, &current_temp_output_index, s, "sec.");
 
     if (current_temp_output_index < max_size) {
         memmove(output, temp_output, current_temp_output_index);
@@ -270,8 +270,7 @@ int compute_token_display(const char* received_origin,
     char ttl_display[MAX_AUTH_TOKEN_TTL_SIZE];
 
     int received_origin_size = strlen(received_origin) + 1;
-    int max_padding_chars_count = 3;
-    char encoded_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + max_padding_chars_count];
+    char encoded_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + 3]; // 3 maximum additional padding chars
 
     int encoded_origin_size = received_origin_size;
     if (encoded_origin_size > AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE) {

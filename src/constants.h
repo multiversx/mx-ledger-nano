@@ -53,6 +53,7 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 
 #define MAX_AMOUNT_LEN                     32
 #define MAX_BUFFER_LEN                     500
+#define MAX_ESDT_TRANSFER_DATA_SIZE        100
 #define MAX_DATA_SIZE                      400  // 400 in base64 = 300 in ASCII
 #define MAX_DISPLAY_DATA_SIZE              64UL  // must be multiple of 4
 #define DATA_SIZE_LEN                      17
