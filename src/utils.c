@@ -270,7 +270,8 @@ int compute_token_display(const char* received_origin,
     char ttl_display[MAX_AUTH_TOKEN_TTL_SIZE];
 
     int received_origin_size = strlen(received_origin) + 1;
-    char encoded_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE + 3]; // 3 maximum additional padding chars
+    char encoded_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE +
+                        3];  // 3 maximum additional padding chars
 
     int encoded_origin_size = received_origin_size;
     if (encoded_origin_size > AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE) {
