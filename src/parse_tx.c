@@ -12,7 +12,7 @@
 #include "globals.h"
 #endif
 
-static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length);
+static void extract_esdt_value();
 static void set_network(const char *chain_id);
 static void set_message_in_amount(const char *message);
 
@@ -243,7 +243,7 @@ uint16_t verify_data(bool *valid) {
             return ERR_INVALID_MESSAGE;
         }
         if (strncmp(tx_context.data, ESDT_TRANSFER_PREFIX, ESDT_TRANSFER_PREFIX_LENGTH) == 0) {
-            extract_esdt_value(tx_hash_context.current_value, tx_hash_context.current_value_len);
+            extract_esdt_value();
         }
         compute_data_size(tx_hash_context.data_field_size);
         *valid = true;
@@ -251,12 +251,14 @@ uint16_t verify_data(bool *valid) {
     return MSG_OK;
 }
 
-static void extract_esdt_value(const char *encoded_data_field, const uint8_t encoded_data_length) {
-    if (encoded_data_length == 0) {
+static void extract_esdt_value() {
+    if (tx_hash_context.current_value_len == 0) {
         return;
     }
-    char data_field[encoded_data_length];
-    if (!base64decode(data_field, encoded_data_field, encoded_data_length)) {
+    char data_field[tx_hash_context.current_value_len];
+    if (!base64decode(data_field,
+                      tx_hash_context.current_value,
+                      tx_hash_context.current_value_len)) {
         return;
     }
 
@@ -298,10 +300,11 @@ static void extract_esdt_value(const char *encoded_data_field, const uint8_t enc
 // verify "chainID" field
 uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
-        char *ticker = TICKER_TESTNET;
+        char ticker[sizeof(TICKER_TESTNET)];
+        memmove(ticker, TICKER_TESTNET, strlen(TICKER_TESTNET));
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) ==
             0) {
-            ticker = TICKER_MAINNET;
+            memmove(ticker, TICKER_MAINNET, strlen(TICKER_MAINNET));
         }
         memmove(tx_context.chain_id,
                 tx_hash_context.current_value,
