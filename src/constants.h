@@ -81,7 +81,8 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define SHA3_KECCAK_BITS                   256
 #define PUBLIC_KEY_LEN                     32
 #define BASE_10                            10
-#define TX_SIGN_FLOW_SIZE                  8
+#define TX_SIGN_FLOW_SIZE                  9
+#define ESDT_TRANSFER_FLOW_SIZE            9
 #define BASE_64_INVALID_CHAR               '?'
 #define SC_ARGS_SEPARATOR                  '@'
 #define MAX_ESDT_VALUE_HEX_COUNT           32

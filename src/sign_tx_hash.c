@@ -178,6 +178,7 @@ static void ui_sign_tx_hash_nbgl(void) {
 #else
 
 const ux_flow_step_t *tx_flow[TX_SIGN_FLOW_SIZE];
+const ux_flow_step_t *esdt_flow[ESDT_TRANSFER_FLOW_SIZE];
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(ux_transfer_esdt_flow_24_step,
@@ -204,6 +205,12 @@ UX_STEP_NOCB(ux_transfer_esdt_flow_27_step,
                  .title = "Fee",
                  .text = tx_context.fee,
              });
+UX_STEP_NOCB(ux_transfer_esdt_flow_31_step,
+             bnnn_paging,
+             {
+                 .title = "Guardian",
+                 .text = tx_context.guardian,
+             });
 UX_STEP_NOCB(ux_transfer_esdt_flow_28_step,
              bnnn_paging,
              {
@@ -224,15 +231,6 @@ UX_STEP_VALID(ux_transfer_esdt_flow_30_step,
                   &C_icon_crossmark,
                   "Reject",
               });
-
-UX_FLOW(ux_transfer_esdt_flow,
-        &ux_transfer_esdt_flow_24_step,
-        &ux_transfer_esdt_flow_25_step,
-        &ux_transfer_esdt_flow_26_step,
-        &ux_transfer_esdt_flow_27_step,
-        &ux_transfer_esdt_flow_28_step,
-        &ux_transfer_esdt_flow_29_step,
-        &ux_transfer_esdt_flow_30_step);
 
 // UI for confirming the tx details of the transaction on screen
 UX_STEP_NOCB(ux_sign_tx_hash_flow_17_step,
@@ -258,6 +256,12 @@ UX_STEP_NOCB(ux_sign_tx_hash_flow_20_step,
              {
                  .title = "Data",
                  .text = tx_context.data,
+             });
+UX_STEP_NOCB(ux_sign_tx_hash_flow_24_step,
+             bnnn_paging,
+             {
+                 .title = "Guardian",
+                 .text = tx_context.guardian,
              });
 UX_STEP_NOCB(ux_sign_tx_hash_flow_21_step,
              bnnn_paging,
@@ -289,12 +293,33 @@ static void display_tx_sign_flow() {
     if (tx_context.data_size > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_20_step;
     }
+    if (tx_context.guardian > 0) {
+        tx_flow[step++] = &ux_sign_tx_hash_flow_24_step;
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
     tx_flow[step++] = FLOW_END_STEP;
 
     ux_flow_init(0, tx_flow, NULL);
+}
+
+static void display_esdt_flow() {
+    uint8_t step = 0;
+
+    esdt_flow[step++] = &ux_transfer_esdt_flow_24_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_25_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_26_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_27_step;
+    if (tx_context.guardian > 0) {
+        esdt_flow[step++] = &ux_transfer_esdt_flow_31_step;
+    }
+    esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_29_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_30_step;
+    esdt_flow[step++] = FLOW_END_STEP;
+
+    ux_flow_init(0, esdt_flow, NULL);
 }
 
 #endif
@@ -365,7 +390,7 @@ void handle_sign_tx_hash(uint8_t p1,
     ui_sign_tx_hash_nbgl();
 #else
     if (should_display_esdt_flow) {
-        ux_flow_init(0, ux_transfer_esdt_flow, NULL);
+        display_esdt_flow();
     } else {
         display_tx_sign_flow();
     }
