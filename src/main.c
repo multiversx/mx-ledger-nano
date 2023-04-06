@@ -283,6 +283,7 @@ unsigned char io_event(unsigned char channel) {
             }
             /* fallthrough */
         case SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT:
+        __attribute__((fallthrough));
 #ifdef HAVE_BAGL
             UX_DISPLAYED_EVENT({});
 #endif  // HAVE_BAGL
