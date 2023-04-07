@@ -299,10 +299,10 @@ static void extract_esdt_value(const char *encoded_data_field, const uint8_t enc
 uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
         char ticker[sizeof(TICKER_TESTNET)];
-        memmove(ticker, TICKER_TESTNET, strlen(TICKER_TESTNET));
+        memmove(ticker, TICKER_TESTNET, strlen(TICKER_TESTNET) + 1);
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) ==
             0) {
-            memmove(ticker, TICKER_MAINNET, strlen(TICKER_MAINNET));
+            memmove(ticker, TICKER_MAINNET, strlen(TICKER_MAINNET) + 1);
         }
         memmove(tx_context.chain_id,
                 tx_hash_context.current_value,

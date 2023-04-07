@@ -293,7 +293,7 @@ static void display_tx_sign_flow() {
     if (tx_context.data_size > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_20_step;
     }
-    if (tx_context.guardian > 0) {
+    if (strlen(tx_context.guardian) > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_24_step;
     }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
@@ -311,7 +311,7 @@ static void display_esdt_flow() {
     esdt_flow[step++] = &ux_transfer_esdt_flow_25_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_26_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_27_step;
-    if (tx_context.guardian > 0) {
+    if (strlen(tx_context.guardian) > 0) {
         esdt_flow[step++] = &ux_transfer_esdt_flow_31_step;
     }
     esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
@@ -335,6 +335,7 @@ void init_tx_context() {
     tx_context.chain_id[0] = 0;
     tx_context.esdt_value[0] = 0;
     tx_context.network[0] = 0;
+    tx_context.guardian[0] = 0;
     tx_hash_context.status = JSON_IDLE;
     cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
 

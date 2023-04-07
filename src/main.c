@@ -143,7 +143,8 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_PROVIDE_ESDT_INFO:
                     ret = handle_provide_ESDT_info(G_io_apdu_buffer + OFFSET_CDATA,
-                                                   G_io_apdu_buffer[OFFSET_LC]);
+                                                   G_io_apdu_buffer[OFFSET_LC],
+                                                   &esdt_info);
                     THROW(ret);
                     break;
 

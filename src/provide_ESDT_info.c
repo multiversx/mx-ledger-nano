@@ -33,7 +33,9 @@ static bool verify_signature(const uint8_t *data_buffer,
 
 // TODO: refactor the input so signature can be checked before parsing all token
 // fields
-uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_length) {
+uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer,
+                                  uint16_t data_length,
+                                  esdt_info_t *esdt_info_obj) {
     size_t last_required_len = 0;
     size_t required_len = 1;
 
@@ -41,16 +43,16 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    esdt_info.ticker_len = data_buffer[last_required_len];
+    esdt_info_obj->ticker_len = data_buffer[last_required_len];
 
     // read ticker
     last_required_len = required_len;
-    required_len += esdt_info.ticker_len;
-    if (esdt_info.ticker_len >= sizeof(esdt_info.ticker) || data_length < required_len) {
+    required_len += esdt_info_obj->ticker_len;
+    if (esdt_info_obj->ticker_len >= sizeof(esdt_info_obj->ticker) || data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memcpy(esdt_info.ticker, data_buffer + last_required_len, esdt_info.ticker_len);
-    esdt_info.ticker[esdt_info.ticker_len] = '\0';
+    memcpy(esdt_info_obj->ticker, data_buffer + last_required_len, esdt_info_obj->ticker_len);
+    esdt_info_obj->ticker[esdt_info_obj->ticker_len] = '\0';
 
     // read identifier len
     last_required_len = required_len;
@@ -58,16 +60,19 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    esdt_info.identifier_len = data_buffer[last_required_len];
+    esdt_info_obj->identifier_len = data_buffer[last_required_len];
 
     // read identifier
     last_required_len = required_len;
-    required_len += esdt_info.identifier_len;
-    if (esdt_info.identifier_len >= sizeof(esdt_info.identifier) || data_length < required_len) {
+    required_len += esdt_info_obj->identifier_len;
+    if (esdt_info_obj->identifier_len >= sizeof(esdt_info_obj->identifier) ||
+        data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memcpy(esdt_info.identifier, data_buffer + last_required_len, esdt_info.identifier_len);
-    esdt_info.identifier[esdt_info.identifier_len] = '\0';
+    memcpy(esdt_info_obj->identifier,
+           data_buffer + last_required_len,
+           esdt_info_obj->identifier_len);
+    esdt_info_obj->identifier[esdt_info_obj->identifier_len] = '\0';
 
     // read decimals
     last_required_len = required_len;
@@ -75,7 +80,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    esdt_info.decimals = data_buffer[last_required_len];
+    esdt_info_obj->decimals = data_buffer[last_required_len];
 
     // read chain id len
     last_required_len = required_len;
@@ -83,16 +88,17 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     if (data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    esdt_info.chain_id_len = data_buffer[last_required_len];
+    esdt_info_obj->chain_id_len = data_buffer[last_required_len];
 
     // read chain id
     last_required_len = required_len;
-    required_len += esdt_info.chain_id_len;
-    if (esdt_info.chain_id_len >= sizeof(esdt_info.chain_id) || data_length < required_len) {
+    required_len += esdt_info_obj->chain_id_len;
+    if (esdt_info_obj->chain_id_len >= sizeof(esdt_info_obj->chain_id) ||
+        data_length < required_len) {
         return ERR_MESSAGE_INCOMPLETE;
     }
-    memcpy(esdt_info.chain_id, data_buffer + last_required_len, esdt_info.chain_id_len);
-    esdt_info.chain_id[esdt_info.chain_id_len] = '\0';
+    memcpy(esdt_info_obj->chain_id, data_buffer + last_required_len, esdt_info_obj->chain_id_len);
+    esdt_info_obj->chain_id[esdt_info_obj->chain_id_len] = '\0';
 
 #ifndef FUZZING
     if (!verify_signature(data_buffer, data_length, required_len)) {
@@ -100,7 +106,7 @@ uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_leng
     }
 #endif
 
-    esdt_info.valid = true;
+    esdt_info_obj->valid = true;
 
     return MSG_OK;
 }

@@ -28,6 +28,8 @@ typedef struct esdt_info_t {
 
 extern esdt_info_t esdt_info;
 
-uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer, uint16_t data_length);
+uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer,
+                                  uint16_t data_length,
+                                  esdt_info_t *esdt_info);
 
 #endif
