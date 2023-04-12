@@ -87,7 +87,7 @@ Or this to remove it:
 
 Reference: https://developers.ledger.com/docs/nano-app/load/
 
-### Install all dependencies (not recommended)
+### Install all dependencies (not recommended) 
 To build locally, you must first clone this repository, then set up the development environment:
 
 ```$ source prepare-devenv s```
