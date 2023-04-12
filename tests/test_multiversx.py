@@ -319,7 +319,6 @@ class TestSignMsg:
 
 
 class TestSignTxHash:
-    # TODO: add test for esdt flow
 
     def test_sign_tx_valid_simple_no_data_confirmed(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
@@ -362,6 +361,86 @@ class TestSignTxHash:
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
                                                           [NavInsID.BOTH_CLICK],
                                                           "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+
+    def test_sign_tx_valid_with_guardian(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+
+    def test_sign_tx_valid_esdt_transfer(self, backend, navigator, test_name):
+        token_ticker = "BUSD"
+        num_decimals = 18
+        token_identifier = "425553442d663263343664"
+        chain_id = "T"
+        signature = bytes.fromhex("304402207d2e749601bcec748ceb80bdc107cdde2bcb2f69fd8a82ceeb94fb088d90b1cc022032e008de068fe6eafc4b0a88e45c2b0b9f4ba62db9c0499d23e85df053295708")
+
+        # ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
+        to_hash_str = chr(len(token_ticker)) + token_ticker + chr(len(token_identifier)) + token_identifier + chr(num_decimals) + chr(len(chain_id)) + chain_id
+        payload = bytes(to_hash_str, "utf-8") + signature
+        rapdu = backend.exchange(CLA, Ins.PROVIDE_ESDT_INFO, P1.FIRST, 0, payload)
+        assert rapdu.status == 0x9000
+
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes("RVNEVFRyYW5zZmVyQDQyNTU1MzQ0MmQ2NjMyNjMzNDM2NjRAMDIwNjljZTkwMTU4NTkwMDAw", 'utf-8') # ESDTTransfer@425553442d663263343664@02069ce90158590000 base64 encoded
+        payload += b'"}'
+
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                        [NavInsID.BOTH_CLICK],
+                        "Confirm transfer",
+                        ROOT_SCREENSHOT_PATH,
+                        test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                        NavInsID.USE_CASE_REVIEW_TAP,
+                        NavInsID.USE_CASE_REVIEW_TAP,
+                        NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+
+    def test_sign_tx_valid_esdt_with_guardian(self, backend, navigator, test_name):
+        token_ticker = "BUSD"
+        num_decimals = 18
+        token_identifier = "425553442d663263343664"
+        chain_id = "T"
+        signature = bytes.fromhex("304402207d2e749601bcec748ceb80bdc107cdde2bcb2f69fd8a82ceeb94fb088d90b1cc022032e008de068fe6eafc4b0a88e45c2b0b9f4ba62db9c0499d23e85df053295708")
+
+        # ticker len, ticker, id_len, id, decimals, chain_id_len, chain_id, signature
+        to_hash_str = chr(len(token_ticker)) + token_ticker + chr(len(token_identifier)) + token_identifier + chr(num_decimals) + chr(len(chain_id)) + chain_id
+        payload = bytes(to_hash_str, "utf-8") + signature
+        rapdu = backend.exchange(CLA, Ins.PROVIDE_ESDT_INFO, P1.FIRST, 0, payload)
+        assert rapdu.status == 0x9000
+
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","guardian":"g","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes("RVNEVFRyYW5zZmVyQDQyNTU1MzQ0MmQ2NjMyNjMzNDM2NjRAMDIwNjljZTkwMTU4NTkwMDAw", 'utf-8') # ESDTTransfer@425553442d663263343664@02069ce90158590000 base64 encoded
+        payload += b'"}'
+
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Confirm transfer",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":

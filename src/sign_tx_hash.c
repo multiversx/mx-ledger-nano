@@ -96,7 +96,7 @@ static bool is_esdt_transfer() {
 #if defined(TARGET_STAX)
 
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t pairs_list[5];  // 5 info max for ESDT and 5 info max for EGLD
+static nbgl_layoutTagValue_t pairs_list[6];  // 6 info max for ESDT and 6 info max for EGLD
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\n" APPNAME " network?",
@@ -124,6 +124,11 @@ static void start_review(void) {
         pairs_list[step].item = "Value", pairs_list[step].value = tx_context.amount, ++step;
         pairs_list[step].item = "Receiver", pairs_list[step].value = tx_context.receiver, ++step;
         pairs_list[step].item = "Fee", pairs_list[step].value = tx_context.fee, ++step;
+        if (strlen(tx_context.guardian) > 0) {
+            pairs_list[step].item = "Guardian";
+            pairs_list[step].value = tx_context.guardian;
+            ++step;
+        }
         pairs_list[step].item = "Network", pairs_list[step].value = tx_context.network, ++step;
     } else {
         pairs_list[step].item = "Receiver";
@@ -138,6 +143,11 @@ static void start_review(void) {
         if (tx_context.data_size > 0) {
             pairs_list[step].item = "Data";
             pairs_list[step].value = tx_context.data;
+            ++step;
+        }
+        if (strlen(tx_context.guardian) > 0) {
+            pairs_list[step].item = "Guardian";
+            pairs_list[step].value = tx_context.guardian;
             ++step;
         }
         pairs_list[step].item = "Network";
