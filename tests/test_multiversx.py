@@ -322,7 +322,7 @@ class TestSignTxHash:
     # TODO: add test for esdt flow
 
     def test_sign_tx_valid_simple_no_data_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -333,12 +333,11 @@ class TestSignTxHash:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_simple_no_data_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -350,7 +349,6 @@ class TestSignTxHash:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_REJECT,
                            NavInsID.USE_CASE_CHOICE_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
@@ -358,7 +356,7 @@ class TestSignTxHash:
 
     def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
         # TODO: use actual data value that makes sense
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"data":"test"}'
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1,"data":"test"}'
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -391,13 +389,12 @@ class TestSignTxHash:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_nonce(self, backend, navigator, test_name):
         # nonce is a 64-bit unsigned integer
-        payload = b'{"nonce":18446744073709551615,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":18446744073709551615,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -407,13 +404,12 @@ class TestSignTxHash:
                                                           test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_amount(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":1234,"value":"1234567890123456789012345678901","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -424,12 +420,11 @@ class TestSignTxHash:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_invalid_nonce(self, backend):
-        payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":{},"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             # error return expected
@@ -437,7 +432,7 @@ class TestSignTxHash:
         assert backend.last_async_response.status == Error.INVALID_MESSAGE
 
     def test_sign_tx_invalid_amount(self, backend):
-        payload = b'{"nonce":1234,"value":"A5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2}'
+        payload = b'{"nonce":1234,"value":"A5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1}'
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             # error return expected
@@ -554,7 +549,6 @@ class TestSignMsgAuthToken:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -575,7 +569,6 @@ class TestSignMsgAuthToken:
                     test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
@@ -618,7 +611,6 @@ class TestSignMsgAuthToken:
                     test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
