@@ -116,43 +116,34 @@ static void review_final_callback(bool confirmed) {
     }
 }
 
+static void update_pair(nbgl_layoutTagValue_t *pair, const char *item, const char *value) {
+    pair->item = item;
+    pair->value = value;
+}
+
 static void start_review(void) {
     uint8_t step = 0;
 
     if (should_display_esdt_flow) {
-        pairs_list[step].item = "Token", pairs_list[step].value = esdt_info.ticker, ++step;
-        pairs_list[step].item = "Value", pairs_list[step].value = tx_context.amount, ++step;
-        pairs_list[step].item = "Receiver", pairs_list[step].value = tx_context.receiver, ++step;
-        pairs_list[step].item = "Fee", pairs_list[step].value = tx_context.fee, ++step;
+        update_pair(&pairs_list[step++], "Token", esdt_info.ticker);
+        update_pair(&pairs_list[step++], "Value", tx_context.amount);
+        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
         if (strlen(tx_context.guardian) > 0) {
-            pairs_list[step].item = "Guardian";
-            pairs_list[step].value = tx_context.guardian;
-            ++step;
+            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
-        pairs_list[step].item = "Network", pairs_list[step].value = tx_context.network, ++step;
+        update_pair(&pairs_list[step++], "Network", tx_context.network);
     } else {
-        pairs_list[step].item = "Receiver";
-        pairs_list[step].value = tx_context.receiver;
-        ++step;
-        pairs_list[step].item = "Amount";
-        pairs_list[step].value = tx_context.amount;
-        ++step;
-        pairs_list[step].item = "Fee";
-        pairs_list[step].value = tx_context.fee;
-        ++step;
+        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&pairs_list[step++], "Amount", tx_context.amount);
+        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
         if (tx_context.data_size > 0) {
-            pairs_list[step].item = "Data";
-            pairs_list[step].value = tx_context.data;
-            ++step;
+            update_pair(&pairs_list[step++], "Data", tx_context.data);
         }
         if (strlen(tx_context.guardian) > 0) {
-            pairs_list[step].item = "Guardian";
-            pairs_list[step].value = tx_context.guardian;
-            ++step;
+            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
-        pairs_list[step].item = "Network";
-        pairs_list[step].value = tx_context.network;
-        ++step;
+        update_pair(&pairs_list[step++], "Network", tx_context.network);
     }
 
     layout.nbMaxLinesForValue = 0;

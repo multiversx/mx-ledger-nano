@@ -148,7 +148,8 @@ void append_time(char* output, int* index, int value, const char* tag) {
    Converts number of seconds to a time string. Example: 123 -> "2min 3 sec."; 1234 -> "20min
    34 sec."; 12345 -> "3h 25min 45 sec.". If more than 24h, will display "more than one day"
 */
-void seconds_to_time(const char* input, char* output, int max_size) {
+void seconds_to_time(const char* input, char* output) {
+    const int max_size = MAX_AUTH_TOKEN_TTL_SIZE;
     int h, m, s;
     int num_seconds = atoi(input);
     if (num_seconds == 0) {  // invalid TTL
@@ -327,7 +328,7 @@ int compute_token_display(const char* received_origin,
         const char undefined_ttl[] = "N/A time";
         memmove(ttl_display, undefined_ttl, strlen(undefined_ttl) + 1);
     } else {
-        seconds_to_time(received_ttl, ttl_display, MAX_AUTH_TOKEN_TTL_SIZE);
+        seconds_to_time(received_ttl, ttl_display);
     }
 
     return build_authorizing_message(display, origin_display, ttl_display, max_display_size);

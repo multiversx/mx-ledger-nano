@@ -92,7 +92,7 @@ func main() {
 	fmt.Printf("Receiver shard: %v\n\r", strReceiverShard)
 
 	// These token details are from a whitelisted testnet token. Alternatively, any token can be tested by generating
-	// the signature using the private key described in testscommon.TestSkBytes and by setting it's public key inside
+	// the signature using the private key described in testscommon.TestSkBytes and by setting its public key inside
 	// Ledger app
 	tokenTicker := "BUSD"
 	numDecimals := 18

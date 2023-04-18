@@ -18,7 +18,7 @@ static void set_message_in_amount(const char *message);
 
 // make the eGLD/token amount look pretty. Add decimals, decimal point and
 // ticker name
-bool make_amount_pretty(char *amount, size_t max_size, char *ticker, int decimals_places) {
+bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int decimals_places) {
     int len = strlen(amount);
     if ((size_t) len + PRETTY_SIZE >= max_size) {
         return false;
@@ -298,11 +298,10 @@ static void extract_esdt_value(const char *encoded_data_field, const uint8_t enc
 // verify "chainID" field
 uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
-        char ticker[sizeof(TICKER_TESTNET)];
-        memmove(ticker, TICKER_TESTNET, strlen(TICKER_TESTNET) + 1);
+        const char *ticker = TICKER_TESTNET;
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) ==
             0) {
-            memmove(ticker, TICKER_MAINNET, strlen(TICKER_MAINNET) + 1);
+            ticker = TICKER_MAINNET;
         }
         memmove(tx_context.chain_id,
                 tx_hash_context.current_value,
