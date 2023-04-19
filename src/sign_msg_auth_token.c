@@ -29,8 +29,7 @@ static token_auth_context_t token_auth_context;
 
 static uint8_t set_result_auth_token(void) {
     uint8_t tx = 0;
-    char complete_response[strlen(token_auth_context.address) +
-                           MESSAGE_SIGNATURE_LEN];  // <addresssignature>
+    char complete_response[BECH32_ADDRESS_LEN + MESSAGE_SIGNATURE_LEN + 1];  // <addresssignature>
     memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
     memmove(complete_response + strlen(token_auth_context.address),
             token_auth_context.signature,

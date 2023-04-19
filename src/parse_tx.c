@@ -18,7 +18,7 @@ static void set_message_in_amount(const char *message);
 
 // make the eGLD/token amount look pretty. Add decimals, decimal point and
 // ticker name
-bool make_amount_pretty(char *amount, size_t max_size, char *ticker, int decimals_places) {
+bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int decimals_places) {
     int len = strlen(amount);
     if ((size_t) len + PRETTY_SIZE >= max_size) {
         return false;
@@ -255,7 +255,7 @@ static void extract_esdt_value(const char *encoded_data_field, const uint8_t enc
     if (encoded_data_length == 0) {
         return;
     }
-    char data_field[encoded_data_length];
+    char data_field[MAX_ESDT_TRANSFER_DATA_SIZE];
     if (!base64decode(data_field, encoded_data_field, encoded_data_length)) {
         return;
     }
@@ -298,7 +298,7 @@ static void extract_esdt_value(const char *encoded_data_field, const uint8_t enc
 // verify "chainID" field
 uint16_t verify_chainid(bool *valid) {
     if (strncmp(tx_hash_context.current_field, CHAINID_FIELD, strlen(CHAINID_FIELD)) == 0) {
-        char *ticker = TICKER_TESTNET;
+        const char *ticker = TICKER_TESTNET;
         if (strncmp(tx_hash_context.current_value, MAINNET_CHAIN_ID, strlen(MAINNET_CHAIN_ID)) ==
             0) {
             ticker = TICKER_MAINNET;
@@ -358,7 +358,7 @@ uint16_t verify_version(bool *valid) {
                        &version)) {
             return ERR_INVALID_MESSAGE;
         }
-        if (version != TX_HASH_VERSION) {
+        if (version < TX_HASH_VERSION) {
             return ERR_WRONG_TX_VERSION;
         }
         *valid = true;
@@ -366,7 +366,7 @@ uint16_t verify_version(bool *valid) {
     return MSG_OK;
 }
 
-// verify "version" field
+// verify "options" field
 uint16_t verify_options(bool *valid) {
     if (strncmp(tx_hash_context.current_field, OPTIONS_FIELD, strlen(OPTIONS_FIELD)) == 0) {
         uint64_t options;
@@ -375,9 +375,24 @@ uint16_t verify_options(bool *valid) {
                        &options)) {
             return ERR_INVALID_MESSAGE;
         }
-        if (options != TX_HASH_OPTIONS) {
+        if (options < TX_HASH_OPTIONS) {
             return ERR_WRONG_TX_OPTIONS;
         }
+        *valid = true;
+    }
+    return MSG_OK;
+}
+
+// verify "guardian" field
+uint16_t verify_guardian(bool *valid) {
+    if (strncmp(tx_hash_context.current_field, GUARDIAN_ADDR_FIELD, strlen(GUARDIAN_ADDR_FIELD)) ==
+        0) {
+        if (tx_hash_context.current_value_len >= sizeof(tx_context.guardian)) {
+            return ERR_INVALID_MESSAGE;
+        }
+        memmove(tx_context.guardian,
+                tx_hash_context.current_value,
+                tx_hash_context.current_value_len);
         *valid = true;
     }
     return MSG_OK;
@@ -422,6 +437,10 @@ uint16_t process_field(void) {
         return err;
     }
     err = verify_options(&valid_field);
+    if (err != MSG_OK) {
+        return err;
+    }
+    err = verify_guardian(&valid_field);
     if (err != MSG_OK) {
         return err;
     }
