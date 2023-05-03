@@ -31,7 +31,7 @@ static bool verify_signature(const uint8_t *data_buffer,
 }
 #endif
 
-// TODO: refactor the input so signature can be checked before parsing all token
+// TODO: refactor the input so the signature can be checked before parsing all token
 // fields
 uint16_t handle_provide_ESDT_info(const uint8_t *data_buffer,
                                   uint16_t data_length,
