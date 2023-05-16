@@ -163,6 +163,7 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK]
         elif backend.firmware.device == "stax":
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                       NavInsID.USE_CASE_SETTINGS_NEXT,
                        NavIns(NavInsID.TOUCH, (350,115)),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 
@@ -178,6 +179,7 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK]
         elif backend.firmware.device == "stax":
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                       NavInsID.USE_CASE_SETTINGS_NEXT,
                        NavIns(NavInsID.TOUCH, (350,115)),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 

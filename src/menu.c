@@ -27,14 +27,14 @@ enum {
 #define SETTINGS_PAGE_NUMBER 2
 static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t* content) {
     if (page == 0) {
-        content->type = SWITCHES_LIST;
-        content->switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
-        content->switchesList.switches = G_switches;
-    } else if (page == 1) {
         content->type = INFOS_LIST;
         content->infosList.nbInfos = ARRAY_COUNT(info_types);
         content->infosList.infoTypes = info_types;
         content->infosList.infoContents = info_contents;
+    } else if (page == 1) {
+        content->type = SWITCHES_LIST;
+        content->switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
+        content->switchesList.switches = G_switches;
     } else {
         return false;
     }
