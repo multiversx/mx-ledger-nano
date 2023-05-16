@@ -46,9 +46,13 @@ static const nbgl_pageInfoLongPress_t review_final_long_press = {
 
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
+        PRINTF("1\n");
         int tx = set_result_signature();
+        PRINTF("2\n");
         send_response(tx, true, false);
+        PRINTF("3\n");
         nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
+        PRINTF("4\n");
     } else {
         nbgl_reject_message_choice();
     }
@@ -56,7 +60,7 @@ static void review_final_callback(bool confirmed) {
 
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = true;
+    layout.smallCaseForValue = false;
     layout.wrapping = true;
     layout.pairs = pairs_list;
     pairs_list[0].item = "hash";

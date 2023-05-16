@@ -13,20 +13,27 @@ uint32_t read_uint32_be(uint8_t* buffer) {
 }
 
 void send_response(uint8_t tx, bool approve, bool back_to_idle) {
+    PRINTF("send_response\n");
     uint16_t response;
 
     if (approve) {
+        PRINTF("approve\n");
         response = MSG_OK;
     } else {
+        PRINTF("!approve\n");
         response = ERR_USER_DENIED;
     }
 
+    PRINTF("G_io_apdu_buffer\n");
     G_io_apdu_buffer[tx++] = response >> 8;
     G_io_apdu_buffer[tx++] = response & 0xff;
     // Send back the response, do not restart the event loop
+    PRINTF("pre io_exchange_custom\n");
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, tx);
+    PRINTF("post io_exchange_custom\n");
 
     if (back_to_idle) {
+        PRINTF("back_to_idle\n");
         // Display back the original UX
         ui_idle();
     }
