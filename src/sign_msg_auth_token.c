@@ -17,7 +17,7 @@ typedef struct {
     uint32_t len;
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
-    char token[AUTH_TOKEN_DISPLAY_MAX_SIZE];
+    char token[AUTH_TOKEN_DISPLAY_MAX_SIZE + 1];
     char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
     char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
     char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_SIZE];
