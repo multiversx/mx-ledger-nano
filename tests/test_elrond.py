@@ -27,12 +27,11 @@ from pathlib import Path
 
 from ragger.navigator import NavInsID, NavIns
 from ragger.backend.interface import RAPDU, RaisePolicy
+from .utils import get_version_from_makefile
 
 CLA = 0xED
 
-LEDGER_MAJOR_VERSION = 1
-LEDGER_MINOR_VERSION = 0
-LEDGER_PATCH_VERSION = 21
+LEDGER_MAJOR_VERSION, LEDGER_MINOR_VERSION, LEDGER_PATCH_VERSION = get_version_from_makefile()
 
 class Ins(IntEnum):
     GET_APP_VERSION       = 0x01
