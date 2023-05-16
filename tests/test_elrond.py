@@ -459,7 +459,7 @@ class TestSignMsgAuthToken:
         payload:bytes = b""
         payload += (0).to_bytes(4, "big") # account index
         payload += (0).to_bytes(4, "big") # address index
-        token = b"BLOB"
+        token = b"aHEOcHM6Ly93YWxsZXQubXVsdGI2ZXJzeC5jb20.726757b8ca0b552199af4f0697eacd95940916044f21824f9ef8767e654b95cb.86400.eyJ0aW1lc3RhbXAiOjE2ODM3OTQzMjJ900aHEOcaHEOcHM6Ly93YWxsZXQubXVsdGI2ZXJzeC5jb20.726757b8ca0b552199af4f0697eacd95940916044f21824f9ef8767e654b95AZEQ"
         payload += (len(token)).to_bytes(4, "big")
         payload += token
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
