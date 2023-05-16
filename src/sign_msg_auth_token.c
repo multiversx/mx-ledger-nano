@@ -59,7 +59,7 @@ static void review_final_callback(bool confirmed) {
 
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = true;
+    layout.smallCaseForValue = false;
     layout.wrapping = true;
     layout.pairs = pairs_list;
     pairs_list[0].item = "Address";
@@ -146,12 +146,10 @@ static void update_token_display_data(uint8_t const *data_buffer, uint8_t const 
     token_auth_context.token[num_chars_to_show] = '\0';
 
     if (should_append_ellipsis) {
-        // add "..." at the end to show that the data field is actually longer
-        char ellipsis[] = "...";
-        int ellipsisLen = strlen(ellipsis);
-        memmove(token_auth_context.token + MAX_DISPLAY_DATA_SIZE - ellipsisLen,
-                ellipsis,
-                ellipsisLen);
+        // Overwrite with "..." at the end to show that the data field is actually longer
+        token_auth_context.token[sizeof(token_auth_context.token) - 2] = '.';
+        token_auth_context.token[sizeof(token_auth_context.token) - 3] = '.';
+        token_auth_context.token[sizeof(token_auth_context.token) - 4] = '.';
         return;
     }
 }
