@@ -8,20 +8,28 @@
 #include "nbgl_use_case.h"
 #endif
 
+#define PARSED_TOKEN_ORIGIN    (token_auth_context.dot_count == 1)
+#define PARSED_TOKEN_BLOCKHASH (token_auth_context.dot_count == 2)
+#define PARSED_TOKEN_TTL       (token_auth_context.dot_count == 3)
+
 typedef struct {
     char address[BECH32_ADDRESS_LEN];
     uint32_t len;
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
-    char token[MAX_DISPLAY_DATA_SIZE];
+    char token[AUTH_TOKEN_DISPLAY_MAX_SIZE + 1];
+    char auth_token_buffer[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
+    char auth_origin[AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE];
+    char auth_ttl[AUTH_TOKEN_ENCODED_TTL_MAX_SIZE];
+    int dot_count;
+    bool stop_origin_ttl_fetch;
 } token_auth_context_t;
 
 static token_auth_context_t token_auth_context;
 
 static uint8_t set_result_auth_token(void) {
     uint8_t tx = 0;
-    char complete_response[strlen(token_auth_context.address) +
-                           MESSAGE_SIGNATURE_LEN];  // <addresssignature>
+    char complete_response[BECH32_ADDRESS_LEN + MESSAGE_SIGNATURE_LEN + 1];  // <addresssignature>
     memmove(complete_response, token_auth_context.address, strlen(token_auth_context.address));
     memmove(complete_response + strlen(token_auth_context.address),
             token_auth_context.signature,
@@ -76,7 +84,7 @@ static void start_review(void) {
 
 static void ui_sign_message_auth_token_nbgl(void) {
     nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                            "Review message to\nsign on " APPNAME "\nnetwork",
+                            "Review auth token to\nsign on " APPNAME "\nnetwork",
                             "",
                             "Reject message",
                             start_review,
@@ -123,22 +131,117 @@ UX_FLOW(ux_auth_token_msg_flow,
 
 #endif
 
+static void clean_token_fields(void) {
+    token_auth_context.len = 0;
+    token_auth_context.dot_count = 0;
+    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
+    memset(token_auth_context.auth_origin, 0, sizeof(token_auth_context.auth_origin));
+    memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
+    memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
+    memset(token_auth_context.hash, 0, sizeof(token_auth_context.hash));
+    memset(token_auth_context.address, 0, sizeof(token_auth_context.address));
+    token_auth_context.stop_origin_ttl_fetch = false;
+}
+
 static void init_auth_token_context(void) {
     bip32_account = 0;
     bip32_address_index = 0;
 
+    clean_token_fields();
+
     app_state = APP_STATE_IDLE;
 }
 
+static void move_value_from_buffer(char *buffer,
+                                   int buffer_size,
+                                   char *destination,
+                                   int destination_size,
+                                   bool *should_stop_processing) {
+    if ((int) (strlen(buffer)) >= destination_size) {
+        *should_stop_processing = true;
+        memset(destination, 0, destination_size);
+        memset(buffer, 0, buffer_size);
+        return;
+    }
+
+    memmove(destination, buffer, strlen(buffer));
+    memset(buffer, 0, buffer_size);
+    *should_stop_processing = false;
+}
+
+static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_length) {
+    if (token_auth_context.stop_origin_ttl_fetch) {
+        return;
+    }
+
+    /*
+    This function parses the auth token char by char and extracts the origin and ttl.
+    An auth token looks like this. We need to parse the first and the third element and save
+    them
+
+    Example:
+    bG9jYWxob3N0.f68177510756edce45eca84b94544a6eacdfa36e69dfd3b8f24c4010d1990751.300.eyJ0aW1lc3RhbXAiOjE2NzM5NzIyNDR9
+         ^                                                                         ^
+      localhost                                                                 300 sec
+    */
+    for (uint8_t i = 0; i < data_length; i++) {
+        if (data_buffer[i] != '.') {
+            if (token_auth_context.dot_count == 1) {
+                // ignore the second part of the token since we are not interested in it
+                continue;
+            }
+
+            size_t buffer_len = strlen(token_auth_context.auth_token_buffer);
+
+            if (buffer_len >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE - 2) {
+                // we've reached the max length of the origin
+                token_auth_context.stop_origin_ttl_fetch = true;
+                return;
+            }
+            // add the current char to the buffer
+            token_auth_context.auth_token_buffer[buffer_len] = data_buffer[i];
+            token_auth_context.auth_token_buffer[buffer_len + 1] = '\0';
+        } else {
+            token_auth_context.dot_count++;
+            if (PARSED_TOKEN_ORIGIN) {
+                move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       sizeof(token_auth_context.auth_token_buffer),
+                                       token_auth_context.auth_origin,
+                                       sizeof(token_auth_context.auth_origin),
+                                       &token_auth_context.stop_origin_ttl_fetch);
+                if (token_auth_context.stop_origin_ttl_fetch) {
+                    return;
+                }
+            }
+
+            if (PARSED_TOKEN_BLOCKHASH) {
+                continue;
+            }
+
+            if (PARSED_TOKEN_TTL) {
+                move_value_from_buffer(token_auth_context.auth_token_buffer,
+                                       sizeof(token_auth_context.auth_token_buffer),
+                                       token_auth_context.auth_ttl,
+                                       sizeof(token_auth_context.auth_ttl),
+                                       &token_auth_context.stop_origin_ttl_fetch);
+                if (token_auth_context.stop_origin_ttl_fetch) {
+                    return;
+                }
+            }
+        }
+    }
+}
+
 static void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
-    if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
+    handle_auth_token_data(data_buffer, data_length);
+    if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         return;
     }
 
     int num_chars_to_show = data_length;
     bool should_append_ellipsis = false;
-    if (data_length >= MAX_DISPLAY_DATA_SIZE) {
-        num_chars_to_show = MAX_DISPLAY_DATA_SIZE;
+    if (data_length >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
+        num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_SIZE;
         should_append_ellipsis = true;
     }
 
@@ -149,7 +252,7 @@ static void update_token_display_data(uint8_t const *data_buffer, uint8_t const 
         // add "..." at the end to show that the data field is actually longer
         char ellipsis[] = "...";
         int ellipsisLen = strlen(ellipsis);
-        memmove(token_auth_context.token + MAX_DISPLAY_DATA_SIZE - ellipsisLen,
+        memmove(token_auth_context.token + AUTH_TOKEN_DISPLAY_MAX_SIZE - ellipsisLen,
                 ellipsis,
                 ellipsisLen);
         return;
@@ -203,7 +306,7 @@ void handle_auth_token(uint8_t p1,
         the first bulk, while the entire token can come in multiple bulks
     */
     if (p1 == P1_FIRST) {
-        memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
+        clean_token_fields();
         token_auth_context.token[0] = '\0';
         char token_length_str[11];
 
@@ -280,7 +383,7 @@ void handle_auth_token(uint8_t p1,
         THROW(MSG_OK);
     }
 
-    // finalize hash, compute it and store it in `msg_context.strhash` for display
+    // finalize hash and compute it
     cx_hash((cx_hash_t *) &sha3_context,
             CX_LAST,
             data_buffer,
@@ -292,6 +395,18 @@ void handle_auth_token(uint8_t p1,
     if (!sign_auth_token()) {
         init_auth_token_context();
         THROW(ERR_SIGNATURE_FAILED);
+    }
+
+    char display[AUTH_TOKEN_DISPLAY_MAX_SIZE];
+    int ret_code = compute_token_display(token_auth_context.auth_origin,
+                                         token_auth_context.auth_ttl,
+                                         display,
+                                         AUTH_TOKEN_DISPLAY_MAX_SIZE);
+    if (ret_code == 0) {
+        memmove(token_auth_context.token, display, strlen(display));
+        token_auth_context.token[strlen(display)] = '\0';
+    } else if (ret_code == AUTH_TOKEN_BAD_REQUEST_RET_CODE) {
+        THROW(ERR_INVALID_MESSAGE);
     }
 
     app_state = APP_STATE_IDLE;
