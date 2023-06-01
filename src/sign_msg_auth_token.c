@@ -13,7 +13,7 @@ typedef struct {
     uint32_t len;
     uint8_t hash[HASH_LEN];
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
-    char token[MAX_DISPLAY_DATA_SIZE];
+    char token[MAX_DISPLAY_DATA_SIZE + 1];
 } token_auth_context_t;
 
 static token_auth_context_t token_auth_context;
@@ -59,7 +59,7 @@ static void review_final_callback(bool confirmed) {
 
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = true;
+    layout.smallCaseForValue = false;
     layout.wrapping = true;
     layout.pairs = pairs_list;
     pairs_list[0].item = "Address";
@@ -130,28 +130,33 @@ static void init_auth_token_context(void) {
     app_state = APP_STATE_IDLE;
 }
 
-static void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
-    if (strlen(token_auth_context.token) >= MAX_DISPLAY_DATA_SIZE) {
+static void update_token_display_data(const uint8_t *data_buffer, uint8_t data_length) {
+    if (strlen(token_auth_context.token) >= sizeof(token_auth_context.token)) {
         return;
     }
 
     int num_chars_to_show = data_length;
     bool should_append_ellipsis = false;
-    if (data_length >= MAX_DISPLAY_DATA_SIZE) {
-        num_chars_to_show = MAX_DISPLAY_DATA_SIZE;
+
+    // On Nano devices the output can be truncated if needed to fit the screen
+    // On Stax device the truncating can not happen as the array is bigger than max uint8_t
+    // Keep the check but flag it to remove the compilation warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+    if (data_length >= sizeof(token_auth_context.token)) {
+        num_chars_to_show = sizeof(token_auth_context.token) - 1;
         should_append_ellipsis = true;
     }
+#pragma GCC diagnostic pop
 
     memmove(token_auth_context.token, data_buffer, num_chars_to_show);
     token_auth_context.token[num_chars_to_show] = '\0';
 
     if (should_append_ellipsis) {
-        // add "..." at the end to show that the data field is actually longer
-        char ellipsis[] = "...";
-        int ellipsisLen = strlen(ellipsis);
-        memmove(token_auth_context.token + MAX_DISPLAY_DATA_SIZE - ellipsisLen,
-                ellipsis,
-                ellipsisLen);
+        // Overwrite with "..." at the end to show that the data field is actually longer
+        token_auth_context.token[sizeof(token_auth_context.token) - 2] = '.';
+        token_auth_context.token[sizeof(token_auth_context.token) - 3] = '.';
+        token_auth_context.token[sizeof(token_auth_context.token) - 4] = '.';
         return;
     }
 }
