@@ -23,22 +23,18 @@ bool get_private_key(uint32_t account_index,
     bip32_path[2] = account_index | HARDENED_OFFSET;
     bip32_path[4] = address_index | HARDENED_OFFSET;
 
-    int ret_code = os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
-                                                      CX_CURVE_Ed25519,
-                                                      bip32_path,
-                                                      BIP32_PATH,
-                                                      private_key_data,
-                                                      NULL,
-                                                      NULL,
-                                                      0);
+    os_derive_bip32_with_seed_no_throw(HDW_ED25519_SLIP10,
+                                       CX_CURVE_Ed25519,
+                                       bip32_path,
+                                       BIP32_PATH,
+                                       private_key_data,
+                                       NULL,
+                                       NULL,
+                                       0);
+    int ret_code =
+        cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, private_key_data, 32, private_key);
     if (ret_code != 0) {
         success = false;
-    } else {
-        ret_code =
-            cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519, private_key_data, 32, private_key);
-        if (ret_code != 0) {
-            success = false;
-        }
     }
     explicit_bzero(private_key_data, sizeof(private_key_data));
 
