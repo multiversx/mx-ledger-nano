@@ -90,9 +90,9 @@ Or this to remove it:
 ```$ make delete```
 
 If you want to check the build process for a specific device:
-- Nano S: `$make load & make BOLOS_SDK=$NANOS_SDK`
-- Nano SX `$make load & make BOLOS_SDK=$NANOX_SDK`
-- Stax: `$make load & make BOLOS_SDK=$STAX_SDK`
+- Nano S: `$make load && make BOLOS_SDK=$NANOS_SDK`
+- Nano X `$make load && make BOLOS_SDK=$NANOX_SDK`
+- Stax: `$make load && make BOLOS_SDK=$STAX_SDK`
 
 Reference: https://github.com/LedgerHQ/ledger-app-builder
 

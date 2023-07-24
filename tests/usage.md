@@ -26,13 +26,7 @@ exit
 
 ### Run a simple test using the Speculos emulator
 
-Copy the compiled binaries to the `elfs` directory, create the directory if necessary.
-```
-mkdir -p tests/elfs/
-cp bin/app.elf tests/elfs/<appname>_<device>.elf    # replace <device> with one of [nanos, nanox, nanosp, stax]
-                                                    # replace <appname> with the name of your app, (eg boilerplate)
-                                                    # so for example tests/elfs/boilerplate_nanos.elf
-```
+Before running the tests for a device, make sure you've compiled the application for that specific device before. The compilation will prepare the binaries needed by the tests.
 
 You can use the following command to get your first experience with Ragger and Speculos
 ```
