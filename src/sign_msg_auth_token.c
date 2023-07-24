@@ -311,7 +311,7 @@ void handle_auth_token(uint8_t p1,
         char token_length_str[11];
 
         // check that the indexes and the length are valid
-        if (data_length < 12) {
+        if (data_length < AUTH_TOKEN_ADDRESS_INDICES_SIZE + AUTH_TOKEN_TOKEN_LEN_FIELD_SIZE) {
             THROW(ERR_INVALID_MESSAGE);
         }
 
@@ -329,14 +329,14 @@ void handle_auth_token(uint8_t p1,
 
         // account and address indexes (4 bytes each) have been read, so skip the
         // first 8 bytes
-        data_buffer += 8;
-        data_length -= 8;
+        data_buffer += AUTH_TOKEN_ADDRESS_INDICES_SIZE;
+        data_length -= AUTH_TOKEN_ADDRESS_INDICES_SIZE;
 
         token_auth_context.len = U4BE(data_buffer, 0);
 
         // the token length (4 bytes) has been read, so skip the next 4 bytes
-        data_buffer += 4;
-        data_length -= 4;
+        data_buffer += AUTH_TOKEN_TOKEN_LEN_FIELD_SIZE;
+        data_length -= AUTH_TOKEN_TOKEN_LEN_FIELD_SIZE;
 
         update_token_display_data(data_buffer, data_length);
 

@@ -25,6 +25,9 @@ bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int d
     }
     int missing = decimals_places - len + 1;
     if (missing > 0) {
+        if (len + 1 > max_size || missing > max_size) {
+            return false;
+        }
         memmove(amount + missing, amount, len + 1);
         memset(amount, '0', missing);
     }

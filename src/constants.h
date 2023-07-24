@@ -69,6 +69,8 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define AUTH_TOKEN_ENCODED_TTL_MAX_SIZE    11
 #define AUTH_TOKEN_INVALID_RET_CODE        -1
 #define AUTH_TOKEN_BAD_REQUEST_RET_CODE    -2
+#define AUTH_TOKEN_ADDRESS_INDICES_SIZE    8
+#define AUTH_TOKEN_TOKEN_LEN_FIELD_SIZE    4
 #define AUTH_TOKEN_INVALID_ORIGIN_PREFIX   "multiversx://"
 #define MAX_INT_NUM_DIGITS                 10
 #define PRETTY_SIZE                        (2 + MAX_TICKER_LEN)  // additional space for "0." and " eGLD"

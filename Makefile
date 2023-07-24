@@ -22,11 +22,6 @@ endif
 include $(BOLOS_SDK)/Makefile.defines
 
 APP_LOAD_PARAMS = --curve ed25519
-ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
-APP_LOAD_PARAMS += --appFlags 0x240  # APPLICATION_FLAG_BOLOS_SETTINGS
-else
-APP_LOAD_PARAMS += --appFlags 0x040
-endif
 APP_LOAD_PARAMS += --path "44'/508'"
 APP_LOAD_PARAMS += $(COMMON_LOAD_PARAMS)
 
