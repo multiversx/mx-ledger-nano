@@ -629,7 +629,10 @@ uint16_t parse_esdt_data(void) {
         return ERR_INVALID_ESDT;
     }
 
-    if (!make_amount_pretty(amount, sizeof(tx_context.amount), esdt_info.ticker, esdt_info.decimals)) {
+    if (!make_amount_pretty(amount,
+                            sizeof(tx_context.amount),
+                            esdt_info.ticker,
+                            esdt_info.decimals)) {
         return ERR_PRETTY_FAILED;
     }
 
