@@ -134,12 +134,12 @@ UX_FLOW(ux_auth_token_msg_flow,
 static void clean_token_fields(void) {
     token_auth_context.len = 0;
     token_auth_context.dot_count = 0;
-    memset(token_auth_context.auth_token_buffer, 0, sizeof(token_auth_context.auth_token_buffer));
-    memset(token_auth_context.auth_origin, 0, sizeof(token_auth_context.auth_origin));
-    memset(token_auth_context.auth_ttl, 0, sizeof(token_auth_context.auth_ttl));
-    memset(token_auth_context.token, 0, sizeof(token_auth_context.token));
-    memset(token_auth_context.hash, 0, sizeof(token_auth_context.hash));
-    memset(token_auth_context.address, 0, sizeof(token_auth_context.address));
+    explicit_bzero(token_auth_context.auth_token_buffer, sizeof(token_auth_context.auth_token_buffer));
+    explicit_bzero(token_auth_context.auth_origin, sizeof(token_auth_context.auth_origin));
+    explicit_bzero(token_auth_context.auth_ttl, sizeof(token_auth_context.auth_ttl));
+    explicit_bzero(token_auth_context.token, sizeof(token_auth_context.token));
+    explicit_bzero(token_auth_context.hash, sizeof(token_auth_context.hash));
+    explicit_bzero(token_auth_context.address, sizeof(token_auth_context.address));
     token_auth_context.stop_origin_ttl_fetch = false;
 }
 
@@ -159,13 +159,13 @@ static void move_value_from_buffer(char *buffer,
                                    bool *should_stop_processing) {
     if ((int) (strlen(buffer)) >= destination_size) {
         *should_stop_processing = true;
-        memset(destination, 0, destination_size);
-        memset(buffer, 0, buffer_size);
+        explicit_bzero(destination, destination_size);
+        explicit_bzero(buffer, buffer_size);
         return;
     }
 
     memmove(destination, buffer, strlen(buffer));
-    memset(buffer, 0, buffer_size);
+    explicit_bzero(buffer, buffer_size);
     *should_stop_processing = false;
 }
 

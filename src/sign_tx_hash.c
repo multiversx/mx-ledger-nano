@@ -379,7 +379,7 @@ void handle_sign_tx_hash(uint8_t p1,
     should_display_esdt_flow = false;
     if (is_esdt_transfer()) {
         uint16_t res;
-        res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
+        res = parse_esdt_data();
         if (res != MSG_OK) {
             THROW(res);
         }
