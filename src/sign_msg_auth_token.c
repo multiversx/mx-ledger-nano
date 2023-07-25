@@ -134,7 +134,8 @@ UX_FLOW(ux_auth_token_msg_flow,
 static void clean_token_fields(void) {
     token_auth_context.len = 0;
     token_auth_context.dot_count = 0;
-    explicit_bzero(token_auth_context.auth_token_buffer, sizeof(token_auth_context.auth_token_buffer));
+    explicit_bzero(token_auth_context.auth_token_buffer,
+                   sizeof(token_auth_context.auth_token_buffer));
     explicit_bzero(token_auth_context.auth_origin, sizeof(token_auth_context.auth_origin));
     explicit_bzero(token_auth_context.auth_ttl, sizeof(token_auth_context.auth_ttl));
     explicit_bzero(token_auth_context.token, sizeof(token_auth_context.token));

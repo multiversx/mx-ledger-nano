@@ -29,7 +29,8 @@ bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int d
         if (missing + len + 1 > max_size) {
             return false;
         }
-        // missing represents the leading 0s. amount needs to be moved to the right and the missing 0s prepended
+        // missing represents the leading 0s. amount needs to be moved to the right and the missing
+        // 0s prepended
         memmove(amount + missing, amount, len + 1);
         // replace remaining leading characters with 0s in the buffer
         memset(amount, '0', missing);
@@ -628,10 +629,7 @@ uint16_t parse_esdt_data(void) {
         return ERR_INVALID_ESDT;
     }
 
-    if (!make_amount_pretty(amount,
-                            sizeof(amount),
-                            esdt_info.ticker,
-                            esdt_info.decimals)) {
+    if (!make_amount_pretty(amount, sizeof(amount), esdt_info.ticker, esdt_info.decimals)) {
         return ERR_PRETTY_FAILED;
     }
 
