@@ -13,12 +13,12 @@ static bool verify_signature(const uint8_t *data_buffer,
     cx_ecfp_public_key_t tokenKey;
 
     cx_sha256_init(&sha256);
-    cx_hash((cx_hash_t *) &sha256, CX_LAST, data_buffer, required_len, hash, 32);
+    cx_hash_no_throw((cx_hash_t *) &sha256, CX_LAST, data_buffer, required_len, hash, 32);
 
-    cx_ecfp_init_public_key(CX_CURVE_256K1,
-                            LEDGER_SIGNATURE_PUBLIC_KEY,
-                            sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
-                            &tokenKey);
+    cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1,
+                                     LEDGER_SIGNATURE_PUBLIC_KEY,
+                                     sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
+                                     &tokenKey);
 
     int signature_size = data_length - required_len;
     return cx_ecdsa_verify(&tokenKey,

@@ -33,28 +33,22 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
         return false;
     }
 
-    BEGIN_TRY {
-        TRY {
-            cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, tx_hash_context.hash, 32);
-            cx_eddsa_sign(&private_key,
-                          CX_RND_RFC6979 | CX_LAST,
-                          CX_SHA512,
-                          tx_hash_context.hash,
-                          32,
-                          NULL,
-                          0,
-                          tx_context.signature,
-                          64,
-                          NULL);
-        }
-        CATCH_ALL {
-            success = false;
-        }
-        FINALLY {
-            explicit_bzero(&private_key, sizeof(private_key));
-        }
+    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                     CX_LAST,
+                     data_buffer,
+                     0,
+                     tx_hash_context.hash,
+                     32);
+    int ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                          CX_SHA512,
+                                          tx_hash_context.hash,
+                                          32,
+                                          tx_context.signature,
+                                          64);
+    if (ret_code != 0) {
+        success = false;
     }
-    END_TRY;
+    explicit_bzero(&private_key, sizeof(private_key));
 
     return success;
 }
@@ -338,7 +332,7 @@ void init_tx_context() {
     tx_context.network[0] = 0;
     tx_context.guardian[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
+    cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
 
     app_state = APP_STATE_IDLE;
 }
@@ -359,7 +353,7 @@ void handle_sign_tx_hash(uint8_t p1,
         }
     }
 
-    cx_hash((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     uint16_t err = parse_data(data_buffer, data_length);
     if (err != MSG_OK) {
         init_tx_context();
