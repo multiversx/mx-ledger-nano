@@ -26,7 +26,7 @@ bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int d
     }
     int missing = decimals_places - len + 1;
     if (missing > 0) {
-        if (missing + len + 1 > max_size) {
+        if ((size_t)(missing + len + 1) > max_size) {
             return false;
         }
         // missing represents the leading 0s. amount needs to be moved to the right and the missing
