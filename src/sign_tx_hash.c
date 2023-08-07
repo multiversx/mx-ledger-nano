@@ -28,6 +28,7 @@ static uint8_t set_result_signature() {
 static bool sign_tx_hash(uint8_t *data_buffer) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
+    int ret_code = 0;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
@@ -39,12 +40,12 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
                      0,
                      tx_hash_context.hash,
                      32);
-    int ret_code = cx_eddsa_sign_no_throw(&private_key,
-                                          CX_SHA512,
-                                          tx_hash_context.hash,
-                                          32,
-                                          tx_context.signature,
-                                          64);
+    ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                      CX_SHA512,
+                                      tx_hash_context.hash,
+                                      32,
+                                      tx_context.signature,
+                                      64);
     if (ret_code != 0) {
         success = false;
     }

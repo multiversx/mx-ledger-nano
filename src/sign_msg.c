@@ -112,17 +112,18 @@ UX_FLOW(ux_sign_msg_flow,
 static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
+    int ret_code = 0;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
-    int ret_code = cx_eddsa_sign_no_throw(&private_key,
-                                          CX_SHA512,
-                                          msg_context.hash,
-                                          HASH_LEN,
-                                          msg_context.signature,
-                                          MESSAGE_SIGNATURE_LEN);
+    ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                      CX_SHA512,
+                                      msg_context.hash,
+                                      HASH_LEN,
+                                      msg_context.signature,
+                                      MESSAGE_SIGNATURE_LEN);
     if (ret_code != 0) {
         success = false;
     }

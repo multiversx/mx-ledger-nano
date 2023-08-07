@@ -185,7 +185,8 @@ uint16_t verify_value(bool *valid) {
 
 // verify "receiver" field
 uint16_t verify_receiver(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0) {
+    if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0 &&
+        tx_hash_context.current_field_len == strlen(RECEIVER_FIELD)) {
         if (tx_hash_context.current_value_len >= sizeof(tx_context.receiver)) {
             return ERR_RECEIVER_TOO_LONG;
         }
