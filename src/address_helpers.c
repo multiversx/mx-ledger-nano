@@ -12,23 +12,17 @@ bool get_public_key(uint32_t account_number, uint32_t index, uint8_t *public_key
     cx_ecfp_private_key_t private_key;
     cx_ecfp_public_key_t public_key;
     bool error = false;
+    int ret_code = 0;
 
     if (!get_private_key(account_number, index, &private_key)) {
         return false;
     }
 
-    BEGIN_TRY {
-        TRY {
-            cx_ecfp_generate_pair(CX_CURVE_Ed25519, &public_key, &private_key, 1);
-        }
-        CATCH_ALL {
-            error = true;
-        }
-        FINALLY {
-            explicit_bzero(&private_key, sizeof(private_key));
-        }
+    ret_code = cx_ecfp_generate_pair_no_throw(CX_CURVE_Ed25519, &public_key, &private_key, 1);
+    if (ret_code != 0) {
+        error = true;
     }
-    END_TRY;
+    explicit_bzero(&private_key, sizeof(private_key));
 
     if (error) {
         return false;
