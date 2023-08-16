@@ -18,6 +18,7 @@ static void set_message_in_amount(const char *message);
 
 // make the eGLD/token amount look pretty. Add decimals, decimal point and
 // ticker name
+//  example: amount=500, decimal_places=3 => amount=0.5 eGLD
 bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int decimals_places) {
     int len = strlen(amount);
     if ((size_t) len + PRETTY_SIZE >= max_size) {
@@ -25,7 +26,13 @@ bool make_amount_pretty(char *amount, size_t max_size, const char *ticker, int d
     }
     int missing = decimals_places - len + 1;
     if (missing > 0) {
+        if ((size_t)(missing + len + 1) > max_size) {
+            return false;
+        }
+        // missing represents the leading 0s. amount needs to be moved to the right and the missing
+        // 0s prepended
         memmove(amount + missing, amount, len + 1);
+        // replace remaining leading characters with 0s in the buffer
         memset(amount, '0', missing);
     }
     len = strlen(amount);
@@ -178,7 +185,8 @@ uint16_t verify_value(bool *valid) {
 
 // verify "receiver" field
 uint16_t verify_receiver(bool *valid) {
-    if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0) {
+    if (strncmp(tx_hash_context.current_field, RECEIVER_FIELD, strlen(RECEIVER_FIELD)) == 0 &&
+        tx_hash_context.current_field_len == strlen(RECEIVER_FIELD)) {
         if (tx_hash_context.current_value_len >= sizeof(tx_context.receiver)) {
             return ERR_RECEIVER_TOO_LONG;
         }
@@ -592,7 +600,7 @@ uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length) {
 }
 
 // parse_esdt_data interprets the ESDT transfer data field of a transaction
-uint16_t parse_esdt_data() {
+uint16_t parse_esdt_data(void) {
     uint128_t value = {{0, 0}};
     bool res;
 
@@ -623,7 +631,7 @@ uint16_t parse_esdt_data() {
     }
 
     if (!make_amount_pretty(amount,
-                            strlen(amount) + MAX_TICKER_LEN + PRETTY_SIZE + 1,
+                            sizeof(tx_context.amount),
                             esdt_info.ticker,
                             esdt_info.decimals)) {
         return ERR_PRETTY_FAILED;

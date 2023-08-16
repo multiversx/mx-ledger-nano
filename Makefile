@@ -30,11 +30,11 @@ endif
 APP_LOAD_PARAMS += --path "44'/508'"
 APP_LOAD_PARAMS += $(COMMON_LOAD_PARAMS)
 
-APPNAME      = "MultiversX Guardians Test"
+APPNAME      = "MultiversX"
 APPVERSION_M = 1
 APPVERSION_N = 0
 APPVERSION_P = 22
-APPVERSION   = $(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)-guardians-test
+APPVERSION   = $(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
 
 ifeq ($(TARGET_NAME),TARGET_NANOS)
     ICONNAME = icons/nanos_app_multiversx.gif
@@ -191,4 +191,4 @@ dep/%.d: %.c Makefile
 
 
 listvariants:
-	@echo VARIANTS COIN eGLD_guardians_test
+	@echo VARIANTS COIN eGLD
