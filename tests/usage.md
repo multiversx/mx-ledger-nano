@@ -15,24 +15,18 @@ sudo apt-get update && sudo apt-get install -y qemu-user-static tesseract-ocr li
 ### Compile the application
 
 The application to test must be compiled for all required devices.
-You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite`:
+You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder`:
 ```
-docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
+docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 cd <your app repository>                        # replace <appname> with the name of your app, (eg boilerplate)
-docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder-lite:latest
+docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder:latest
 make clean && make BOLOS_SDK=$<device>_SDK      # replace <device> with one of [NANOS, NANOX, NANOSP, STAX]
 exit
 ```
 
 ### Run a simple test using the Speculos emulator
 
-Copy the compiled binaries to the `elfs` directory, create the directory if necessary.
-```
-mkdir -p tests/elfs/
-cp bin/app.elf tests/elfs/<appname>_<device>.elf    # replace <device> with one of [nanos, nanox, nanosp, stax]
-                                                    # replace <appname> with the name of your app, (eg boilerplate)
-                                                    # so for example tests/elfs/boilerplate_nanos.elf
-```
+Before running the tests for a device, make sure you've compiled the application for that specific device before. The compilation will prepare the binaries needed by the tests.
 
 You can use the following command to get your first experience with Ragger and Speculos
 ```
@@ -44,11 +38,11 @@ Or you can refer to the section `Available pytest options` to configure the opti
 ### Run a simple test using a real device
 
 The application to test must be loaded and started on a Ledger device plugged in USB.
-You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite`:
+You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder`:
 ```
-docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
+docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 cd app-<appname>/                                   # replace <appname> with the name of your app, (eg boilerplate)
-docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder-lite:latest
+docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder:latest
 make clean && make BOLOS_SDK=$<device>_SDK load     # replace <device> with one of [NANOS, NANOX, NANOSP]
 exit
 ```

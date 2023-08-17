@@ -23,4 +23,4 @@ extern tx_context_t tx_context;
 extern tx_hash_context_t tx_hash_context;
 
 uint16_t parse_data(const uint8_t *data_buffer, uint16_t data_length);
-uint16_t parse_esdt_data();
+uint16_t parse_esdt_data(void);

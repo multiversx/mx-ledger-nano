@@ -214,13 +214,24 @@ void truncate_if_needed(const char* source, int max_src_len, char* dest, int max
         const int truncate_str_len = sizeof(truncate_replacement) - 1;
         int truncate_index = replacement_index(max_dest_len, truncate_str_len);
         int remaining_chars_from_src = max_dest_len - truncate_index - truncate_str_len;
+        if (remaining_chars_from_src < 0) {
+            return;
+        }
         int index_after_replacement = truncate_index + truncate_str_len;
         int remaining_source_index = len_src - remaining_chars_from_src;
+        if (remaining_source_index < 0) {
+            return;
+        }
 
+        if (truncate_index > max_dest_len || truncate_index + truncate_str_len > max_dest_len ||
+            index_after_replacement + remaining_chars_from_src > max_dest_len ||
+            remaining_source_index + remaining_chars_from_src > max_src_len) {
+            return;
+        }
         memmove(dest, source, (size_t) truncate_index);
-        memmove(&dest[truncate_index], truncate_replacement, truncate_str_len);
-        memmove(&dest[index_after_replacement],
-                &source[remaining_source_index],
+        memmove(dest + truncate_index, truncate_replacement, truncate_str_len);
+        memmove(dest + index_after_replacement,
+                source + remaining_source_index,
                 remaining_chars_from_src);
         dest[max_dest_len] = 0;
     }
