@@ -654,6 +654,7 @@ class TestSignMsgAuthToken:
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -716,6 +717,7 @@ class TestSignMsgAuthToken:
                     test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_TAP,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
