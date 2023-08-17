@@ -68,7 +68,7 @@ static void review_final_callback(bool confirmed) {
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
     layout.smallCaseForValue = false;
-    layout.wrapping = true;
+    layout.wrapping = false;
     layout.pairs = pairs_list;
     pairs_list[0].item = "Address";
     pairs_list[0].value = token_auth_context.address;
@@ -233,7 +233,7 @@ static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_leng
     }
 }
 
-static void update_token_display_data(uint8_t const *data_buffer, uint8_t const data_length) {
+static void update_token_display_data(const uint8_t *data_buffer, const uint8_t data_length) {
     handle_auth_token_data(data_buffer, data_length);
     if (strlen(token_auth_context.token) >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         return;
@@ -241,6 +241,12 @@ static void update_token_display_data(uint8_t const *data_buffer, uint8_t const 
 
     int num_chars_to_show = data_length;
     bool should_append_ellipsis = false;
+
+    // On Nano devices the output can be truncated if needed to fit the screen
+    // On Stax device the truncating can not happen as the array is bigger than max uint8_t
+    // Keep the check but flag it to remove the compilation warning
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
     if (data_length >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_SIZE;
         should_append_ellipsis = true;
