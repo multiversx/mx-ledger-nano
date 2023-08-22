@@ -56,7 +56,7 @@ static void review_final_callback(bool confirmed) {
 
 static void start_review(void) {
     layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = true;
+    layout.smallCaseForValue = false;
     layout.wrapping = true;
     layout.pairs = pairs_list;
     pairs_list[0].item = "hash";

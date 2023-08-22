@@ -30,18 +30,31 @@ static uint8_t set_result_get_address(void) {
 
 #if defined(TARGET_STAX)
 
-static void callback_match(bool match) {
+static void address_verification_cancelled(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Address verification\ncancelled", false, ui_idle);
+}
+
+static void callback_choice(bool match) {
     if (match) {
         send_response(set_result_get_address(), true, false);
         nbgl_useCaseStatus("ADDRESS\nVERIFIED", true, ui_idle);
     } else {
-        send_response(0, false, false);
-        nbgl_useCaseStatus("Address verification\ncancelled", false, ui_idle);
+        address_verification_cancelled();
     }
 }
 
+static void display_addr(void) {
+    nbgl_useCaseAddressConfirmation(address, callback_choice);
+}
+
 static void ui_get_public_key_nbgl(void) {
-    nbgl_useCaseAddressConfirmation(address, callback_match);
+    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
+                            "Verify " APPNAME "\naddress",
+                            NULL,
+                            "Cancel",
+                            display_addr,
+                            address_verification_cancelled);
 }
 
 #else
