@@ -112,32 +112,22 @@ UX_FLOW(ux_sign_msg_flow,
 static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
+    int ret_code = 0;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
-    BEGIN_TRY {
-        TRY {
-            cx_eddsa_sign(&private_key,
-                          CX_RND_RFC6979 | CX_LAST,
-                          CX_SHA512,
-                          msg_context.hash,
-                          HASH_LEN,
-                          NULL,
-                          0,
-                          msg_context.signature,
-                          MESSAGE_SIGNATURE_LEN,
-                          NULL);
-        }
-        CATCH_ALL {
-            success = false;
-        }
-        FINALLY {
-            explicit_bzero(&private_key, sizeof(private_key));
-        }
+    ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                      CX_SHA512,
+                                      msg_context.hash,
+                                      HASH_LEN,
+                                      msg_context.signature,
+                                      MESSAGE_SIGNATURE_LEN);
+    if (ret_code != 0) {
+        success = false;
     }
-    END_TRY;
+    explicit_bzero(&private_key, sizeof(private_key));
 
     return success;
 }
@@ -168,20 +158,25 @@ void handle_sign_msg(uint8_t p1,
         data_buffer += 4;
         data_length -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
-        cx_hash((cx_hash_t *) &sha3_context, 0, (uint8_t *) PREPEND, sizeof(PREPEND) - 1, NULL, 0);
+        cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                         0,
+                         (uint8_t *) PREPEND,
+                         sizeof(PREPEND) - 1,
+                         NULL,
+                         0);
 
         // convert message length to string and store it in the variable
         // `message_length_str`
         uint32_t_to_char_array(msg_context.len, message_length_str);
 
         // add the message length to the hash
-        cx_hash((cx_hash_t *) &sha3_context,
-                0,
-                (uint8_t *) message_length_str,
-                strlen(message_length_str),
-                NULL,
-                0);
+        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                         0,
+                         (uint8_t *) message_length_str,
+                         strlen(message_length_str),
+                         NULL,
+                         0);
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
@@ -195,14 +190,19 @@ void handle_sign_msg(uint8_t p1,
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     msg_context.len -= data_length;
     if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                     CX_LAST,
+                     data_buffer,
+                     0,
+                     msg_context.hash,
+                     HASH_LEN);
     convert_to_hex_str(msg_context.strhash,
                        sizeof(msg_context.strhash),
                        msg_context.hash,

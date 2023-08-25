@@ -15,6 +15,7 @@
 #define OPTIONS_FIELD           "options"
 #define SENDER_USERNAME_FIELD   "senderUsername"
 #define RECEIVER_USERNAME_FIELD "receiverUsername"
+#define GUARDIAN_ADDR_FIELD     "guardian"
 
 #define MAX_FIELD_LEN 16
 #define MAX_VALUE_LEN 128UL

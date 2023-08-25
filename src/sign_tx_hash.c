@@ -28,33 +28,28 @@ static uint8_t set_result_signature() {
 static bool sign_tx_hash(uint8_t *data_buffer) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
+    int ret_code = 0;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
-    BEGIN_TRY {
-        TRY {
-            cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, tx_hash_context.hash, 32);
-            cx_eddsa_sign(&private_key,
-                          CX_RND_RFC6979 | CX_LAST,
-                          CX_SHA512,
-                          tx_hash_context.hash,
-                          32,
-                          NULL,
-                          0,
-                          tx_context.signature,
-                          64,
-                          NULL);
-        }
-        CATCH_ALL {
-            success = false;
-        }
-        FINALLY {
-            explicit_bzero(&private_key, sizeof(private_key));
-        }
+    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                     CX_LAST,
+                     data_buffer,
+                     0,
+                     tx_hash_context.hash,
+                     32);
+    ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                      CX_SHA512,
+                                      tx_hash_context.hash,
+                                      32,
+                                      tx_context.signature,
+                                      64);
+    if (ret_code != 0) {
+        success = false;
     }
-    END_TRY;
+    explicit_bzero(&private_key, sizeof(private_key));
 
     return success;
 }
@@ -96,7 +91,7 @@ static bool is_esdt_transfer() {
 #if defined(TARGET_STAX)
 
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t pairs_list[5];  // 5 info max for ESDT and 5 info max for EGLD
+static nbgl_layoutTagValue_t pairs_list[6];  // 6 info max for ESDT and 6 info max for EGLD
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\n" APPNAME " network?",
@@ -116,33 +111,34 @@ static void review_final_callback(bool confirmed) {
     }
 }
 
+static void update_pair(nbgl_layoutTagValue_t *pair, const char *item, const char *value) {
+    pair->item = item;
+    pair->value = value;
+}
+
 static void start_review(void) {
     uint8_t step = 0;
 
     if (should_display_esdt_flow) {
-        pairs_list[step].item = "Token", pairs_list[step].value = esdt_info.ticker, ++step;
-        pairs_list[step].item = "Value", pairs_list[step].value = tx_context.amount, ++step;
-        pairs_list[step].item = "Receiver", pairs_list[step].value = tx_context.receiver, ++step;
-        pairs_list[step].item = "Fee", pairs_list[step].value = tx_context.fee, ++step;
-        pairs_list[step].item = "Network", pairs_list[step].value = tx_context.network, ++step;
-    } else {
-        pairs_list[step].item = "Receiver";
-        pairs_list[step].value = tx_context.receiver;
-        ++step;
-        pairs_list[step].item = "Amount";
-        pairs_list[step].value = tx_context.amount;
-        ++step;
-        pairs_list[step].item = "Fee";
-        pairs_list[step].value = tx_context.fee;
-        ++step;
-        if (tx_context.data_size > 0) {
-            pairs_list[step].item = "Data";
-            pairs_list[step].value = tx_context.data;
-            ++step;
+        update_pair(&pairs_list[step++], "Token", esdt_info.ticker);
+        update_pair(&pairs_list[step++], "Value", tx_context.amount);
+        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
+        if (strlen(tx_context.guardian) > 0) {
+            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
-        pairs_list[step].item = "Network";
-        pairs_list[step].value = tx_context.network;
-        ++step;
+        update_pair(&pairs_list[step++], "Network", tx_context.network);
+    } else {
+        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&pairs_list[step++], "Amount", tx_context.amount);
+        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
+        if (tx_context.data_size > 0) {
+            update_pair(&pairs_list[step++], "Data", tx_context.data);
+        }
+        if (strlen(tx_context.guardian) > 0) {
+            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
+        }
+        update_pair(&pairs_list[step++], "Network", tx_context.network);
     }
 
     layout.nbMaxLinesForValue = 0;
@@ -178,6 +174,7 @@ static void ui_sign_tx_hash_nbgl(void) {
 #else
 
 const ux_flow_step_t *tx_flow[TX_SIGN_FLOW_SIZE];
+const ux_flow_step_t *esdt_flow[ESDT_TRANSFER_FLOW_SIZE];
 
 // UI for confirming the ESDT transfer on screen
 UX_STEP_NOCB(ux_transfer_esdt_flow_24_step,
@@ -204,6 +201,12 @@ UX_STEP_NOCB(ux_transfer_esdt_flow_27_step,
                  .title = "Fee",
                  .text = tx_context.fee,
              });
+UX_STEP_NOCB(ux_transfer_esdt_flow_31_step,
+             bnnn_paging,
+             {
+                 .title = "Guardian",
+                 .text = tx_context.guardian,
+             });
 UX_STEP_NOCB(ux_transfer_esdt_flow_28_step,
              bnnn_paging,
              {
@@ -224,15 +227,6 @@ UX_STEP_VALID(ux_transfer_esdt_flow_30_step,
                   &C_icon_crossmark,
                   "Reject",
               });
-
-UX_FLOW(ux_transfer_esdt_flow,
-        &ux_transfer_esdt_flow_24_step,
-        &ux_transfer_esdt_flow_25_step,
-        &ux_transfer_esdt_flow_26_step,
-        &ux_transfer_esdt_flow_27_step,
-        &ux_transfer_esdt_flow_28_step,
-        &ux_transfer_esdt_flow_29_step,
-        &ux_transfer_esdt_flow_30_step);
 
 // UI for confirming the tx details of the transaction on screen
 UX_STEP_NOCB(ux_sign_tx_hash_flow_17_step,
@@ -258,6 +252,12 @@ UX_STEP_NOCB(ux_sign_tx_hash_flow_20_step,
              {
                  .title = "Data",
                  .text = tx_context.data,
+             });
+UX_STEP_NOCB(ux_sign_tx_hash_flow_24_step,
+             bnnn_paging,
+             {
+                 .title = "Guardian",
+                 .text = tx_context.guardian,
              });
 UX_STEP_NOCB(ux_sign_tx_hash_flow_21_step,
              bnnn_paging,
@@ -289,12 +289,33 @@ static void display_tx_sign_flow() {
     if (tx_context.data_size > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_20_step;
     }
+    if (strlen(tx_context.guardian) > 0) {
+        tx_flow[step++] = &ux_sign_tx_hash_flow_24_step;
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
     tx_flow[step++] = FLOW_END_STEP;
 
     ux_flow_init(0, tx_flow, NULL);
+}
+
+static void display_esdt_flow() {
+    uint8_t step = 0;
+
+    esdt_flow[step++] = &ux_transfer_esdt_flow_24_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_25_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_26_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_27_step;
+    if (strlen(tx_context.guardian) > 0) {
+        esdt_flow[step++] = &ux_transfer_esdt_flow_31_step;
+    }
+    esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_29_step;
+    esdt_flow[step++] = &ux_transfer_esdt_flow_30_step;
+    esdt_flow[step++] = FLOW_END_STEP;
+
+    ux_flow_init(0, esdt_flow, NULL);
 }
 
 #endif
@@ -310,8 +331,9 @@ void init_tx_context() {
     tx_context.chain_id[0] = 0;
     tx_context.esdt_value[0] = 0;
     tx_context.network[0] = 0;
+    tx_context.guardian[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
+    cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
 
     app_state = APP_STATE_IDLE;
 }
@@ -332,7 +354,7 @@ void handle_sign_tx_hash(uint8_t p1,
         }
     }
 
-    cx_hash((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     uint16_t err = parse_data(data_buffer, data_length);
     if (err != MSG_OK) {
         init_tx_context();
@@ -352,7 +374,7 @@ void handle_sign_tx_hash(uint8_t p1,
     should_display_esdt_flow = false;
     if (is_esdt_transfer()) {
         uint16_t res;
-        res = parse_esdt_data(tx_context.data, tx_context.data_size + DATA_SIZE_LEN);
+        res = parse_esdt_data();
         if (res != MSG_OK) {
             THROW(res);
         }
@@ -365,7 +387,7 @@ void handle_sign_tx_hash(uint8_t p1,
     ui_sign_tx_hash_nbgl();
 #else
     if (should_display_esdt_flow) {
-        ux_flow_init(0, ux_transfer_esdt_flow, NULL);
+        display_esdt_flow();
     } else {
         display_tx_sign_flow();
     }
