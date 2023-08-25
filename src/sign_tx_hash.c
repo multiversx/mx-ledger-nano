@@ -142,7 +142,7 @@ static void start_review(void) {
     }
 
     layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = true;
+    layout.smallCaseForValue = false;
     layout.wrapping = true;
     layout.pairs = pairs_list;
     layout.nbPairs = step;
