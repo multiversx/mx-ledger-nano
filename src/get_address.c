@@ -9,10 +9,55 @@
 #include "os.h"
 #include "utils.h"
 #include "ux.h"
+#include "menu.h"
+
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
 
 static char address[FULL_ADDRESS_LENGTH];
 
-static uint8_t set_result_get_address();
+static uint8_t set_result_get_address(void) {
+    uint8_t tx = 0;
+    uint8_t address_size = strlen(address);
+
+    G_io_apdu_buffer[tx++] = address_size;
+    memmove(G_io_apdu_buffer + tx, address, address_size);
+    tx += address_size;
+
+    return tx;
+}
+
+#if defined(TARGET_STAX)
+
+static void address_verification_cancelled(void) {
+    send_response(0, false, false);
+    nbgl_useCaseStatus("Address verification\ncancelled", false, ui_idle);
+}
+
+static void callback_choice(bool match) {
+    if (match) {
+        send_response(set_result_get_address(), true, false);
+        nbgl_useCaseStatus("ADDRESS\nVERIFIED", true, ui_idle);
+    } else {
+        address_verification_cancelled();
+    }
+}
+
+static void display_addr(void) {
+    nbgl_useCaseAddressConfirmation(address, callback_choice);
+}
+
+static void ui_get_public_key_nbgl(void) {
+    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
+                            "Verify " APPNAME "\naddress",
+                            NULL,
+                            "Cancel",
+                            display_addr,
+                            address_verification_cancelled);
+}
+
+#else
 
 // UI interface for validating the address on screen
 UX_STEP_NOCB(ux_display_public_flow_5_step,
@@ -23,14 +68,14 @@ UX_STEP_NOCB(ux_display_public_flow_5_step,
              });
 UX_STEP_VALID(ux_display_public_flow_6_step,
               pb,
-              send_response(set_result_get_address(), true),
+              send_response(set_result_get_address(), true, true),
               {
                   &C_icon_validate_14,
                   "Approve",
               });
 UX_STEP_VALID(ux_display_public_flow_7_step,
               pb,
-              send_response(0, false),
+              send_response(0, false, true),
               {
                   &C_icon_crossmark,
                   "Reject",
@@ -41,16 +86,7 @@ UX_FLOW(ux_display_public_flow,
         &ux_display_public_flow_6_step,
         &ux_display_public_flow_7_step);
 
-static uint8_t set_result_get_address() {
-    uint8_t tx = 0;
-    const uint8_t address_size = strlen(address);
-
-    G_io_apdu_buffer[tx++] = address_size;
-    memmove(G_io_apdu_buffer + tx, address, address_size);
-    tx += address_size;
-
-    return tx;
-}
+#endif
 
 void handle_get_address(uint8_t p1,
                         uint8_t p2,
@@ -88,7 +124,11 @@ void handle_get_address(uint8_t p1,
         *tx = set_result_get_address();
         THROW(MSG_OK);
     } else {
+#if defined(TARGET_STAX)
+        ui_get_public_key_nbgl();
+#else
         ux_flow_init(0, ux_display_public_flow, NULL);
+#endif
         *flags |= IO_ASYNCH_REPLY;
     }
 }

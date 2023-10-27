@@ -1,6 +1,11 @@
 #include "sign_msg.h"
 #include "get_private_key.h"
 #include "utils.h"
+#include "menu.h"
+
+#ifdef HAVE_NBGL
+#include "nbgl_use_case.h"
+#endif
 
 typedef struct {
     uint32_t len;
@@ -10,36 +15,6 @@ typedef struct {
 } msg_context_t;
 
 static msg_context_t msg_context;
-
-static uint8_t set_result_signature();
-bool sign_message(void);
-
-// UI for confirming the message hash on screen
-UX_STEP_NOCB(ux_sign_msg_flow_14_step,
-             bnnn_paging,
-             {
-                 .title = "Hash",
-                 .text = msg_context.strhash,
-             });
-UX_STEP_VALID(ux_sign_msg_flow_15_step,
-              pb,
-              send_response(set_result_signature(), true),
-              {
-                  &C_icon_validate_14,
-                  "Sign message",
-              });
-UX_STEP_VALID(ux_sign_msg_flow_16_step,
-              pb,
-              send_response(0, false),
-              {
-                  &C_icon_crossmark,
-                  "Reject",
-              });
-
-UX_FLOW(ux_sign_msg_flow,
-        &ux_sign_msg_flow_14_step,
-        &ux_sign_msg_flow_15_step,
-        &ux_sign_msg_flow_16_step);
 
 void init_msg_context(void) {
     bip32_account = 0;
@@ -56,35 +31,103 @@ static uint8_t set_result_signature() {
     return tx;
 }
 
-bool sign_message(void) {
+#if defined(TARGET_STAX)
+
+static nbgl_layoutTagValueList_t layout;
+static nbgl_layoutTagValue_t pairs_list[1];
+
+static const nbgl_pageInfoLongPress_t review_final_long_press = {
+    .text = "Sign message on\n" APPNAME " network?",
+    .icon = &C_icon_multiversx_logo_64x64,
+    .longPressText = "Hold to sign",
+    .longPressToken = 0,
+    .tuneId = TUNE_TAP_CASUAL,
+};
+
+static void review_final_callback(bool confirmed) {
+    if (confirmed) {
+        int tx = set_result_signature();
+        send_response(tx, true, false);
+        nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
+    } else {
+        nbgl_reject_message_choice();
+    }
+}
+
+static void start_review(void) {
+    layout.nbMaxLinesForValue = 0;
+    layout.smallCaseForValue = false;
+    layout.wrapping = true;
+    layout.pairs = pairs_list;
+    pairs_list[0].item = "hash";
+    pairs_list[0].value = msg_context.strhash;
+    layout.nbPairs = ARRAY_COUNT(pairs_list);
+
+    nbgl_useCaseStaticReview(&layout,
+                             &review_final_long_press,
+                             "Reject message",
+                             review_final_callback);
+}
+
+static void ui_sign_message_nbgl(void) {
+    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
+                            "Review message to\nsign on " APPNAME "\nnetwork",
+                            "",
+                            "Reject message",
+                            start_review,
+                            nbgl_reject_message_choice);
+}
+
+#else
+
+// UI for confirming the message hash on screen
+UX_STEP_NOCB(ux_sign_msg_flow_14_step,
+             bnnn_paging,
+             {
+                 .title = "Hash",
+                 .text = msg_context.strhash,
+             });
+UX_STEP_VALID(ux_sign_msg_flow_15_step,
+              pb,
+              send_response(set_result_signature(), true, true),
+              {
+                  &C_icon_validate_14,
+                  "Sign message",
+              });
+UX_STEP_VALID(ux_sign_msg_flow_16_step,
+              pb,
+              send_response(0, false, true),
+              {
+                  &C_icon_crossmark,
+                  "Reject",
+              });
+
+UX_FLOW(ux_sign_msg_flow,
+        &ux_sign_msg_flow_14_step,
+        &ux_sign_msg_flow_15_step,
+        &ux_sign_msg_flow_16_step);
+
+#endif
+
+static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
+    int ret_code = 0;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
-    BEGIN_TRY {
-        TRY {
-            cx_eddsa_sign(&private_key,
-                          CX_RND_RFC6979 | CX_LAST,
-                          CX_SHA512,
-                          msg_context.hash,
-                          HASH_LEN,
-                          NULL,
-                          0,
-                          msg_context.signature,
-                          MESSAGE_SIGNATURE_LEN,
-                          NULL);
-        }
-        CATCH_ALL {
-            success = false;
-        }
-        FINALLY {
-            explicit_bzero(&private_key, sizeof(private_key));
-        }
+    ret_code = cx_eddsa_sign_no_throw(&private_key,
+                                      CX_SHA512,
+                                      msg_context.hash,
+                                      HASH_LEN,
+                                      msg_context.signature,
+                                      MESSAGE_SIGNATURE_LEN);
+    if (ret_code != 0) {
+        success = false;
     }
-    END_TRY;
+    explicit_bzero(&private_key, sizeof(private_key));
 
     return success;
 }
@@ -115,20 +158,25 @@ void handle_sign_msg(uint8_t p1,
         data_buffer += 4;
         data_length -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init(&sha3_context, SHA3_KECCAK_BITS);
-        cx_hash((cx_hash_t *) &sha3_context, 0, (uint8_t *) PREPEND, sizeof(PREPEND) - 1, NULL, 0);
+        cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                         0,
+                         (uint8_t *) PREPEND,
+                         sizeof(PREPEND) - 1,
+                         NULL,
+                         0);
 
         // convert message length to string and store it in the variable
         // `message_length_str`
         uint32_t_to_char_array(msg_context.len, message_length_str);
 
         // add the message length to the hash
-        cx_hash((cx_hash_t *) &sha3_context,
-                0,
-                (uint8_t *) message_length_str,
-                strlen(message_length_str),
-                NULL,
-                0);
+        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                         0,
+                         (uint8_t *) message_length_str,
+                         strlen(message_length_str),
+                         NULL,
+                         0);
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
@@ -142,19 +190,23 @@ void handle_sign_msg(uint8_t p1,
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     msg_context.len -= data_length;
     if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash((cx_hash_t *) &sha3_context, CX_LAST, data_buffer, 0, msg_context.hash, HASH_LEN);
-    snprintf(msg_context.strhash,
-             sizeof(msg_context.strhash),
-             "%.*H",
-             sizeof(msg_context.hash),
-             msg_context.hash);
+    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                     CX_LAST,
+                     data_buffer,
+                     0,
+                     msg_context.hash,
+                     HASH_LEN);
+    convert_to_hex_str(msg_context.strhash,
+                       sizeof(msg_context.strhash),
+                       msg_context.hash,
+                       sizeof(msg_context.hash));
 
     // sign the hash
     if (!sign_message()) {
@@ -163,6 +215,11 @@ void handle_sign_msg(uint8_t p1,
     }
 
     app_state = APP_STATE_IDLE;
+
+#if defined(TARGET_STAX)
+    ui_sign_message_nbgl();
+#else
     ux_flow_init(0, ux_sign_msg_flow, NULL);
+#endif
     *flags |= IO_ASYNCH_REPLY;
 }

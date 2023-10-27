@@ -18,25 +18,34 @@
 ifeq ($(BOLOS_SDK),)
 $(error Environment variable BOLOS_SDK is not set)
 endif
+
 include $(BOLOS_SDK)/Makefile.defines
 
-APP_LOAD_PARAMS= --curve ed25519 --path "44'/508'" --appFlags 0x240 $(COMMON_LOAD_PARAMS)
+APP_LOAD_PARAMS = --curve ed25519
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
+APP_LOAD_PARAMS += --appFlags 0x240  # APPLICATION_FLAG_BOLOS_SETTINGS
+else
+APP_LOAD_PARAMS += --appFlags 0x040
+endif
+APP_LOAD_PARAMS += --path "44'/508'"
+APP_LOAD_PARAMS += $(COMMON_LOAD_PARAMS)
 
-APPVERSION_M:=$(if $(APPVERSION_M),$(APPVERSION_M),1)
-APPVERSION_N:=$(if $(APPVERSION_N),$(APPVERSION_N),0)
-APPVERSION_P:=$(if $(APPVERSION_P),$(APPVERSION_P),20)
-APPVERSION=$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
-APPNAME = "MultiversX"
+APPNAME      = "MultiversX"
+APPVERSION_M = 1
+APPVERSION_N = 0
+APPVERSION_P = 23
+APPVERSION   = $(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)
+
+ifeq ($(TARGET_NAME),TARGET_NANOS)
+    ICONNAME = icons/nanos_app_multiversx.gif
+else ifeq ($(TARGET_NAME),TARGET_STAX)
+    ICONNAME = icons/stax_app_multiversx.gif
+else
+    ICONNAME = icons/nanox_app_multiversx.gif
+endif
 
 DEFINES += $(DEFINES_LIB)
 DEFINES += JSMN_STRICT=1
-
-
-ifeq ($(TARGET_NAME),TARGET_NANOS)
-	ICONNAME=icons/nanos_app_multiversx.gif
-else
-	ICONNAME=icons/nanox_app_multiversx.gif
-endif
 
 
 ################
@@ -49,8 +58,13 @@ all: default
 ############
 
 DEFINES   += OS_IO_SEPROXYHAL
-DEFINES   += HAVE_BAGL HAVE_SPRINTF
+DEFINES   += HAVE_SPRINTF
+ifneq ($(TARGET_NAME),TARGET_STAX)
+DEFINES   += HAVE_BAGL
+endif
+
 DEFINES   += HAVE_IO_USB HAVE_L4_USBLIB IO_USB_MAX_ENDPOINTS=6 IO_HID_EP_LENGTH=64 HAVE_USB_APDU
+CFLAGS    += -DAPPNAME=\"$(APPNAME)\"
 DEFINES   += LEDGER_MAJOR_VERSION=$(APPVERSION_M) LEDGER_MINOR_VERSION=$(APPVERSION_N) LEDGER_PATCH_VERSION=$(APPVERSION_P)
 
 # U2F
@@ -65,29 +79,35 @@ DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
 
-ifeq ($(TARGET_NAME),TARGET_NANOX)
-DEFINES       += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000
-DEFINES       += HAVE_BLE_APDU # basic ledger apdu transport over BLE
-endif
-ifeq ($(TARGET_NAME),TARGET_NANOS)
-DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=128
-else
-DEFINES       += IO_SEPROXYHAL_BUFFER_SIZE_B=300
-DEFINES       += HAVE_GLO096
-DEFINES       += HAVE_BAGL BAGL_WIDTH=128 BAGL_HEIGHT=64
-DEFINES       += HAVE_BAGL_ELLIPSIS # long label truncation feature
-DEFINES       += HAVE_BAGL_FONT_OPEN_SANS_REGULAR_11PX
-DEFINES       += HAVE_BAGL_FONT_OPEN_SANS_EXTRABOLD_11PX
-DEFINES       += HAVE_BAGL_FONT_OPEN_SANS_LIGHT_16PX
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
+    DEFINES += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000 HAVE_BLE_APDU
 endif
 
-# Both nano S and X benefit from the flow.
-DEFINES       += HAVE_UX_FLOW
+ifeq ($(TARGET_NAME),TARGET_NANOS)
+    DEFINES += IO_SEPROXYHAL_BUFFER_SIZE_B=128
+else
+    DEFINES += IO_SEPROXYHAL_BUFFER_SIZE_B=300
+endif
+
+
+ifeq ($(TARGET_NAME),TARGET_STAX)
+    DEFINES += NBGL_QRCODE
+    SDK_SOURCE_PATH += qrcode
+else
+    DEFINES += HAVE_BAGL HAVE_UX_FLOW
+    ifneq ($(TARGET_NAME),TARGET_NANOS)
+        DEFINES += HAVE_GLO096
+        DEFINES += BAGL_WIDTH=128 BAGL_HEIGHT=64
+        DEFINES += HAVE_BAGL_ELLIPSIS # long label truncation feature
+        DEFINES += HAVE_BAGL_FONT_OPEN_SANS_REGULAR_11PX
+        DEFINES += HAVE_BAGL_FONT_OPEN_SANS_EXTRABOLD_11PX
+        DEFINES += HAVE_BAGL_FONT_OPEN_SANS_LIGHT_16PX
+    endif
+endif
 
 # Enabling debug PRINTF
 DEBUG = 0
 ifneq ($(DEBUG),0)
-
         ifeq ($(TARGET_NAME),TARGET_NANOS)
                 DEFINES   += HAVE_PRINTF PRINTF=screen_printf
         else
@@ -131,10 +151,15 @@ include $(BOLOS_SDK)/Makefile.glyphs
 ### variables processed by the common makefile.rules of the SDK to grab source files and include dirs
 APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
-SDK_SOURCE_PATH  += lib_ux
 APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/uint256
 
+ifneq ($(TARGET_NAME),TARGET_STAX)
+SDK_SOURCE_PATH  += lib_ux
+endif
+
 ifeq ($(TARGET_NAME),TARGET_NANOX)
+SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
+else ifeq ($(TARGET_NAME),TARGET_STAX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 endif
 

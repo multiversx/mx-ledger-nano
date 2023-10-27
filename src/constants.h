@@ -53,38 +53,55 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 
 #define MAX_AMOUNT_LEN              32
 #define MAX_BUFFER_LEN              500
+#define MAX_ESDT_TRANSFER_DATA_SIZE 100
 #define MAX_DATA_SIZE               400  // 400 in base64 = 300 in ASCII
-#define MAX_DISPLAY_DATA_SIZE       64UL  // must be multiple of 4
-#define DATA_SIZE_LEN               17
-#define MAX_CHAINID_LEN             4
-#define MAX_TICKER_LEN              10
-#define MAX_UINT32_LEN              10  // len(f"{0xffffffff:d}")
-#define MAX_UINT64_LEN              20  // len(f"{0xffffffffffffffff:d}")
-#define MAX_UINT128_LEN             39  // len(f"{0xffffffffffffffffffffffffffffffff:d}")
-#define PRETTY_SIZE                 (2 + MAX_TICKER_LEN)  // additional space for "0." and " eGLD"
-#define GAS_PER_DATA_BYTE           1500
-#define GAS_PRICE_DIVIDER           100
-#define MIN_GAS_LIMIT               50000
-#define MAX_AUTH_TOKEN_LEN          100
-#define BECH32_ADDRESS_LEN          62
-#define HASH_LEN                    32
-#define MESSAGE_SIGNATURE_LEN       64
-#define SHA3_KECCAK_BITS            256
-#define PUBLIC_KEY_LEN              32
-#define BASE_10                     10
-#define TX_SIGN_FLOW_SIZE           8
-#define BASE_64_INVALID_CHAR        '?'
-#define SC_ARGS_SEPARATOR           '@'
-#define MAX_ESDT_VALUE_HEX_COUNT    32
-#define INVALID_INDEX               -1
-#define ESDT_CODE_VALUE_TOO_HIGH    '1'
-#define ESDT_CODE_VALUE_OK          '2'
-#define ESDT_VALUE_MAX_LENGTH       40
-#define ESDT_TRANSFER_PREFIX        "ESDTTransfer@"
-#define ESDT_VALUE_N_A              "N/A"
-#define ESDT_VALUE_TOO_LONG         "<value too big to display>"
-#define ESDT_VALUE_HEX_PARSE_ERR    "<value cannot be parsed to hex>"
-#define ESDT_TRANSFER_PREFIX_LENGTH strlen(ESDT_TRANSFER_PREFIX)
+#ifdef HAVE_BAGL
+#define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
+#else
+#define MAX_DISPLAY_DATA_SIZE 256UL  // must be multiple of 4
+#endif
+#define DATA_SIZE_LEN                      17
+#define MAX_CHAINID_LEN                    4
+#define MAX_TICKER_LEN                     10
+#define MAX_UINT32_LEN                     10  // len(f"{0xffffffff:d}")
+#define MAX_UINT64_LEN                     20  // len(f"{0xffffffffffffffff:d}")
+#define MAX_UINT128_LEN                    39  // len(f"{0xffffffffffffffffffffffffffffffff:d}")
+#define MAX_AUTH_TOKEN_ORIGIN_SIZE         37
+#define MAX_AUTH_TOKEN_TTL_SIZE            41
+#define AUTH_TOKEN_DISPLAY_MAX_SIZE        100
+#define AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE 101
+#define AUTH_TOKEN_ENCODED_TTL_MAX_SIZE    11
+#define AUTH_TOKEN_INVALID_RET_CODE        -1
+#define AUTH_TOKEN_BAD_REQUEST_RET_CODE    -2
+#define AUTH_TOKEN_ADDRESS_INDICES_SIZE    8
+#define AUTH_TOKEN_TOKEN_LEN_FIELD_SIZE    4
+#define AUTH_TOKEN_INVALID_ORIGIN_PREFIX   "multiversx://"
+#define MAX_INT_NUM_DIGITS                 10
+#define PRETTY_SIZE                        (2 + MAX_TICKER_LEN)  // additional space for "0." and " eGLD"
+#define GAS_PER_DATA_BYTE                  1500
+#define GAS_PRICE_DIVIDER                  100
+#define MIN_GAS_LIMIT                      50000
+#define MAX_AUTH_TOKEN_LEN                 100
+#define BECH32_ADDRESS_LEN                 62
+#define HASH_LEN                           32
+#define MESSAGE_SIGNATURE_LEN              64
+#define SHA3_KECCAK_BITS                   256
+#define PUBLIC_KEY_LEN                     32
+#define BASE_10                            10
+#define TX_SIGN_FLOW_SIZE                  9
+#define ESDT_TRANSFER_FLOW_SIZE            9
+#define BASE_64_INVALID_CHAR               '?'
+#define SC_ARGS_SEPARATOR                  '@'
+#define MAX_ESDT_VALUE_HEX_COUNT           32
+#define INVALID_INDEX                      -1
+#define ESDT_CODE_VALUE_TOO_HIGH           '1'
+#define ESDT_CODE_VALUE_OK                 '2'
+#define ESDT_VALUE_MAX_LENGTH              40
+#define ESDT_TRANSFER_PREFIX               "ESDTTransfer@"
+#define ESDT_VALUE_N_A                     "N/A"
+#define ESDT_VALUE_TOO_LONG                "<value too big to display>"
+#define ESDT_VALUE_HEX_PARSE_ERR           "<value cannot be parsed to hex>"
+#define ESDT_TRANSFER_PREFIX_LENGTH        strlen(ESDT_TRANSFER_PREFIX)
 
 static const char PREPEND[] =
     "\x17"

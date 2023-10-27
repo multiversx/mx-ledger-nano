@@ -9,87 +9,16 @@ on:
   pull_request:
 
 jobs:
-  nano_build:
-    name: Build MultiversX application for NanoS, X and S+
-    strategy:
-      matrix:
-        include:
-          - SDK: "$NANOS_SDK"
-            device: nanos
-          - SDK: "$NANOX_SDK"
-            device: nanox
-          - SDK: "$NANOSP_SDK"
-            device: nanosp
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
+  build_application:
+    name: Build application using the reusable workflow
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_build.yml@v1
+    with:
+      upload_app_binaries_artifact: compiled_app_binaries
 
-    steps:
-      - name: Clone
-        uses: actions/checkout@v3
-
-      - name: Build
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          make BOLOS_SDK=${{ matrix.SDK }}
-          cp bin/app.elf bin/multiversx_${{ matrix.device }}.elf
-
-      - name: Upload app binary
-        uses: actions/upload-artifact@v3
-        with:
-          name: multiversx_binaries
-          path: ./bin/multiversx_${{ matrix.device }}.elf
-          if-no-files-found: error
-
-
-  jobs-e2e-pytest-tests:
-    name: Pytest tests
-
-    needs: nano_build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v3
-
-      - name: Download app binaries
-        uses: actions/download-artifact@v3
-
-      - name: Gather artifacts
-        run: |
-          mkdir tests/elfs
-          mv *_binaries/*.elf tests/elfs
-
-      - name: Install APT dependencies
-        run: sudo apt-get update && sudo apt-get install -y qemu-user-static
-
-      - name: Install Ragger
-        run: |
-          pip install --extra-index-url https://test.pypi.org/simple/ -r tests/requirements.txt
-
-      - name: Run speculos tests
-        run: |
-          pytest -v --tb=short ./tests
-
-
-  job_scan_build:
-    name: Clang Static Analyzer
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v3
-
-      - name: Build with Clang Static Analyzer
-        run: |
-          make clean
-          scan-build --use-cc=clang -analyze-headers -enable-checker security -enable-checker unix -enable-checker valist -o scan-build --status-bugs make default
-
-      - name: Upload scan result
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: scan-build
-          path: scan-build
+  ragger_tests:
+    name: Run ragger tests using the reusable workflow
+    needs: build_application
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_ragger_tests.yml@v1
+    with:
+      download_app_binaries_artifact: compiled_app_binaries
+      test_dir: tests

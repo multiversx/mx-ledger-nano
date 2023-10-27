@@ -9,46 +9,40 @@ This framework allows testing the application on the Speculos emulator or on a r
 
 ```
 pip install --extra-index-url https://test.pypi.org/simple/ -r requirements.txt
-sudo apt-get update && sudo apt-get install qemu-user-static
+sudo apt-get update && sudo apt-get install -y qemu-user-static tesseract-ocr libtesseract-dev
 ```
 
 ### Compile the application
 
 The application to test must be compiled for all required devices.
-You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite`:
+You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder`:
 ```
-docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
-cd app-<appname>/                               # replace <appname> with the name of your app, (eg boilerplate)
-docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ledger-app-builder-lite:latest
-make clean && make BOLOS_SDK=$<device>_SDK      # replace <device> with one of [NANOS, NANOX, NANOSP]
+docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+cd <your app repository>                        # replace <appname> with the name of your app, (eg boilerplate)
+docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder:latest
+make clean && make BOLOS_SDK=$<device>_SDK      # replace <device> with one of [NANOS, NANOX, NANOSP, STAX]
 exit
 ```
 
 ### Run a simple test using the Speculos emulator
 
-Copy the compiled binaries to the `elfs` directory, create the directory if necessary.
-```
-mkdir -p tests/elfs/
-cp bin/app.elf tests/elfs/<appname>_<device>.elf    # replace <device> with one of [nanos, nanox, nanosp]
-                                                    # replace <appname> with the name of your app, (eg boilerplate)
-                                                    # so for example tests/elfs/boilerplate_nanos.elf
-```
+Before running the tests for a device, make sure you've compiled the application for that specific device before. The compilation will prepare the binaries needed by the tests.
 
 You can use the following command to get your first experience with Ragger and Speculos
 ```
-pytest -v --tb=short --nanox --display
+pytest -v --tb=short --device nanox --display
 ```
 Or you can refer to the section `Available pytest options` to configure the options you want to use
 
 
 ### Run a simple test using a real device
 
-The application to test must be loaded on a Ledger device plugged in USB.
-You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite`:
+The application to test must be loaded and started on a Ledger device plugged in USB.
+You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder`:
 ```
-docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-lite:latest
+docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 cd app-<appname>/                                   # replace <appname> with the name of your app, (eg boilerplate)
-docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ledger-app-builder-lite:latest
+docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder:latest
 make clean && make BOLOS_SDK=$<device>_SDK load     # replace <device> with one of [NANOS, NANOX, NANOSP]
 exit
 ```
@@ -56,28 +50,27 @@ exit
 You can use the following command to get your first experience with Ragger and Ledgerwallet on a NANOX.
 Make sure that the device is plugged, unlocked, and that the tested application is open.
 ```
-pytest -v --tb=short --nanox --backend ledgerwallet
+pytest -v --tb=short --device nanox --backend ledgerwallet
 ```
 Or you can refer to the section `Available pytest options` to configure the options you want to use
 
 
 ## Available pytest options
 
-Standard recommended pytest options
+Standard useful pytest options
 ```
     -v              formats the test summary in a readable way
     -s              enable logs for successful tests, on Speculos it will enable app logs if compiled with DEBUG=1
     -k <testname>   only run the tests that contain <testname> in their names
-    --tb=short      in case of errors, formats the testtraceback in a readable way
+    --tb=short      in case of errors, formats the test traceback in a readable way
 ``` 
 
 Custom pytest options
 ```
-    --backend <backend>  run the tests against the backend [speculos, ledgercomm, ledgerwallet]. Speculos is the default
-    --display            on Speculos, enables the display of the app screen using QT
-    --golden_run         on Speculos, screen comparison functions will save the current screen instead of comparing
-    --nanos              run only the test for the nanos device
-    --nanox              run only the test for the nanox device
-    --nanosp             run only the test for the nanosp device
+    --device <device>           run the test on the specified device [nanos,nanox,nanosp,stax,all]. This parameter is mandatory
+    --backend <backend>         run the tests against the backend [speculos, ledgercomm, ledgerwallet]. Speculos is the default
+    --display                   on Speculos, enables the display of the app screen using QT
+    --golden_run                on Speculos, screen comparison functions will save the current screen instead of comparing
+    --log_apdu_file <filepath>  log all apdu exchanges to the file in parameter. The previous file content is erased
 ``` 
 

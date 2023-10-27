@@ -4,6 +4,9 @@
 #include "utils.h"
 #include "ux.h"
 
+// Not applicatble for Stax
+#if !defined(TARGET_STAX)
+
 static unsigned int app_version_ui_button(unsigned int button_mask,
                                           unsigned int button_mask_counter);
 
@@ -97,6 +100,7 @@ static const bagl_element_t app_version_ui[] = {
     },
     {
         {BAGL_ICON, 0x00, 117, 13, 7, 7, 0, 0, 0, 0xFFFFFF, 0x000000, 0, BAGL_GLYPH_ICON_UP},
+        NULL,
     },
 #endif
 };
@@ -118,3 +122,5 @@ static unsigned int app_version_ui_button(unsigned int button_mask,
 void view_app_version() {
     UX_DISPLAY(app_version_ui, NULL);
 }
+
+#endif
