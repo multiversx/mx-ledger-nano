@@ -406,6 +406,19 @@ uint16_t verify_guardian(bool *valid) {
     return MSG_OK;
 }
 
+uint16_t verify_relayer(bool *valid) {
+    if (strncmp(tx_hash_context.current_field, RELAYER_FIELD, strlen(RELAYER_FIELD)) == 0) {
+        if (tx_hash_context.current_value_len >= sizeof(tx_context.relayer)) {
+            return ERR_INVALID_MESSAGE;
+        }
+        memmove(tx_context.relayer,
+                tx_hash_context.current_value,
+                tx_hash_context.current_value_len);
+        *valid = true;
+    }
+    return MSG_OK;
+}
+
 // verifies if the field and value are valid and stores them
 uint16_t process_field(void) {
     if (tx_hash_context.current_field_len == 0 || tx_hash_context.current_value_len == 0) {
@@ -449,6 +462,10 @@ uint16_t process_field(void) {
         return err;
     }
     err = verify_guardian(&valid_field);
+    if (err != MSG_OK) {
+        return err;
+    }
+    err = verify_relayer(&valid_field);
     if (err != MSG_OK) {
         return err;
     }
