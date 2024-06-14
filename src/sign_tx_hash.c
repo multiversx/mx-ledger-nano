@@ -127,9 +127,9 @@ static void start_review(void) {
         if (strlen(tx_context.guardian) > 0) {
             update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
-		if (strlen(tx_context.relayer) > 0) {
-		    update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
-		}
+        if (strlen(tx_context.relayer) > 0) {
+            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
+        }
         update_pair(&pairs_list[step++], "Network", tx_context.network);
     } else {
         update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
@@ -141,9 +141,9 @@ static void start_review(void) {
         if (strlen(tx_context.guardian) > 0) {
             update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
-		if (strlen(tx_context.relayer) > 0) {
-		    update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
-		}
+        if (strlen(tx_context.relayer) > 0) {
+            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
+        }
         update_pair(&pairs_list[step++], "Network", tx_context.network);
     }
 
@@ -310,9 +310,9 @@ static void display_tx_sign_flow() {
     if (strlen(tx_context.guardian) > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_24_step;
     }
-	if (strlen(tx_context.relayer) > 0) {
+    if (strlen(tx_context.relayer) > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_25_step;
-	}
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
@@ -331,9 +331,9 @@ static void display_esdt_flow() {
     if (strlen(tx_context.guardian) > 0) {
         esdt_flow[step++] = &ux_transfer_esdt_flow_31_step;
     }
-	if (strlen(tx_context.relayer) > 0) {
+    if (strlen(tx_context.relayer) > 0) {
         esdt_flow[step++] = &ux_transfer_esdt_flow_32_step;
-	}
+    }
     esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_29_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_30_step;
