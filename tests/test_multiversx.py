@@ -383,8 +383,8 @@ class TestSignTxHash:
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_with_guardian(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"erd1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssycr6th","version":2,"options":2,"data":"test"}'
+    def test_sign_tx_valid_with_guardian_confirmed(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -399,6 +399,96 @@ class TestSignTxHash:
                                                           "Hold to sign",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
+
+    def test_sign_tx_valid_with_guardian_rejected(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Reject",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                                                          [NavInsID.USE_CASE_REVIEW_CONFIRM,
+                                                           NavInsID.USE_CASE_STATUS_DISMISS],
+                                                          "Hold to sign",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+        assert backend.last_async_response.status == Error.USER_DENIED
+
+
+    def test_sign_tx_valid_with_relayer_confirmed(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                                                          [NavInsID.USE_CASE_REVIEW_CONFIRM,
+                                                           NavInsID.USE_CASE_STATUS_DISMISS],
+                                                          "Hold to sign",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+
+    def test_sign_tx_valid_with_relayer_rejected(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Reject",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                                                          [NavInsID.USE_CASE_REVIEW_CONFIRM,
+                                                           NavInsID.USE_CASE_STATUS_DISMISS],
+                                                          "Hold to sign",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+
+
+    def test_sign_tx_valid_with_relayer_and_guardian_confirmed(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                                                          [NavInsID.USE_CASE_REVIEW_CONFIRM,
+                                                           NavInsID.USE_CASE_STATUS_DISMISS],
+                                                          "Hold to sign",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+
+
+    def test_sign_tx_valid_with_relayer_and_guardian_rejected(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Reject",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                                                          [NavInsID.USE_CASE_REVIEW_CONFIRM,
+                                                           NavInsID.USE_CASE_STATUS_DISMISS],
+                                                          "Hold to sign",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+        assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_esdt_transfer(self, backend, navigator, test_name):
         token_ticker = "BUSD"
