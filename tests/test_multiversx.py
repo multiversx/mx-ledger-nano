@@ -402,6 +402,7 @@ class TestSignTxHash:
 
     def test_sign_tx_valid_with_guardian_rejected(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -438,6 +439,7 @@ class TestSignTxHash:
 
     def test_sign_tx_valid_with_relayer_rejected(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -474,6 +476,7 @@ class TestSignTxHash:
 
     def test_sign_tx_valid_with_relayer_and_guardian_rejected(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,

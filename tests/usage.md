@@ -42,7 +42,7 @@ You can use for this the container `ghcr.io/ledgerhq/ledger-app-builder/ledger-a
 ```
 docker pull ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 cd app-<appname>/                                   # replace <appname> with the name of your app, (eg boilerplate)
-docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder:latest
+docker run --user "$(id -u)":"$(id -g)" --rm -ti -v "$(realpath .):/app" --privileged -v "/dev/bus/usb:/dev/bus/usb" ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 make clean && make BOLOS_SDK=$<device>_SDK load     # replace <device> with one of [NANOS, NANOX, NANOSP]
 exit
 ```
