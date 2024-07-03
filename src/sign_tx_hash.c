@@ -29,17 +29,21 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
     cx_ecfp_private_key_t private_key;
     bool success = true;
     int ret_code = 0;
+    int err;
 
     if (!get_private_key(bip32_account, bip32_address_index, &private_key)) {
         return false;
     }
 
-    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+    err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                      CX_LAST,
                      data_buffer,
                      0,
                      tx_hash_context.hash,
                      32);
+    if (err != CX_OK) {
+        success = false;
+    }
     ret_code = cx_eddsa_sign_no_throw(&private_key,
                                       CX_SHA512,
                                       tx_hash_context.hash,
@@ -358,7 +362,10 @@ void init_tx_context() {
     tx_context.guardian[0] = 0;
     tx_context.relayer[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+    int err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+    if (err != CX_OK) {
+        THROW(ERR_INVALID_ARGUMENTS);
+    }
 
     app_state = APP_STATE_IDLE;
 }
@@ -367,6 +374,8 @@ void handle_sign_tx_hash(uint8_t p1,
                          uint8_t *data_buffer,
                          uint16_t data_length,
                          volatile unsigned int *flags) {
+
+
     if (p1 == P1_FIRST) {
         init_tx_context();
         app_state = APP_STATE_SIGNING_TX;
@@ -379,9 +388,14 @@ void handle_sign_tx_hash(uint8_t p1,
         }
     }
 
-    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
-    uint16_t err = parse_data(data_buffer, data_length);
-    if (err != MSG_OK) {
+    int err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    if (err != CX_OK) {
+        init_tx_context();
+        THROW(ERR_INVALID_ARGUMENTS);
+    }
+
+    uint16_t parse_err = parse_data(data_buffer, data_length);
+    if (parse_err != MSG_OK) {
         init_tx_context();
         THROW(err);
     }

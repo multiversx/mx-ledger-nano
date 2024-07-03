@@ -300,6 +300,8 @@ void handle_auth_token(uint8_t p1,
         the account and address indexes, alongside token length are computed in
         the first bulk, while the entire token can come in multiple bulks
     */
+    int err;
+
     if (p1 == P1_FIRST) {
         clean_token_fields();
         token_auth_context.token[0] = '\0';
@@ -336,33 +338,46 @@ void handle_auth_token(uint8_t p1,
         update_token_display_data(data_buffer, data_length);
 
         // initialize hash with the constant string to prepend
-        cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
-        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+        err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+        if (err != CX_OK) {
+            THROW(ERR_INVALID_ARGUMENTS);
+        }
+
+        err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                          0,
                          (uint8_t *) PREPEND,
                          sizeof(PREPEND) - 1,
                          NULL,
                          0);
+        if (err != CX_OK) {
+            THROW(ERR_INVALID_ARGUMENTS);
+        }
 
         // convert message length to string and store it in the variable `tmp`
         uint32_t full_message_len = token_auth_context.len + BECH32_ADDRESS_LEN;
         uint32_t_to_char_array(full_message_len, token_length_str);
 
         // add the message length to the hash
-        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+        err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                          0,
                          (uint8_t *) token_length_str,
                          strlen(token_length_str),
                          NULL,
                          0);
+        if (err != CX_OK) {
+            THROW(ERR_INVALID_ARGUMENTS);
+        }
 
         // add the message length to the hash
-        cx_hash_no_throw((cx_hash_t *) &sha3_context,
+        err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                          0,
                          (uint8_t *) token_auth_context.address,
                          strlen(token_auth_context.address),
                          NULL,
                          0);
+        if (err != CX_OK) {
+            THROW(ERR_INVALID_ARGUMENTS);
+        }
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
@@ -376,7 +391,10 @@ void handle_auth_token(uint8_t p1,
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    if (err != CX_OK) {
+        THROW(ERR_INVALID_ARGUMENTS);
+    }
 
     token_auth_context.len -= data_length;
     if (token_auth_context.len != 0) {
@@ -384,12 +402,15 @@ void handle_auth_token(uint8_t p1,
     }
 
     // finalize hash and compute it
-    cx_hash_no_throw((cx_hash_t *) &sha3_context,
+    err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                      CX_LAST,
                      data_buffer,
                      0,
                      token_auth_context.hash,
                      HASH_LEN);
+    if (err != CX_OK) {
+        THROW(ERR_INVALID_ARGUMENTS);
+    }
 
     // sign the hash
     if (!sign_auth_token()) {
