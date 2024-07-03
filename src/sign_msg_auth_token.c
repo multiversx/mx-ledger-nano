@@ -344,11 +344,11 @@ void handle_auth_token(uint8_t p1,
         }
 
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) PREPEND,
-                         sizeof(PREPEND) - 1,
-                         NULL,
-                         0);
+                               0,
+                               (uint8_t *) PREPEND,
+                               sizeof(PREPEND) - 1,
+                               NULL,
+                               0);
         if (err != CX_OK) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
@@ -359,22 +359,22 @@ void handle_auth_token(uint8_t p1,
 
         // add the message length to the hash
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) token_length_str,
-                         strlen(token_length_str),
-                         NULL,
-                         0);
+                               0,
+                               (uint8_t *) token_length_str,
+                               strlen(token_length_str),
+                               NULL,
+                               0);
         if (err != CX_OK) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
 
         // add the message length to the hash
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) token_auth_context.address,
-                         strlen(token_auth_context.address),
-                         NULL,
-                         0);
+                               0,
+                               (uint8_t *) token_auth_context.address,
+                               strlen(token_auth_context.address),
+                               NULL,
+                               0);
         if (err != CX_OK) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
@@ -403,11 +403,11 @@ void handle_auth_token(uint8_t p1,
 
     // finalize hash and compute it
     err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                     CX_LAST,
-                     data_buffer,
-                     0,
-                     token_auth_context.hash,
-                     HASH_LEN);
+                           CX_LAST,
+                           data_buffer,
+                           0,
+                           token_auth_context.hash,
+                           HASH_LEN);
     if (err != CX_OK) {
         THROW(ERR_INVALID_ARGUMENTS);
     }

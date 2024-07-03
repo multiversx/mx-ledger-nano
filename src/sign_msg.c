@@ -164,11 +164,11 @@ void handle_sign_msg(uint8_t p1,
             THROW(ERR_INVALID_ARGUMENTS);
         }
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) PREPEND,
-                         sizeof(PREPEND) - 1,
-                         NULL,
-                         0);
+                               0,
+                               (uint8_t *) PREPEND,
+                               sizeof(PREPEND) - 1,
+                               NULL,
+                               0);
         if (err != CX_OK) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
@@ -179,11 +179,11 @@ void handle_sign_msg(uint8_t p1,
 
         // add the message length to the hash
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) message_length_str,
-                         strlen(message_length_str),
-                         NULL,
-                         0);
+                               0,
+                               (uint8_t *) message_length_str,
+                               strlen(message_length_str),
+                               NULL,
+                               0);
         if (err != CX_OK) {
             THROW(ERR_INVALID_ARGUMENTS);
         }
@@ -211,11 +211,11 @@ void handle_sign_msg(uint8_t p1,
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
     err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                     CX_LAST,
-                     data_buffer,
-                     0,
-                     msg_context.hash,
-                     HASH_LEN);
+                           CX_LAST,
+                           data_buffer,
+                           0,
+                           msg_context.hash,
+                           HASH_LEN);
     if (err != CX_OK) {
         THROW(ERR_INVALID_ARGUMENTS);
     }

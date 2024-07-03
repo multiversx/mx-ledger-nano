@@ -36,11 +36,11 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
     }
 
     err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                     CX_LAST,
-                     data_buffer,
-                     0,
-                     tx_hash_context.hash,
-                     32);
+                           CX_LAST,
+                           data_buffer,
+                           0,
+                           tx_hash_context.hash,
+                           32);
     if (err != CX_OK) {
         success = false;
     }
@@ -374,8 +374,6 @@ void handle_sign_tx_hash(uint8_t p1,
                          uint8_t *data_buffer,
                          uint16_t data_length,
                          volatile unsigned int *flags) {
-
-
     if (p1 == P1_FIRST) {
         init_tx_context();
         app_state = APP_STATE_SIGNING_TX;

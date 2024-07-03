@@ -20,19 +20,19 @@ static bool verify_signature(const uint8_t *data_buffer,
     }
 
     err = cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1,
-                                     LEDGER_SIGNATURE_PUBLIC_KEY,
-                                     sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
-                                     &tokenKey);
+                                           LEDGER_SIGNATURE_PUBLIC_KEY,
+                                           sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
+                                           &tokenKey);
     if (err != CX_OK) {
         return false;
     }
 
     int signature_size = data_length - required_len;
     return cx_ecdsa_verify_no_throw(&tokenKey,
-                           hash,
-                           32,
-                           data_buffer + required_len,
-                           signature_size);
+                                    hash,
+                                    32,
+                                    data_buffer + required_len,
+                                    signature_size);
 }
 #endif
 
