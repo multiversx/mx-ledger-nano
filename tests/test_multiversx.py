@@ -27,7 +27,6 @@ from pathlib import Path
 
 from ragger.navigator import NavInsID, NavIns
 from ragger.backend.interface import RAPDU, RaisePolicy
-from ragger.error import ExceptionRAPDU
 from .utils import get_version_from_makefile
 
 CLA = 0xED
