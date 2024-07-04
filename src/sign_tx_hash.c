@@ -364,7 +364,7 @@ void init_tx_context() {
     tx_hash_context.status = JSON_IDLE;
     int err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
     if (err != CX_OK) {
-        THROW(ERR_INVALID_ARGUMENTS);
+        THROW(err);
     }
 
     app_state = APP_STATE_IDLE;
@@ -389,13 +389,13 @@ void handle_sign_tx_hash(uint8_t p1,
     int err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     if (err != CX_OK) {
         init_tx_context();
-        THROW(ERR_INVALID_ARGUMENTS);
+        THROW(err);
     }
 
     uint16_t parse_err = parse_data(data_buffer, data_length);
     if (parse_err != MSG_OK) {
         init_tx_context();
-        THROW(err);
+        THROW(parse_err);
     }
 
     if (tx_hash_context.status != JSON_IDLE) {

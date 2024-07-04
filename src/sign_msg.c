@@ -161,7 +161,7 @@ void handle_sign_msg(uint8_t p1,
         // initialize hash with the constant string to prepend
         err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
         if (err != CX_OK) {
-            THROW(ERR_INVALID_ARGUMENTS);
+            THROW(err);
         }
         err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
                                0,
@@ -170,7 +170,7 @@ void handle_sign_msg(uint8_t p1,
                                NULL,
                                0);
         if (err != CX_OK) {
-            THROW(ERR_INVALID_ARGUMENTS);
+            THROW(err);
         }
 
         // convert message length to string and store it in the variable
@@ -185,7 +185,7 @@ void handle_sign_msg(uint8_t p1,
                                NULL,
                                0);
         if (err != CX_OK) {
-            THROW(ERR_INVALID_ARGUMENTS);
+            THROW(err);
         }
     } else {
         if (p1 != P1_MORE) {
@@ -202,7 +202,7 @@ void handle_sign_msg(uint8_t p1,
     // add the received message part to the hash and decrease the remaining length
     err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     if (err != CX_OK) {
-        THROW(ERR_INVALID_ARGUMENTS);
+        THROW(err);
     }
     msg_context.len -= data_length;
     if (msg_context.len != 0) {
@@ -217,7 +217,7 @@ void handle_sign_msg(uint8_t p1,
                            msg_context.hash,
                            HASH_LEN);
     if (err != CX_OK) {
-        THROW(ERR_INVALID_ARGUMENTS);
+        THROW(err);
     }
 
     convert_to_hex_str(msg_context.strhash,
