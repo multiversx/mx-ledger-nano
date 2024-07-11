@@ -35,11 +35,11 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
     }
 
     ret_code = cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                           CX_LAST,
-                           data_buffer,
-                           0,
-                           tx_hash_context.hash,
-                           32);
+                                CX_LAST,
+                                data_buffer,
+                                0,
+                                tx_hash_context.hash,
+                                32);
     if (ret_code != CX_OK) {
         success = false;
     }
