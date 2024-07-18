@@ -123,7 +123,7 @@ class TestMenu:
         elif backend.firmware.device == "stax":
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
                        NavInsID.USE_CASE_SETTINGS_NEXT,
-                       NavInsID.USE_CASE_SETTINGS_PREVIOUS,
+                       NavInsID.SWIPE_CENTER_TO_RIGHT,
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
                        NavInsID.USE_CASE_HOME_QUIT]
 
@@ -217,8 +217,8 @@ class TestGetAddr:
                                                           test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [
-                    NavInsID.USE_CASE_REVIEW_TAP,
-                    NavIns(NavInsID.TOUCH, (200, 346)),
+                    NavInsID.SWIPE_CENTER_TO_LEFT,
+                    NavIns(NavInsID.TOUCH, (64, 520)),
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_EXIT_QR,
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CONFIRM,
                     NavInsID.USE_CASE_STATUS_DISMISS]
@@ -239,7 +239,7 @@ class TestGetAddr:
                                                           test_name)
             elif backend.firmware.device == "stax":
                 nav_ins = [
-                    NavInsID.USE_CASE_REVIEW_TAP,
+                    NavInsID.SWIPE_CENTER_TO_LEFT,
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL,
                     NavInsID.USE_CASE_STATUS_DISMISS]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
@@ -277,14 +277,14 @@ class TestSignMsg:
                                                           test_name)
             elif backend.firmware.device == "stax":
                 # Navigate a bit through rejection screens before confirming
-                nav_ins = [NavInsID.USE_CASE_REVIEW_REJECT,
+                nav_ins = [NavIns(NavInsID.TOUCH,(80, 625)),
                            NavInsID.USE_CASE_CHOICE_REJECT,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_PREVIOUS,
-                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.USE_CASE_VIEW_DETAILS_PREVIOUS,
+                           NavIns(NavInsID.TOUCH,(80, 625)),
                            NavInsID.USE_CASE_CHOICE_REJECT,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -300,8 +300,8 @@ class TestSignMsg:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -320,7 +320,7 @@ class TestSignMsg:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -347,7 +347,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -365,8 +365,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -385,9 +385,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -401,7 +400,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -419,8 +418,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -438,7 +437,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -456,8 +455,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -475,7 +474,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -493,8 +492,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -531,9 +530,8 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -566,9 +564,9 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -588,7 +586,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -606,7 +604,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -623,7 +621,7 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -672,7 +670,7 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -695,8 +693,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                navigator.navigate_until_text_and_compare(NavInsID.USE_CASE_REVIEW_TAP,
-                                                          [NavInsID.USE_CASE_REVIEW_REJECT,
+                navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
+                                                          [NavIns(NavInsID.TOUCH,(80, 625)),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -719,8 +717,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -739,8 +737,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -760,9 +758,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -782,8 +779,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -803,8 +800,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -824,9 +821,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -846,8 +842,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
@@ -867,8 +863,8 @@ class TestSignMsgAuthToken:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
             elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.USE_CASE_REVIEW_TAP,
-                           NavInsID.USE_CASE_REVIEW_TAP,
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
