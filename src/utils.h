@@ -25,7 +25,7 @@ void convert_to_hex_str(char* destination,
                         const uint8_t* source,
                         size_t source_size);
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 void nbgl_reject_message_choice(void);
 void nbgl_reject_transaction_choice(void);

@@ -91,7 +91,7 @@ static bool is_esdt_transfer() {
            next_char_after_identifier_is_at_separator && same_chainid;
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 static nbgl_layoutTagValueList_t layout;
 static nbgl_layoutTagValue_t pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
@@ -419,7 +419,7 @@ void handle_sign_tx_hash(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
     ui_sign_tx_hash_nbgl();
 #else
     if (should_display_esdt_flow) {

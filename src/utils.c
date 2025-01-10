@@ -345,7 +345,7 @@ int compute_token_display(const char* received_origin,
     return build_authorizing_message(display, origin_display, ttl_display, max_display_size);
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 static void message_rejection(void) {
     send_response(0, false, false);
