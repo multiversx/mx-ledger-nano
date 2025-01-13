@@ -40,6 +40,8 @@ ifeq ($(TARGET_NAME),TARGET_NANOS)
     ICONNAME = icons/nanos_app_multiversx.gif
 else ifeq ($(TARGET_NAME),TARGET_STAX)
     ICONNAME = icons/stax_app_multiversx.gif
+else ifeq ($(TARGET_NAME),TARGET_FLEX)
+    ICONNAME = icons/flex_app_multiversx.gif
 else
     ICONNAME = icons/nanox_app_multiversx.gif
 endif
