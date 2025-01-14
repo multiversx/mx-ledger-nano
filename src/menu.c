@@ -76,9 +76,9 @@ static void ui_menu_main(void) {
         G_switches[CONTRACT_DATA_IDX].initState = OFF_STATE;
     } else {
         G_switches[CONTRACT_DATA_IDX].initState = ON_STATE;
-    }
-    
-    initialize_settings_contents();
+         }
+
+     initialize_settings_contents();
 
     nbgl_useCaseHomeAndSettings(APPNAME,                        // const char               *appName
                                 &C_icon_multiversx_logo_64x64,  // nbgl_icon_details_t      *appIcon
@@ -90,7 +90,7 @@ static void ui_menu_main(void) {
                                 quit_app_callback    // nbgl_callback_t           quitCallback
     );
 
-}    
+}
 
 #else
 
