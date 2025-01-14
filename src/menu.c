@@ -89,6 +89,7 @@ static void ui_menu_main(void) {
                                 NULL,                // nbgl_homeAction_t        *action
                                 quit_app_callback    // nbgl_callback_t           quitCallback
     );
+
 }    
 
 #else
