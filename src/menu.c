@@ -80,18 +80,16 @@ static void ui_menu_main(void) {
     
     initialize_settings_contents();
 
-    
-    nbgl_useCaseHomeAndSettings(
-        APPNAME,                            // const char               *appName
-        &C_icon_multiversx_logo_64x64,      // nbgl_icon_details_t      *appIcon
-        NULL,                               // char                     *tagline
-        INIT_HOME_PAGE,                     // uint8_t                   initSettingPage
-        &settings_contents,                 // nbgl_genericContents_t   *settingContents
-        &app_info,                          // nbgl_contentInfoList_t   *infosList
-        NULL,                               // nbgl_homeAction_t        *action
-        quit_app_callback                   // nbgl_callback_t           quitCallback
+    nbgl_useCaseHomeAndSettings(APPNAME,                        // const char               *appName
+                                &C_icon_multiversx_logo_64x64,  // nbgl_icon_details_t      *appIcon
+                                NULL,                           // char                     *tagline
+                                INIT_HOME_PAGE,      // uint8_t                   initSettingPage
+                                &settings_contents,  // nbgl_genericContents_t   *settingContents
+                                &app_info,           // nbgl_contentInfoList_t   *infosList
+                                NULL,                // nbgl_homeAction_t        *action
+                                quit_app_callback    // nbgl_callback_t           quitCallback
     );
-}
+}    
 
 #else
 

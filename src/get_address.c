@@ -44,18 +44,13 @@ static void callback_choice(bool match) {
     }
 }
 
-                               
-                               
-                               
-                               
-                               
 static void ui_get_public_key_nbgl(void) {
-    nbgl_useCaseAddressReview(address,                          //const char                        *address
-                              NULL,                             //const nbgl_contentTagValueList_t  *additionalTagValueList
-                              &C_icon_multiversx_logo_64x64,    //const nbgl_icon_details_t         *icon
-                              "Verify " APPNAME "\naddress",    //const char                        *reviewTitle
-                              NULL,                             //const char                        *reviewSubTitle
-                              callback_choice);                 //nbgl_choiceCallback_t              choiceCallback
+    nbgl_useCaseAddressReview(address,  // const char *address
+                              NULL,     // const nbgl_contentTagValueList_t  *additionalTagValueList
+                              &C_icon_multiversx_logo_64x64,  // const nbgl_icon_details_t *icon
+                              "Verify " APPNAME "\naddress",  // const char *reviewTitle
+                              NULL,  // const char *reviewSubTitle
+                              callback_choice);  // nbgl_choiceCallback_t choiceCallback
 }
 
 #else
