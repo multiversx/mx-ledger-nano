@@ -44,17 +44,13 @@ static void callback_choice(bool match) {
     }
 }
 
-static void display_addr(void) {
-    nbgl_useCaseAddressConfirmation(address, callback_choice);
-}
-
 static void ui_get_public_key_nbgl(void) {
-    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                            "Verify " APPNAME "\naddress",
-                            NULL,
-                            "Cancel",
-                            display_addr,
-                            address_verification_cancelled);
+    nbgl_useCaseAddressReview(address,
+                              NULL,
+                              &C_icon_multiversx_logo_64x64,
+                              "Verify " APPNAME "\naddress",
+                              NULL,
+                              callback_choice);
 }
 
 #else

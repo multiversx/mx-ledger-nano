@@ -25,27 +25,9 @@ enum {
 };
 
 #define SETTINGS_PAGE_NUMBER 2
-static bool settings_nav_callback(uint8_t page, nbgl_pageContent_t* content) {
-    if (page == 0) {
-        content->type = INFOS_LIST;
-        content->infosList.nbInfos = ARRAY_COUNT(info_types);
-        content->infosList.infoTypes = info_types;
-        content->infosList.infoContents = info_contents;
-    } else if (page == 1) {
-        content->type = SWITCHES_LIST;
-        content->switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
-        content->switchesList.switches = G_switches;
-    } else {
-        return false;
-    }
 
-    return true;
-}
-
-static void ui_menu_main(void);
-static void ui_menu_settings(void);
-
-static void settings_controls_callback(int token, uint8_t index) {
+static void settings_controls_callback(int token, uint8_t index, int action) {
+    UNUSED(action);
     uint8_t new_setting;
     UNUSED(index);
     switch (token) {
@@ -64,7 +46,28 @@ static void settings_controls_callback(int token, uint8_t index) {
     }
 }
 
-static void ui_menu_settings(void) {
+static void ui_menu_main(void);
+
+nbgl_contentInfoList_t app_info;
+nbgl_content_t settings_page_content;
+nbgl_genericContents_t settings_contents;
+
+static void initialize_settings_contents(void) {
+    app_info.nbInfos = ARRAY_COUNT(info_types);
+    app_info.infoTypes = info_types;
+    app_info.infoContents = info_contents;
+
+    settings_page_content.type = SWITCHES_LIST;
+    settings_page_content.content.switchesList.nbSwitches = NB_SETTINGS_SWITCHES;
+    settings_page_content.content.switchesList.switches = G_switches;
+    settings_page_content.contentActionCallback = settings_controls_callback;
+
+    settings_contents.callbackCallNeeded = false;
+    settings_contents.contentsList = &settings_page_content;
+    settings_contents.nbContents = NB_SETTINGS_SWITCHES;
+}
+
+static void ui_menu_main(void) {
     G_switches[CONTRACT_DATA_IDX].text = "Contract data";
     G_switches[CONTRACT_DATA_IDX].subText = "Enable contract data";
     G_switches[CONTRACT_DATA_IDX].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
@@ -74,22 +77,17 @@ static void ui_menu_settings(void) {
     } else {
         G_switches[CONTRACT_DATA_IDX].initState = ON_STATE;
     }
-    nbgl_useCaseSettings(APPNAME " settings",
-                         0,
-                         SETTINGS_PAGE_NUMBER,
-                         false,
-                         ui_menu_main,
-                         settings_nav_callback,
-                         settings_controls_callback);
-}
 
-static void ui_menu_main(void) {
-    nbgl_useCaseHome(APPNAME,
-                     &C_icon_multiversx_logo_64x64,
-                     NULL,
-                     true,
-                     ui_menu_settings,
-                     quit_app_callback);
+    initialize_settings_contents();
+
+    nbgl_useCaseHomeAndSettings(APPNAME,
+                                &C_icon_multiversx_logo_64x64,
+                                NULL,
+                                INIT_HOME_PAGE,
+                                &settings_contents,
+                                &app_info,
+                                NULL,
+                                quit_app_callback);
 }
 
 #else
