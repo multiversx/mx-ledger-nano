@@ -87,8 +87,7 @@ static void ui_menu_main(void) {
                                 &settings_contents,
                                 &app_info,
                                 NULL,
-                                quit_app_callback
-    );
+                                quit_app_callback);
 }
 
 #else
