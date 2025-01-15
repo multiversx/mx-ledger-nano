@@ -2,6 +2,7 @@
 #define _SIGN_TX_HASH_H_
 
 #include <stdint.h>
+#include "constants.h"
 
 #define NONCE_FIELD             "nonce"
 #define VALUE_FIELD             "value"
@@ -19,7 +20,7 @@
 #define RELAYER_FIELD           "relayer"
 
 #define MAX_FIELD_LEN 16
-#define MAX_VALUE_LEN 128UL
+#define MAX_VALUE_LEN (MAX_DISPLAY_DATA_SIZE * 2)
 
 typedef enum parser_status_e {
     JSON_IDLE,
