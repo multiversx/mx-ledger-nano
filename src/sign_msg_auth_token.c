@@ -190,7 +190,8 @@ static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_leng
             if (token_auth_context.dot_count == 1) {
                 // ignore the second part of the token since we are not interested in it
                 continue;
-            }
+            }//#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+
 
             size_t buffer_len = strlen(token_auth_context.auth_token_buffer);
 
