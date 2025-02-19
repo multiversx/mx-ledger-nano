@@ -192,7 +192,6 @@ static void handle_auth_token_data(uint8_t const *data_buffer, uint8_t data_leng
                 continue;
             }
 
-
             size_t buffer_len = strlen(token_auth_context.auth_token_buffer);
 
             if (buffer_len >= AUTH_TOKEN_ENCODED_ORIGIN_MAX_SIZE - 2) {
