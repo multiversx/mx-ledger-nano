@@ -244,14 +244,10 @@ static void update_token_display_data(const uint8_t *data_buffer, const uint8_t 
 
     // On Nano devices the output can be truncated if needed to fit the screen
     // On Stax device the truncating can not happen as the array is bigger than max uint8_t
-    // Keep the check but flag it to remove the compilation warning
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
     if (data_length >= AUTH_TOKEN_DISPLAY_MAX_SIZE) {
         num_chars_to_show = AUTH_TOKEN_DISPLAY_MAX_SIZE;
         should_append_ellipsis = true;
     }
-#pragma GCC diagnostic pop
 
     memmove(token_auth_context.token, data_buffer, num_chars_to_show);
     token_auth_context.token[num_chars_to_show] = '\0';
