@@ -145,9 +145,10 @@ void handle_sign_msg(uint8_t p1,
        the message length is computed in the first bulk, while the entire message
        can come in multiple bulks
    */
+    int err;
+
     if (p1 == P1_FIRST) {
         char message_length_str[11];
-
         // first 4 bytes from data_buffer should be the message length (big endian
         // uint32)
         if (data_length < 4) {
@@ -158,25 +159,34 @@ void handle_sign_msg(uint8_t p1,
         data_buffer += 4;
         data_length -= 4;
         // initialize hash with the constant string to prepend
-        cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
-        cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) PREPEND,
-                         sizeof(PREPEND) - 1,
-                         NULL,
-                         0);
+        err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+        if (err != CX_OK) {
+            THROW(err);
+        }
+        err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                               0,
+                               (uint8_t *) PREPEND,
+                               sizeof(PREPEND) - 1,
+                               NULL,
+                               0);
+        if (err != CX_OK) {
+            THROW(err);
+        }
 
         // convert message length to string and store it in the variable
         // `message_length_str`
         uint32_t_to_char_array(msg_context.len, message_length_str);
 
         // add the message length to the hash
-        cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                         0,
-                         (uint8_t *) message_length_str,
-                         strlen(message_length_str),
-                         NULL,
-                         0);
+        err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                               0,
+                               (uint8_t *) message_length_str,
+                               strlen(message_length_str),
+                               NULL,
+                               0);
+        if (err != CX_OK) {
+            THROW(err);
+        }
     } else {
         if (p1 != P1_MORE) {
             THROW(ERR_INVALID_P1);
@@ -190,19 +200,26 @@ void handle_sign_msg(uint8_t p1,
     }
 
     // add the received message part to the hash and decrease the remaining length
-    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    if (err != CX_OK) {
+        THROW(err);
+    }
     msg_context.len -= data_length;
     if (msg_context.len != 0) {
         THROW(MSG_OK);
     }
 
     // finalize hash, compute it and store it in `msg_context.strhash` for display
-    cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                     CX_LAST,
-                     data_buffer,
-                     0,
-                     msg_context.hash,
-                     HASH_LEN);
+    err = cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                           CX_LAST,
+                           data_buffer,
+                           0,
+                           msg_context.hash,
+                           HASH_LEN);
+    if (err != CX_OK) {
+        THROW(err);
+    }
+
     convert_to_hex_str(msg_context.strhash,
                        sizeof(msg_context.strhash),
                        msg_context.hash,

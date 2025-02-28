@@ -17,6 +17,7 @@ typedef struct {
     char esdt_value[MAX_ESDT_VALUE_HEX_COUNT + PRETTY_SIZE];
     char network[8];
     char guardian[FULL_ADDRESS_LENGTH];
+    char relayer[FULL_ADDRESS_LENGTH];
 } tx_context_t;
 
 extern tx_context_t tx_context;

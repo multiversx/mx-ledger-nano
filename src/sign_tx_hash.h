@@ -16,6 +16,7 @@
 #define SENDER_USERNAME_FIELD   "senderUsername"
 #define RECEIVER_USERNAME_FIELD "receiverUsername"
 #define GUARDIAN_ADDR_FIELD     "guardian"
+#define RELAYER_FIELD           "relayer"
 
 #define MAX_FIELD_LEN 16
 #define MAX_VALUE_LEN 128UL

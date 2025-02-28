@@ -11,23 +11,28 @@ static bool verify_signature(const uint8_t *data_buffer,
     uint8_t hash[HASH_LEN];
     cx_sha256_t sha256;
     cx_ecfp_public_key_t tokenKey;
+    int err;
 
     cx_sha256_init(&sha256);
-    cx_hash_no_throw((cx_hash_t *) &sha256, CX_LAST, data_buffer, required_len, hash, 32);
+    err = cx_hash_no_throw((cx_hash_t *) &sha256, CX_LAST, data_buffer, required_len, hash, 32);
+    if (err != CX_OK) {
+        return false;
+    }
 
-    cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1,
-                                     LEDGER_SIGNATURE_PUBLIC_KEY,
-                                     sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
-                                     &tokenKey);
+    err = cx_ecfp_init_public_key_no_throw(CX_CURVE_256K1,
+                                           LEDGER_SIGNATURE_PUBLIC_KEY,
+                                           sizeof(LEDGER_SIGNATURE_PUBLIC_KEY),
+                                           &tokenKey);
+    if (err != CX_OK) {
+        return false;
+    }
 
     int signature_size = data_length - required_len;
-    return cx_ecdsa_verify(&tokenKey,
-                           CX_LAST,
-                           CX_SHA256,
-                           hash,
-                           32,
-                           data_buffer + required_len,
-                           signature_size);
+    return cx_ecdsa_verify_no_throw(&tokenKey,
+                                    hash,
+                                    32,
+                                    data_buffer + required_len,
+                                    signature_size);
 }
 #endif
 

@@ -34,12 +34,15 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
         return false;
     }
 
-    cx_hash_no_throw((cx_hash_t *) &sha3_context,
-                     CX_LAST,
-                     data_buffer,
-                     0,
-                     tx_hash_context.hash,
-                     32);
+    ret_code = cx_hash_no_throw((cx_hash_t *) &sha3_context,
+                                CX_LAST,
+                                data_buffer,
+                                0,
+                                tx_hash_context.hash,
+                                32);
+    if (ret_code != CX_OK) {
+        success = false;
+    }
     ret_code = cx_eddsa_sign_no_throw(&private_key,
                                       CX_SHA512,
                                       tx_hash_context.hash,
@@ -91,7 +94,7 @@ static bool is_esdt_transfer() {
 #if defined(TARGET_STAX)
 
 static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t pairs_list[6];  // 6 info max for ESDT and 6 info max for EGLD
+static nbgl_layoutTagValue_t pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\n" APPNAME " network?",
@@ -127,6 +130,9 @@ static void start_review(void) {
         if (strlen(tx_context.guardian) > 0) {
             update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
         }
+        if (strlen(tx_context.relayer) > 0) {
+            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
+        }
         update_pair(&pairs_list[step++], "Network", tx_context.network);
     } else {
         update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
@@ -137,6 +143,9 @@ static void start_review(void) {
         }
         if (strlen(tx_context.guardian) > 0) {
             update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
+        }
+        if (strlen(tx_context.relayer) > 0) {
+            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
         }
         update_pair(&pairs_list[step++], "Network", tx_context.network);
     }
@@ -207,6 +216,12 @@ UX_STEP_NOCB(ux_transfer_esdt_flow_31_step,
                  .title = "Guardian",
                  .text = tx_context.guardian,
              });
+UX_STEP_NOCB(ux_transfer_esdt_flow_32_step,
+             bnnn_paging,
+             {
+                 .title = "Relayer",
+                 .text = tx_context.relayer,
+             });
 UX_STEP_NOCB(ux_transfer_esdt_flow_28_step,
              bnnn_paging,
              {
@@ -259,6 +274,12 @@ UX_STEP_NOCB(ux_sign_tx_hash_flow_24_step,
                  .title = "Guardian",
                  .text = tx_context.guardian,
              });
+UX_STEP_NOCB(ux_sign_tx_hash_flow_25_step,
+             bnnn_paging,
+             {
+                 .title = "Relayer",
+                 .text = tx_context.relayer,
+             });
 UX_STEP_NOCB(ux_sign_tx_hash_flow_21_step,
              bnnn_paging,
              {
@@ -292,6 +313,9 @@ static void display_tx_sign_flow() {
     if (strlen(tx_context.guardian) > 0) {
         tx_flow[step++] = &ux_sign_tx_hash_flow_24_step;
     }
+    if (strlen(tx_context.relayer) > 0) {
+        tx_flow[step++] = &ux_sign_tx_hash_flow_25_step;
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
@@ -309,6 +333,9 @@ static void display_esdt_flow() {
     esdt_flow[step++] = &ux_transfer_esdt_flow_27_step;
     if (strlen(tx_context.guardian) > 0) {
         esdt_flow[step++] = &ux_transfer_esdt_flow_31_step;
+    }
+    if (strlen(tx_context.relayer) > 0) {
+        esdt_flow[step++] = &ux_transfer_esdt_flow_32_step;
     }
     esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_29_step;
@@ -332,8 +359,12 @@ void init_tx_context() {
     tx_context.esdt_value[0] = 0;
     tx_context.network[0] = 0;
     tx_context.guardian[0] = 0;
+    tx_context.relayer[0] = 0;
     tx_hash_context.status = JSON_IDLE;
-    cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+    int err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
+    if (err != CX_OK) {
+        THROW(err);
+    }
 
     app_state = APP_STATE_IDLE;
 }
@@ -354,11 +385,16 @@ void handle_sign_tx_hash(uint8_t p1,
         }
     }
 
-    cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
-    uint16_t err = parse_data(data_buffer, data_length);
-    if (err != MSG_OK) {
+    int err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
+    if (err != CX_OK) {
         init_tx_context();
         THROW(err);
+    }
+
+    uint16_t parse_err = parse_data(data_buffer, data_length);
+    if (parse_err != MSG_OK) {
+        init_tx_context();
+        THROW(parse_err);
     }
 
     if (tx_hash_context.status != JSON_IDLE) {
