@@ -2,11 +2,11 @@ name: Compilation & tests
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-      - develop
-  pull_request:
+  # push:
+  #   branches:
+  #     - master
+  #     - develop
+  # pull_request:
 
 jobs:
   build_application:
