@@ -415,8 +415,7 @@ class TestSignTxHash:
             elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
-                           *([NavInsID.SWIPE_CENTER_TO_LEFT]
-                             if backend.firmware.device == "flex" else []),
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT] if backend.firmware.device == "flex" else []),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(
                     ROOT_SCREENSHOT_PATH, test_name, nav_ins)
