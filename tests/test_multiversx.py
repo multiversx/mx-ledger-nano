@@ -182,7 +182,6 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK]
         elif backend.firmware.device in ["stax", "flex"]:
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
-                       NavInsID.USE_CASE_SETTINGS_NEXT,
                        NavIns(NavInsID.TOUCH, get_screen_coordinates(
                            backend.firmware.device, "enable_contract_data")),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
@@ -201,7 +200,6 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK]
         elif backend.firmware.device in ["stax", "flex"]:
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
-                       NavInsID.USE_CASE_SETTINGS_NEXT,
                        NavIns(NavInsID.TOUCH, get_screen_coordinates(
                            backend.firmware.device, "enable_contract_data")),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
