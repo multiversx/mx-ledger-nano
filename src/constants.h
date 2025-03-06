@@ -58,7 +58,9 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #ifdef HAVE_BAGL
 #define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
 #else
-#define MAX_DISPLAY_DATA_SIZE 256UL  // must be multiple of 4
+// must be multiple of 4
+// must be <= MAX_VALUE_LEN
+#define MAX_DISPLAY_DATA_SIZE 128UL
 #endif
 #define DATA_SIZE_LEN                      17
 #define MAX_CHAINID_LEN                    4
