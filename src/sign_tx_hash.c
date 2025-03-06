@@ -6,6 +6,9 @@
 #include "utils.h"
 #include "ux.h"
 #include <uint256.h>
+#include <ctype.h>
+#include "os.h"
+#include "cx.h"
 #include "menu.h"
 
 #ifdef HAVE_NBGL
@@ -15,6 +18,7 @@
 tx_hash_context_t tx_hash_context;
 tx_context_t tx_context;
 bool should_display_esdt_flow;
+bool should_display_blind_signing_flow;
 
 static uint8_t set_result_signature() {
     uint8_t tx = 0;
@@ -57,6 +61,21 @@ static bool sign_tx_hash(uint8_t *data_buffer) {
     return success;
 }
 
+static bool is_blind_signing() {
+    bool has_data = strlen(tx_context.data) > 0;
+    if (!has_data) return false;
+
+    char *ptr = tx_context.data;
+
+    while (*ptr) {
+        if (!isalnum((unsigned char)*ptr) && !strchr("@[]: ", *ptr)) {
+            return true;  // Found an invalid character - blind signing
+        }
+        ptr++;
+    }
+    return false;  // All characters are either alphanumeric or '@' - not blind signing
+}
+
 static bool is_esdt_transfer() {
     bool identifier_len_valid = esdt_info.identifier_len > 0;
     bool has_data = strlen(tx_context.data) > 0;
@@ -96,6 +115,9 @@ static bool is_esdt_transfer() {
 static nbgl_layoutTagValueList_t layout;
 static nbgl_layoutTagValue_t pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
 
+static nbgl_contentTagValueList_t content;
+static nbgl_contentTagValue_t content_pairs_list[7]; 
+
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\n" APPNAME " network?",
     .icon = &C_icon_multiversx_logo_64x64,
@@ -114,7 +136,12 @@ static void review_final_callback(bool confirmed) {
     }
 }
 
-static void update_pair(nbgl_layoutTagValue_t *pair, const char *item, const char *value) {
+static void update_pair(nbgl_contentTagValue_t *pair, const char *item, const char *value) {
+    pair->item = item;
+    pair->value = value;
+}
+
+static void update_content_pair(nbgl_contentTagValue_t *pair, const char *item, const char *value) {
     pair->item = item;
     pair->value = value;
 }
@@ -162,6 +189,35 @@ static void start_review(void) {
                              review_final_callback);
 }
 
+
+static void make_content_list(void){
+    uint8_t step = 0;
+
+    update_content_pair(&content_pairs_list[step++], "Receiver", tx_context.receiver);
+    update_content_pair(&content_pairs_list[step++], "Amount", tx_context.amount);
+    update_content_pair(&content_pairs_list[step++], "Fee", tx_context.fee);
+    if (tx_context.data_size > 0) {
+        update_content_pair(&content_pairs_list[step++], "Data", tx_context.data);
+    }
+    if (strlen(tx_context.guardian) > 0) {
+        update_content_pair(&content_pairs_list[step++], "Guardian", tx_context.guardian);
+    }
+    if (strlen(tx_context.relayer) > 0) {
+        update_content_pair(&content_pairs_list[step++], "Relayer", tx_context.relayer);
+    }
+    update_content_pair(&content_pairs_list[step++], "Network", tx_context.network);
+    
+    content.pairs = content_pairs_list;
+    content.callback = NULL;
+    content.nbPairs = step;
+    content.startIndex = 0;
+    content.nbMaxLinesForValue = 2;
+    content.token = 0;
+    content.smallCaseForValue = false;
+    content.wrapping = true;
+    content.actionCallback = NULL;
+}
+
 static void ui_sign_tx_hash_nbgl(void) {
     if (should_display_esdt_flow) {
         nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
@@ -170,7 +226,28 @@ static void ui_sign_tx_hash_nbgl(void) {
                                 "Reject transaction",
                                 start_review,
                                 nbgl_reject_transaction_choice);
+    } else if (should_display_blind_signing_flow) {
+        make_content_list();
+        nbgl_useCaseReviewBlindSigning(TYPE_TRANSACTION,
+                                       &content,
+                                       &C_icon_multiversx_logo_64x64,
+                                       "Review transaction to\nsend EGLD on\n" APPNAME " network",
+                                       "",
+                                       "Accept risk and sign transaction?",
+                                       NULL,
+                                       review_final_callback);
     } else {
+        /*
+        make_content_list();
+        nbgl_useCaseReview(TYPE_TRANSACTION,
+                           &content,
+                           &C_icon_multiversx_logo_64x64,
+                           "Review transaction to\nsend EGLD on\n" APPNAME " network",
+                           "",
+                           "Sign transaction on\n" APPNAME " network?",
+                           review_final_callback);
+        
+        */
         nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
                                 "Review transaction to\nsend EGLD on\n" APPNAME " network",
                                 "",
@@ -415,6 +492,8 @@ void handle_sign_tx_hash(uint8_t p1,
             THROW(res);
         }
         should_display_esdt_flow = true;
+    } else if (is_blind_signing()) {
+        should_display_blind_signing_flow = true;
     }
 
     app_state = APP_STATE_IDLE;

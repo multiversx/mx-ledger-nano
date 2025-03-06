@@ -86,6 +86,8 @@ def get_screen_coordinates(device, button):
         return (350, 115) if device == "stax" else (415, 140)
     elif button == "qr_code":
         return (64, 520) if device == "stax" else (74, 430)
+    elif button == "blind_signing_warning icon":
+        return (334, 65) if device == "stax" else (74, 430)
 
 
 MAX_SIZE = 251
@@ -396,6 +398,26 @@ class TestSignTxHash:
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
         assert backend.last_async_response.status == Error.USER_DENIED
+
+    def test_blind_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
+        # TODO: use actual data value that makes sense
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","version":2,"options":1,"data":"test"}'
+
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device == "stax":
+                nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "blind_signing_warning icon")),
+                           NavIns(NavInsID.TOUCH, (44, 40)),
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
         # TODO: use actual data value that makes sense
