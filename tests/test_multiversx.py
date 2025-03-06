@@ -399,7 +399,12 @@ class TestSignTxHash:
 
     def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
         # TODO: use actual data value that makes sense
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -417,7 +422,12 @@ class TestSignTxHash:
                     ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_with_guardian_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -434,7 +444,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_guardian_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -454,7 +469,12 @@ class TestSignTxHash:
         assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_with_relayer_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -471,7 +491,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_relayer_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -491,7 +516,12 @@ class TestSignTxHash:
         assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_with_relayer_and_guardian_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -508,7 +538,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_relayer_and_guardian_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
