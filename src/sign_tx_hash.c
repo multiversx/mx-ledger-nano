@@ -68,7 +68,7 @@ static bool is_blind_signing() {
     char *ptr = tx_context.data;
 
     while (*ptr) {
-        if (!isalnum((unsigned char)*ptr) && !strchr("@[]: ", *ptr)) {
+        if (!isalnum((unsigned char) *ptr) && !strchr("@[]: ", *ptr)) {
             return true;  // Found an invalid character - blind signing
         }
         ptr++;
@@ -116,7 +116,7 @@ static nbgl_layoutTagValueList_t layout;
 static nbgl_layoutTagValue_t pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
 
 static nbgl_contentTagValueList_t content;
-static nbgl_contentTagValue_t content_pairs_list[7]; 
+static nbgl_contentTagValue_t content_pairs_list[7];
 
 static const nbgl_pageInfoLongPress_t review_final_long_press = {
     .text = "Sign transaction on\n" APPNAME " network?",
@@ -189,8 +189,7 @@ static void start_review(void) {
                              review_final_callback);
 }
 
-
-static void make_content_list(void){
+static void make_content_list(void) {
     uint8_t step = 0;
 
     update_content_pair(&content_pairs_list[step++], "Receiver", tx_context.receiver);
@@ -206,7 +205,7 @@ static void make_content_list(void){
         update_content_pair(&content_pairs_list[step++], "Relayer", tx_context.relayer);
     }
     update_content_pair(&content_pairs_list[step++], "Network", tx_context.network);
-    
+
     content.pairs = content_pairs_list;
     content.callback = NULL;
     content.nbPairs = step;
@@ -246,7 +245,6 @@ static void ui_sign_tx_hash_nbgl(void) {
                            "",
                            "Sign transaction on\n" APPNAME " network?",
                            review_final_callback);
-        
         */
         nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
                                 "Review transaction to\nsend EGLD on\n" APPNAME " network",

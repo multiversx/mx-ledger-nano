@@ -87,7 +87,7 @@ def get_screen_coordinates(device, button):
     elif button == "qr_code":
         return (64, 520) if device == "stax" else (74, 430)
     elif button == "blind_signing_warning icon":
-        return (334, 65) if device == "stax" else (74, 430)
+        return (334, 65) if device == "stax" else (396, 67)
 
 
 MAX_SIZE = 251
@@ -410,10 +410,11 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT] if backend.firmware.device == "flex" else []),
                            NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "blind_signing_warning icon")),
                            NavIns(NavInsID.TOUCH, (44, 40)),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
