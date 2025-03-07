@@ -35,6 +35,8 @@ ifeq ($(TARGET_NAME),TARGET_NANOS)
     ICONNAME = icons/nanos_app_multiversx.gif
 else ifeq ($(TARGET_NAME),TARGET_STAX)
     ICONNAME = icons/stax_app_multiversx.gif
+else ifeq ($(TARGET_NAME),TARGET_FLEX)
+    ICONNAME = icons/flex_app_multiversx.gif
 else
     ICONNAME = icons/nanox_app_multiversx.gif
 endif
@@ -47,6 +49,9 @@ DEFINES += JSMN_STRICT=1
 # Default rule #
 ################
 all: default
+#	@echo "BOLOS_SDK=$(BOLOS_SDK)"
+#	@warning "HAVE_BAGL=$(HAVE_BAGL)"
+	@echo "XXXXXX   TARGET_NAME=$(TARGET_NAME)"
 
 ############
 # Platform #
@@ -54,7 +59,7 @@ all: default
 
 DEFINES   += OS_IO_SEPROXYHAL
 DEFINES   += HAVE_SPRINTF
-ifneq ($(TARGET_NAME),TARGET_STAX)
+ifneq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_STAX TARGET_FLEX))
 DEFINES   += HAVE_BAGL
 endif
 
@@ -74,7 +79,7 @@ DEFINES   += UNUSED\(x\)=\(void\)x
 DEFINES   += APPVERSION=\"$(APPVERSION)\"
 
 
-ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX))
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_NANOX TARGET_STAX TARGET_FLEX))
     DEFINES += HAVE_BLE BLE_COMMAND_TIMEOUT_MS=2000 HAVE_BLE_APDU
 endif
 
@@ -85,7 +90,7 @@ else
 endif
 
 
-ifeq ($(TARGET_NAME),TARGET_STAX)
+ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_STAX TARGET_FLEX))
     DEFINES += NBGL_QRCODE
     SDK_SOURCE_PATH += qrcode
 else
@@ -148,13 +153,13 @@ APP_SOURCE_PATH  += src
 SDK_SOURCE_PATH  += lib_stusb lib_stusb_impl lib_u2f
 APP_SOURCE_PATH  += deps/ledger-zxlib/include deps/ledger-zxlib/src deps/uint256
 
-ifneq ($(TARGET_NAME),TARGET_STAX)
+ifneq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_STAX TARGET_FLEX))
 SDK_SOURCE_PATH  += lib_ux
 endif
 
 ifeq ($(TARGET_NAME),TARGET_NANOX)
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
-else ifeq ($(TARGET_NAME),TARGET_STAX)
+else ifeq ($(TARGET_NAME),$(filter $(TARGET_NAME),TARGET_STAX TARGET_FLEX))
 SDK_SOURCE_PATH  += lib_blewbxx lib_blewbxx_impl
 endif
 

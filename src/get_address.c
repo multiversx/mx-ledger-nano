@@ -28,7 +28,7 @@ static uint8_t set_result_get_address(void) {
     return tx;
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 static void address_verification_cancelled(void) {
     send_response(0, false, false);
@@ -120,7 +120,7 @@ void handle_get_address(uint8_t p1,
         *tx = set_result_get_address();
         THROW(MSG_OK);
     } else {
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
         ui_get_public_key_nbgl();
 #else
         ux_flow_init(0, ux_display_public_flow, NULL);
