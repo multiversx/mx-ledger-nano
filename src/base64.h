@@ -3,15 +3,21 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "os_print.h"
 
 /*
 This implementation is based on the documentation found at
 https://en.wikipedia.org/wiki/Base64
 */
 
+typedef struct {
+    bool is_valid;
+    bool has_non_printable_chars;
+} base64decode_result_t;
+
 static bool isBase64Char(char c);
 static char base64decode_byte(char c);
-static bool base64decode(char *decoded, const char *source, size_t len);
+static base64decode_result_t base64decode(char *decoded, const char *source, size_t len);
 
 // returns true is the char given as parameter is a valid base64 char and false
 // otherwise
@@ -41,13 +47,14 @@ static char base64decode_byte(char c) {
 }
 
 // decode base64 data
-static bool base64decode(char *decoded, const char *source, size_t len) {
+static base64decode_result_t base64decode(char *decoded, const char *source, size_t len) {
+    base64decode_result_t result = {.is_valid = false, .has_non_printable_chars = false};
     for (size_t i = 0; i < len / 4; i++) {
         uint32_t data = 0;
         for (int j = 0; j < 4; j++) {
             char c = source[i * 4 + j];
             if (!isBase64Char(c)) {
-                return false;
+                return result;
             }
             data <<= 6;
             data |= base64decode_byte(c);
@@ -57,11 +64,14 @@ static bool base64decode(char *decoded, const char *source, size_t len) {
         decoded[i * 3 + 2] = data & 0xFF;
     }
     decoded[len / 4 * 3] = '\0';
+    result.is_valid = true;
     // replace non-printable characters with '?'
     for (size_t i = 0; i < len / 4 * 3; i++) {
-        if (decoded[i] < 32 || decoded[i] > 126) {
+        if ((decoded[i] > 0 && decoded[i] < 9) || (decoded[i] > 13 && decoded[i] < 32) ||
+            decoded[i] > 126) {
             decoded[i] = '?';
+            result.has_non_printable_chars = true;
         }
     }
-    return true;
+    return result;
 }

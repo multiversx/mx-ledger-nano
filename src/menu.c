@@ -7,7 +7,7 @@
 #include "nbgl_use_case.h"
 #endif
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 static const char* const info_types[] = {"Version", APPNAME};
 static const char* const info_contents[] = {APPVERSION, "(c) 2023 Ledger"};
@@ -16,15 +16,14 @@ static void quit_app_callback(void) {
     os_sched_exit(-1);
 }
 
-#define NB_SETTINGS_SWITCHES 1
+#define NB_SETTINGS_SWITCHES 2
 static nbgl_layoutSwitch_t G_switches[NB_SETTINGS_SWITCHES];
 #define CONTRACT_DATA_IDX 0
+#define BLIND_SIGNING_IDX 1
 
-enum {
-    SWITCH_CONTRACT_DATA_SET_TOKEN = FIRST_USER_TOKEN,
-};
+enum { SWITCH_CONTRACT_DATA_SET_TOKEN = FIRST_USER_TOKEN, SWITCH_BLIND_SIGNING_SET_TOKEN };
 
-#define SETTINGS_PAGE_NUMBER 2
+#define NB_SETTINGS_PAGES 1
 
 static void settings_controls_callback(int token, uint8_t index, int action) {
     UNUSED(action);
@@ -40,13 +39,22 @@ static void settings_controls_callback(int token, uint8_t index, int action) {
             }
             nvm_write((void*) &N_storage.setting_contract_data, &new_setting, 1);
             break;
+        case SWITCH_BLIND_SIGNING_SET_TOKEN:
+            G_switches[BLIND_SIGNING_IDX].initState = !(G_switches[BLIND_SIGNING_IDX].initState);
+            if (G_switches[BLIND_SIGNING_IDX].initState == OFF_STATE) {
+                new_setting = BLIND_SIGNING_DISABLED;
+            } else {
+                new_setting = BLIND_SIGNING_ENABLED;
+            }
+            nvm_write((void*) &N_storage.setting_blind_signing, &new_setting, 1);
+            break;
         default:
             PRINTF("Should not happen !\n");
             break;
     }
 }
 
-static void ui_menu_main(void);
+static void ui_menu_main(int page);
 
 nbgl_contentInfoList_t app_info;
 nbgl_content_t settings_page_content;
@@ -64,10 +72,10 @@ static void initialize_settings_contents(void) {
 
     settings_contents.callbackCallNeeded = false;
     settings_contents.contentsList = &settings_page_content;
-    settings_contents.nbContents = NB_SETTINGS_SWITCHES;
+    settings_contents.nbContents = NB_SETTINGS_PAGES;
 }
 
-static void ui_menu_main(void) {
+static void ui_menu_main(int page) {
     G_switches[CONTRACT_DATA_IDX].text = "Contract data";
     G_switches[CONTRACT_DATA_IDX].subText = "Enable contract data";
     G_switches[CONTRACT_DATA_IDX].token = SWITCH_CONTRACT_DATA_SET_TOKEN;
@@ -78,12 +86,22 @@ static void ui_menu_main(void) {
         G_switches[CONTRACT_DATA_IDX].initState = ON_STATE;
     }
 
+    G_switches[BLIND_SIGNING_IDX].text = "Blind signing";
+    G_switches[BLIND_SIGNING_IDX].subText = "Enable blind signing";
+    G_switches[BLIND_SIGNING_IDX].token = SWITCH_BLIND_SIGNING_SET_TOKEN;
+    G_switches[BLIND_SIGNING_IDX].tuneId = TUNE_TAP_CASUAL;
+    if (N_storage.setting_blind_signing == BLIND_SIGNING_DISABLED) {
+        G_switches[BLIND_SIGNING_IDX].initState = OFF_STATE;
+    } else {
+        G_switches[BLIND_SIGNING_IDX].initState = ON_STATE;
+    }
+
     initialize_settings_contents();
 
     nbgl_useCaseHomeAndSettings(APPNAME,
                                 &C_icon_multiversx_logo_64x64,
                                 NULL,
-                                INIT_HOME_PAGE,
+                                page,
                                 &settings_contents,
                                 &app_info,
                                 NULL,
@@ -93,8 +111,10 @@ static void ui_menu_main(void) {
 #else
 
 const char *const setting_contract_data_getter_values[] = {"No", "Yes", "Back"};
+const char *const setting_blind_signing_getter_values[] = {"No", "Yes", "Back"};
 const char *const settings_submenu_getter_values[] = {
     "Contract data",
+    "Blind signing",
     "Back",
 };
 const char *const info_submenu_getter_values[] = {
@@ -105,6 +125,9 @@ const char *const info_submenu_getter_values[] = {
 static void setting_contract_data_change(unsigned int contract_data);
 static const char *setting_contract_data_getter(unsigned int idx);
 static void setting_contract_data_selector(unsigned int idx);
+static void setting_blind_signing_change(unsigned int contract_data);
+static const char *setting_blind_signing_getter(unsigned int idx);
+static void setting_blind_signing_selector(unsigned int idx);
 static const char *settings_submenu_getter(unsigned int idx);
 static void settings_submenu_selector(unsigned int idx);
 static const char *info_submenu_getter(unsigned int idx);
@@ -151,9 +174,20 @@ static void setting_contract_data_change(unsigned int contract_data) {
     ui_idle();
 }
 
+static void setting_blind_signing_change(unsigned int blind_signing) {
+    nvm_write((void *) &N_storage.setting_blind_signing, &blind_signing, 1);
+    ui_idle();
+}
+
 static const char *setting_contract_data_getter(unsigned int idx) {
     if (idx < ARRAYLEN(setting_contract_data_getter_values))
         return setting_contract_data_getter_values[idx];
+    return NULL;
+}
+
+static const char *setting_blind_signing_getter(unsigned int idx) {
+    if (idx < ARRAYLEN(setting_blind_signing_getter_values))
+        return setting_blind_signing_getter_values[idx];
     return NULL;
 }
 
@@ -164,6 +198,20 @@ static void setting_contract_data_selector(unsigned int idx) {
             break;
         case CONTRACT_DATA_ENABLED:
             setting_contract_data_change(CONTRACT_DATA_ENABLED);
+            break;
+        default:
+            ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
+            break;
+    }
+}
+
+static void setting_blind_signing_selector(unsigned int idx) {
+    switch (idx) {
+        case BLIND_SIGNING_DISABLED:
+            setting_blind_signing_change(BLIND_SIGNING_DISABLED);
+            break;
+        case BLIND_SIGNING_ENABLED:
+            setting_blind_signing_change(BLIND_SIGNING_ENABLED);
             break;
         default:
             ux_menulist_init(0, settings_submenu_getter, settings_submenu_selector);
@@ -184,6 +232,12 @@ static void settings_submenu_selector(unsigned int idx) {
                                     setting_contract_data_getter,
                                     setting_contract_data_selector,
                                     N_storage.setting_contract_data);
+            break;
+        case 1:
+            ux_menulist_init_select(0,
+                                    setting_blind_signing_getter,
+                                    setting_blind_signing_selector,
+                                    N_storage.setting_blind_signing);
             break;
         default:
             ui_idle();
@@ -211,8 +265,21 @@ static void info_submenu_selector(unsigned int idx) {
 #endif
 
 void ui_idle(void) {
-#if defined(TARGET_STAX)
-    ui_menu_main();
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
+    ui_menu_main(INIT_HOME_PAGE);
+#else
+    // reserve a display stack slot if none yet
+    if (G_ux.stack_count == 0) {
+        ux_stack_push();
+    }
+    ux_flow_init(0, ux_idle_flow, NULL);
+#endif
+}
+
+void ui_settings(void) {
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
+    const int BLIND_SIGNING_SWITCH_SETTINGS_PAGE = 0;
+    ui_menu_main(BLIND_SIGNING_SWITCH_SETTINGS_PAGE);
 #else
     // reserve a display stack slot if none yet
     if (G_ux.stack_count == 0) {

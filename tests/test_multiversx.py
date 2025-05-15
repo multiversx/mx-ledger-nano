@@ -14,6 +14,8 @@ Please refer to the usage file for all available options
 
 from contextlib import contextmanager
 from typing import List, Generator, Dict
+from ragger.backend import BackendInterface
+from ragger.error import ExceptionRAPDU
 from requests import exceptions
 
 import base64
@@ -25,13 +27,30 @@ import sys
 from enum import IntEnum
 from pathlib import Path
 
-from ragger.navigator import NavInsID, NavIns
+from ragger.navigator import NavInsID, NavIns, Navigator
 from ragger.backend.interface import RAPDU, RaisePolicy
 from .utils import get_version_from_makefile
 
 CLA = 0xED
 
 LEDGER_MAJOR_VERSION, LEDGER_MINOR_VERSION, LEDGER_PATCH_VERSION = get_version_from_makefile()
+
+
+def turn_on_blind_signing(backend: BackendInterface, navigator: Navigator):
+    if backend.firmware.device.startswith("nano"):
+        nav_ins = [NavInsID.RIGHT_CLICK,
+                   NavInsID.BOTH_CLICK,
+                   NavInsID.RIGHT_CLICK,
+                   NavInsID.BOTH_CLICK,
+                   NavInsID.RIGHT_CLICK,
+                   NavInsID.BOTH_CLICK]
+    elif backend.firmware.device in ["stax", "flex"]:
+        nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                   NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                       backend.firmware.device, "enable_blind_signing")),
+                   NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
+
+    navigator.navigate(nav_ins, screen_change_before_first_instruction=False)
 
 
 class Ins(IntEnum):
@@ -79,13 +98,27 @@ class Error(IntEnum):
     PRETTY_FAILED = 0x6E0D
 
 
+def get_screen_coordinates(device, button):
+    if button == "reject":
+        return (68, 620) if device == "stax" else (90, 550)
+    elif button == "enable_contract_data":
+        return (350, 115) if device == "stax" else (415, 140)
+    elif button == "enable_blind_signing":
+        return (350, 271) if device == "stax" else (415, 300)
+    elif button == "qr_code":
+        return (64, 520) if device == "stax" else (74, 430)
+    elif button == "blind_signing_warning icon":
+        return (334, 65) if device == "stax" else (396, 67)
+
+
 MAX_SIZE = 251
 ROOT_SCREENSHOT_PATH = Path(__file__).parent.resolve()
 
 
 @contextmanager
 def send_async_sign_message(backend, ins, payload: bytes) -> Generator[None, None, None]:
-    payload_splited = [payload[x:x + MAX_SIZE] for x in range(0, len(payload), MAX_SIZE)]
+    payload_splited = [payload[x:x + MAX_SIZE]
+                       for x in range(0, len(payload), MAX_SIZE)]
     p1 = P1.FIRST
     if len(payload_splited) > 1:
         for p in payload_splited[:-1]:
@@ -114,16 +147,22 @@ class TestMenu:
                        NavInsID.RIGHT_CLICK,
                        NavInsID.RIGHT_CLICK,
                        NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
                        NavInsID.BOTH_CLICK,
                        NavInsID.BOTH_CLICK,
                        NavInsID.RIGHT_CLICK,
                        NavInsID.RIGHT_CLICK,
                        NavInsID.RIGHT_CLICK,
                        NavInsID.BOTH_CLICK]
-        elif backend.firmware.device == "stax":
+        elif backend.firmware.device in ["stax", "flex"]:
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
                        NavInsID.USE_CASE_SETTINGS_NEXT,
-                       NavInsID.SWIPE_CENTER_TO_RIGHT,
+                       NavInsID.USE_CASE_SETTINGS_PREVIOUS,
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT,
                        NavInsID.USE_CASE_HOME_QUIT]
 
@@ -135,7 +174,8 @@ class TestMenu:
 class TestGetAppVersion:
 
     def test_get_app_version(self, backend):
-        data = backend.exchange(CLA, Ins.GET_APP_VERSION, P1.FIRST, 0, b"").data
+        data = backend.exchange(
+            CLA, Ins.GET_APP_VERSION, P1.FIRST, 0, b"").data
         version = data.decode("ascii").split('.')
         assert version[0] == str(LEDGER_MAJOR_VERSION)
         assert version[1] == str(LEDGER_MINOR_VERSION)
@@ -145,9 +185,11 @@ class TestGetAppVersion:
 class TestGetAppConfiguration:
 
     def test_get_app_configuration(self, backend):
-        data = backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data
+        data = backend.exchange(
+            CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data
         assert len(data) == 14
         assert data[0] == 0 or data[0] == 1  # N_storage.setting_contract_data
+        assert data[1] == 0 or data[1] == 1  # N_storage.setting_blind_signing
         # data[1] is not to be taken into account anymore
         # data[2] is not to be taken into account anymore
         assert data[3] == LEDGER_MAJOR_VERSION  # LEDGER_MAJOR_VERSION
@@ -167,9 +209,10 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK,
                        NavInsID.LEFT_CLICK,
                        NavInsID.BOTH_CLICK]
-        elif backend.firmware.device == "stax":
+        elif backend.firmware.device in ["stax", "flex"]:
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
-                       NavIns(NavInsID.TOUCH, (350, 115)),
+                       NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                           backend.firmware.device, "enable_contract_data")),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_0", nav_ins,
@@ -183,14 +226,58 @@ class TestGetAppConfiguration:
                        NavInsID.BOTH_CLICK,
                        NavInsID.RIGHT_CLICK,
                        NavInsID.BOTH_CLICK]
-        elif backend.firmware.device == "stax":
+        elif backend.firmware.device in ["stax", "flex"]:
             nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
-                       NavIns(NavInsID.TOUCH, (350, 115)),
+                       NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                           backend.firmware.device, "enable_contract_data")),
                        NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
 
         navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_1", nav_ins,
                                        screen_change_before_first_instruction=False)
         assert backend.exchange(CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[0] == 1
+
+    def test_toggle_blind_signing(self, backend, navigator, test_name):
+        # init disabled
+        assert backend.exchange(
+            CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[1] == 0
+
+        # switch to enabled
+        if backend.firmware.device.startswith("nano"):
+            nav_ins = [NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK]
+        elif backend.firmware.device in ["stax", "flex"]:
+            nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                       NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                           backend.firmware.device, "enable_blind_signing")),
+                       NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
+
+        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_0", nav_ins,
+                                       screen_change_before_first_instruction=False)
+        assert backend.exchange(
+            CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[1] == 1
+
+        # switch back to enabled
+        if backend.firmware.device.startswith("nano"):
+            nav_ins = [NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.RIGHT_CLICK,
+                       NavInsID.BOTH_CLICK,
+                       NavInsID.LEFT_CLICK,
+                       NavInsID.BOTH_CLICK]
+        elif backend.firmware.device in ["stax", "flex"]:
+            nav_ins = [NavInsID.USE_CASE_HOME_SETTINGS,
+                       NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                           backend.firmware.device, "enable_blind_signing")),
+                       NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT]
+
+        navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name + "_1", nav_ins,
+                                       screen_change_before_first_instruction=False)
+        assert backend.exchange(
+            CLA, Ins.GET_APP_CONFIGURATION, P1.FIRST, 0, b"").data[1] == 0
 
 
 class TestGetAddr:
@@ -213,15 +300,18 @@ class TestGetAddr:
                                                           "Approve",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [
                     NavInsID.SWIPE_CENTER_TO_LEFT,
-                    NavIns(NavInsID.TOUCH, (64, 520)),
+                    NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                           backend.firmware.device, "qr_code")),
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_EXIT_QR,
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CONFIRM,
                     NavInsID.USE_CASE_STATUS_DISMISS]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
-        assert re.match("^@[0-9a-f]{64}$", backend.last_async_response.data.decode("ascii"))
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+        assert re.match(
+            "^@[0-9a-f]{64}$", backend.last_async_response.data.decode("ascii"))
 
     def test_get_addr_confirm_refused(self, backend, navigator, test_name):
         account = 1
@@ -235,12 +325,13 @@ class TestGetAddr:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [
                     NavInsID.SWIPE_CENTER_TO_LEFT,
                     NavInsID.USE_CASE_ADDRESS_CONFIRMATION_CANCEL,
                     NavInsID.USE_CASE_STATUS_DISMISS]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
         assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_get_addr_too_long(self, backend):
@@ -273,18 +364,20 @@ class TestSignMsg:
                                                           "Sign message",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 # Navigate a bit through rejection screens before confirming
-                nav_ins = [NavIns(NavInsID.TOUCH, (80, 625)),
+                nav_ins = [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                            NavInsID.USE_CASE_CHOICE_REJECT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_VIEW_DETAILS_PREVIOUS,
-                           NavIns(NavInsID.TOUCH, (80, 625)),
+                           NavIns(NavInsID.TOUCH, get_screen_coordinates(
+                               backend.firmware.device, "reject")),
                            NavInsID.USE_CASE_CHOICE_REJECT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_short_rejected(self, backend, navigator, test_name):
         payload = b"abcd"
@@ -297,9 +390,9 @@ class TestSignMsg:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -317,7 +410,7 @@ class TestSignMsg:
                                                           "Sign message",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -332,6 +425,67 @@ class TestSignMsg:
         rapdu = backend.exchange(CLA, Ins.SIGN_MSG, P1.FIRST, 0, payload)
         assert rapdu.status == Error.MESSAGE_TOO_LONG
 
+    def test_blind_sign_msg_confirmed(self, backend, navigator, test_name):
+        turn_on_blind_signing(backend, navigator)
+        payload = "Björk sent €100 – Grüße von München!".encode('utf-8')
+        payload = len(payload).to_bytes(4, "big") + payload
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign message",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+
+    def test_blind_sign_msg_rejected(self, backend, navigator, test_name):
+        turn_on_blind_signing(backend, navigator)
+        payload = "Björk sent €100 – Grüße von München!".encode('utf-8')
+        payload = len(payload).to_bytes(4, "big") + payload
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Reject",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_CONFIRM]
+
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+        assert backend.last_async_response.status == Error.USER_DENIED
+
+    def test_blind_sign_msg_when_blind_sign_disabled(self, backend, navigator, test_name):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        payload = "Björk sent €100 – Grüße von München!".encode('utf-8')
+        payload = len(payload).to_bytes(4, "big") + payload
+        with send_async_sign_message(backend, Ins.SIGN_MSG, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Back",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_CONFIRM,
+                           NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "enable_blind_signing")),
+                           NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
+                           ]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+        assert backend.last_async_response.status == Error.USER_DENIED
+
 
 class TestSignTxHash:
 
@@ -344,7 +498,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -362,9 +516,9 @@ class TestSignTxHash:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -372,9 +526,9 @@ class TestSignTxHash:
                                                           test_name)
         assert backend.last_async_response.status == Error.USER_DENIED
 
-    def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
-        # TODO: use actual data value that makes sense
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1,"data":"test"}'
+    def test_blind_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","version":2,"options":1,"data":"test"}'
+        turn_on_blind_signing(backend, navigator)
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -382,14 +536,63 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
-                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT] if backend.firmware.device == "flex" else []),
+                           NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "blind_signing_warning icon")),
+                           NavIns(NavInsID.TOUCH, (44, 40)),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
                 navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
-    def test_sign_tx_valid_with_guardian_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+    def test_blind_sign_tx_when_blind_sign_disabled(self, backend, navigator, test_name):
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","version":2,"options":1,"data":"test"}'
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Back",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_CONFIRM,
+                           NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "enable_blind_signing")),
+                           NavInsID.USE_CASE_SETTINGS_MULTI_PAGE_EXIT
+                           ]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+        assert backend.last_async_response.status == Error.USER_DENIED
+
+    def test_blind_sign_tx_valid_simple_data_rejected(self, backend, navigator, test_name):
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"T","version":2,"options":1,"data":"test"}'
+        turn_on_blind_signing(backend, navigator)
+        backend.raise_policy = RaisePolicy.RAISE_NOTHING
+
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Reject",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.USE_CASE_CHOICE_REJECT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT] if backend.firmware.device == "flex" else []),
+                           NavInsID.USE_CASE_REVIEW_REJECT,
+                           NavInsID.USE_CASE_CHOICE_CONFIRM]
+                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+        assert backend.last_async_response.status == Error.USER_DENIED
+
+    def test_sign_tx_valid_simple_data_confirmed(self, backend, navigator, test_name):
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","version":2,"options":1,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -397,7 +600,29 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
+                nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
+                           NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT] if backend.firmware.device == "flex" else []),
+                           NavInsID.USE_CASE_REVIEW_CONFIRM]
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+
+    def test_sign_tx_valid_with_guardian_confirmed(self, backend, navigator, test_name):
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
+        with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
+            if backend.firmware.device.startswith("nano"):
+                navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
+                                                          [NavInsID.BOTH_CLICK],
+                                                          "Sign transaction",
+                                                          ROOT_SCREENSHOT_PATH,
+                                                          test_name)
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -406,7 +631,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_guardian_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","guardian":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -415,9 +645,9 @@ class TestSignTxHash:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -426,7 +656,12 @@ class TestSignTxHash:
         assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_with_relayer_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -434,7 +669,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -443,7 +678,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_relayer_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -452,9 +692,9 @@ class TestSignTxHash:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -463,7 +703,12 @@ class TestSignTxHash:
         assert backend.last_async_response.status == Error.USER_DENIED
 
     def test_sign_tx_valid_with_relayer_and_guardian_confirmed(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavInsID.RIGHT_CLICK,
@@ -471,7 +716,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -480,7 +725,12 @@ class TestSignTxHash:
                                                           test_name)
 
     def test_sign_tx_valid_with_relayer_and_guardian_rejected(self, backend, navigator, test_name):
-        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,"data":"test"}'
+        encoded_data = base64.b64encode('test'.encode()).decode()
+        payload = b'{"nonce":1234,"value":"5678","receiver":"efgh","sender":"abcd","gasPrice":50000,"gasLimit":20,"chainID":"1","relayer":"ijkl","guardian":"mnop","version":2,"options":2,'
+        payload += b'"data":"'
+        payload += bytes(encoded_data, 'utf-8')  # 'test' base64 encoded
+        payload += b'"}'
+
         backend.raise_policy = RaisePolicy.RAISE_NOTHING
         with send_async_sign_message(backend, Ins.SIGN_TX_HASH, payload):
             if backend.firmware.device.startswith("nano"):
@@ -489,9 +739,9 @@ class TestSignTxHash:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -527,11 +777,14 @@ class TestSignTxHash:
                                                           "Confirm transfer",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT]
+                             if backend.firmware.device == "flex" else []),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_esdt_with_guardian(self, backend, navigator, test_name):
         token_ticker = "BUSD"
@@ -561,12 +814,13 @@ class TestSignTxHash:
                                                           "Confirm transfer",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_tx_valid_large_receiver(self, backend, navigator, test_name):
         payload = b'{"nonce":1234,"value":"'
@@ -583,7 +837,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -601,7 +855,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -618,7 +872,7 @@ class TestSignTxHash:
                                                           "Sign transaction",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -667,7 +921,7 @@ class TestSignMsgAuthToken:
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
                                                           [NavInsID.USE_CASE_REVIEW_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
@@ -690,9 +944,9 @@ class TestSignMsgAuthToken:
                                                           "Reject",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 navigator.navigate_until_text_and_compare(NavInsID.SWIPE_CENTER_TO_LEFT,
-                                                          [NavIns(NavInsID.TOUCH, (80, 625)),
+                                                          [NavIns(NavInsID.TOUCH, get_screen_coordinates(backend.firmware.device, "reject")),
                                                            NavInsID.USE_CASE_CHOICE_CONFIRM,
                                                            NavInsID.USE_CASE_STATUS_DISMISS],
                                                           "Hold to sign",
@@ -710,15 +964,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_xexchange_24h_ok(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -730,15 +986,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_origin_regular_text_ok(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -751,15 +1009,19 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT]
+                             if backend.firmware.device == "flex" else []),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_long_origin_should_trim_ok(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -772,15 +1034,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_ttl_ok(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -793,15 +1057,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_too_long_payload(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -814,15 +1080,19 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
+                           *([NavInsID.SWIPE_CENTER_TO_LEFT]
+                             if backend.firmware.device == "flex" else []),
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_invalid_ttl(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -835,15 +1105,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_long_ttl(self, backend, navigator, test_name):
         payload: bytes = b""
@@ -856,15 +1128,17 @@ class TestSignMsgAuthToken:
         with send_async_sign_message(backend, Ins.SIGN_MSG_AUTH_TOKEN, payload):
             if backend.firmware.device.startswith("nano"):
                 navigator.navigate_until_text_and_compare(NavIns(NavInsID.RIGHT_CLICK),
-                                                          [NavIns(NavInsID.BOTH_CLICK)],
+                                                          [NavIns(
+                                                              NavInsID.BOTH_CLICK)],
                                                           "Authorize",
                                                           ROOT_SCREENSHOT_PATH,
                                                           test_name)
-            elif backend.firmware.device == "stax":
+            elif backend.firmware.device in ["stax", "flex"]:
                 nav_ins = [NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.SWIPE_CENTER_TO_LEFT,
                            NavInsID.USE_CASE_REVIEW_CONFIRM]
-                navigator.navigate_and_compare(ROOT_SCREENSHOT_PATH, test_name, nav_ins)
+                navigator.navigate_and_compare(
+                    ROOT_SCREENSHOT_PATH, test_name, nav_ins)
 
     def test_sign_msg_auth_token_invalid_prefix(self, backend):
         payload: bytes = b""

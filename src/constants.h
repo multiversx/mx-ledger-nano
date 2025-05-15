@@ -5,6 +5,7 @@
 typedef enum { NETWORK_MAINNET = 0, NETWORK_TESTNET = 1 } network_t;
 
 typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } contract_data_t;
+typedef enum { BLIND_SIGNING_ENABLED = true, BLIND_SIGNING_DISABLED = false } blind_signing_t;
 
 #define MSG_OK                     0x9000
 #define ERR_USER_DENIED            0x6985
@@ -56,11 +57,13 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define MAX_ESDT_TRANSFER_DATA_SIZE 100
 #define MAX_DATA_SIZE               400  // 400 in base64 = 300 in ASCII
 #ifdef HAVE_BAGL
-#define MAX_DISPLAY_DATA_SIZE 64UL  // must be multiple of 4
+#define MAX_DISPLAY_DATA_SIZE    64UL  // must be multiple of 4
+#define MAX_DISPLAY_MESSAGE_SIZE 64UL  // must be multiple of 4
 #else
 // must be multiple of 4
 // must be <= MAX_VALUE_LEN
-#define MAX_DISPLAY_DATA_SIZE 128UL
+#define MAX_DISPLAY_DATA_SIZE    128UL
+#define MAX_DISPLAY_MESSAGE_SIZE 128UL
 #endif
 #define DATA_SIZE_LEN                      17
 #define MAX_CHAINID_LEN                    4
@@ -90,7 +93,8 @@ typedef enum { CONTRACT_DATA_ENABLED = true, CONTRACT_DATA_DISABLED = false } co
 #define SHA3_KECCAK_BITS                   256
 #define PUBLIC_KEY_LEN                     32
 #define BASE_10                            10
-#define TX_SIGN_FLOW_SIZE                  10
+#define TX_SIGN_FLOW_SIZE                  15
+#define MSG_SIGN_FLOW_SIZE                 10
 #define ESDT_TRANSFER_FLOW_SIZE            10
 #define BASE_64_INVALID_CHAR               '?'
 #define SC_ARGS_SEPARATOR                  '@'

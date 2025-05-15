@@ -1,5 +1,6 @@
 # Do not add the development environment
 dev-env
+venv
 
 # Do not add binaries
 build

@@ -44,7 +44,6 @@
 #define OFFSET_LC    4
 #define OFFSET_CDATA 5
 
-unsigned char G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 esdt_info_t esdt_info;
 
 #ifdef HAVE_BAGL
@@ -77,14 +76,15 @@ void handle_apdu(volatile unsigned int *flags, volatile unsigned int *tx) {
 
                 case INS_GET_APP_CONFIGURATION:
                     G_io_apdu_buffer[0] = (N_storage.setting_contract_data ? 0x01 : 0x00);
-                    // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not to be taken into
-                    // account anymore since now those variables are 32 bit long, but we
-                    // still expect 6 bytes transmitted to maintain compatibility with the
-                    // web wallet. Account index should be read from bytes 6->9, while
+                    G_io_apdu_buffer[1] = (N_storage.setting_blind_signing ? 0x01 : 0x00);
+                    // G_io_apdu_buffer[1] and G_io_apdu_buffer[2] are not used for account
+                    // index and address index anymore since now those variables are 32 bit
+                    // long, but we still expect 6 bytes transmitted to maintain compatibility
+                    // with the web wallet. Account index should be read from bytes 6->9, while
                     // address index should be read from bytes 10->13 (Big Endian)
-                    G_io_apdu_buffer[3] = LEDGER_MAJOR_VERSION;
-                    G_io_apdu_buffer[4] = LEDGER_MINOR_VERSION;
-                    G_io_apdu_buffer[5] = LEDGER_PATCH_VERSION;
+                    G_io_apdu_buffer[3] = MAJOR_VERSION;
+                    G_io_apdu_buffer[4] = MINOR_VERSION;
+                    G_io_apdu_buffer[5] = PATCH_VERSION;
 
                     G_io_apdu_buffer[6] = bip32_account >> 24;
                     G_io_apdu_buffer[7] = bip32_account >> 16;
@@ -360,6 +360,7 @@ void nv_app_state_init() {
     if (N_storage.initialized != 0x01) {
         internal_storage_t storage;
         storage.setting_contract_data = DEFAULT_CONTRACT_DATA;
+        storage.setting_blind_signing = DEFAULT_BLIND_SIGNING;
         storage.initialized = 0x01;
         nvm_write((internal_storage_t *) &N_storage, (void *) &storage, sizeof(internal_storage_t));
     }

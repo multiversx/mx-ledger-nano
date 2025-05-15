@@ -6,6 +6,9 @@
 #include "utils.h"
 #include "ux.h"
 #include <uint256.h>
+#include <ctype.h>
+#include "os.h"
+#include "cx.h"
 #include "menu.h"
 
 #ifdef HAVE_NBGL
@@ -91,92 +94,90 @@ static bool is_esdt_transfer() {
            next_char_after_identifier_is_at_separator && same_chainid;
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
-static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
-
-static const nbgl_pageInfoLongPress_t review_final_long_press = {
-    .text = "Sign transaction on\n" APPNAME " network?",
-    .icon = &C_icon_multiversx_logo_64x64,
-    .longPressText = "Hold to sign",
-    .longPressToken = 0,
-    .tuneId = TUNE_TAP_CASUAL,
-};
+static nbgl_contentTagValueList_t content;
+static nbgl_contentTagValue_t content_pairs_list[7];  // 7 info max for ESDT and 7 info max for EGLD
 
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
         int tx = set_result_signature();
         send_response(tx, true, false);
-        nbgl_useCaseStatus("TRANSACTION\nSIGNED", true, ui_idle);
+        nbgl_useCaseStatus("Transaction\nsigned", true, ui_idle);
     } else {
-        nbgl_reject_transaction_choice();
+        send_response(0, false, false);
+        nbgl_useCaseStatus("Transaction\nrejected", false, ui_idle);
     }
 }
 
-static void update_pair(nbgl_layoutTagValue_t *pair, const char *item, const char *value) {
+static void update_pair(nbgl_contentTagValue_t *pair, const char *item, const char *value) {
     pair->item = item;
     pair->value = value;
 }
 
-static void start_review(void) {
+static void make_content_list(void) {
     uint8_t step = 0;
 
     if (should_display_esdt_flow) {
-        update_pair(&pairs_list[step++], "Token", esdt_info.ticker);
-        update_pair(&pairs_list[step++], "Value", tx_context.amount);
-        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
-        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
+        update_pair(&content_pairs_list[step++], "Token", esdt_info.ticker);
+        update_pair(&content_pairs_list[step++], "Value", tx_context.amount);
+        update_pair(&content_pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&content_pairs_list[step++], "Fee", tx_context.fee);
         if (strlen(tx_context.guardian) > 0) {
-            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
+            update_pair(&content_pairs_list[step++], "Guardian", tx_context.guardian);
         }
         if (strlen(tx_context.relayer) > 0) {
-            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
+            update_pair(&content_pairs_list[step++], "Relayer", tx_context.relayer);
         }
-        update_pair(&pairs_list[step++], "Network", tx_context.network);
+        update_pair(&content_pairs_list[step++], "Network", tx_context.network);
     } else {
-        update_pair(&pairs_list[step++], "Receiver", tx_context.receiver);
-        update_pair(&pairs_list[step++], "Amount", tx_context.amount);
-        update_pair(&pairs_list[step++], "Fee", tx_context.fee);
+        update_pair(&content_pairs_list[step++], "Receiver", tx_context.receiver);
+        update_pair(&content_pairs_list[step++], "Amount", tx_context.amount);
+        update_pair(&content_pairs_list[step++], "Fee", tx_context.fee);
         if (tx_context.data_size > 0) {
-            update_pair(&pairs_list[step++], "Data", tx_context.data);
+            update_pair(&content_pairs_list[step++], "Data", tx_context.data);
         }
         if (strlen(tx_context.guardian) > 0) {
-            update_pair(&pairs_list[step++], "Guardian", tx_context.guardian);
+            update_pair(&content_pairs_list[step++], "Guardian", tx_context.guardian);
         }
         if (strlen(tx_context.relayer) > 0) {
-            update_pair(&pairs_list[step++], "Relayer", tx_context.relayer);
+            update_pair(&content_pairs_list[step++], "Relayer", tx_context.relayer);
         }
-        update_pair(&pairs_list[step++], "Network", tx_context.network);
+        update_pair(&content_pairs_list[step++], "Network", tx_context.network);
     }
 
-    layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = false;
-    layout.wrapping = true;
-    layout.pairs = pairs_list;
-    layout.nbPairs = step;
-
-    nbgl_useCaseStaticReview(&layout,
-                             &review_final_long_press,
-                             "Reject transaction",
-                             review_final_callback);
+    content.pairs = content_pairs_list;
+    content.callback = NULL;
+    content.nbPairs = step;
+    content.startIndex = 0;
+    content.nbMaxLinesForValue = 2;
+    content.token = 0;
+    content.smallCaseForValue = false;
+    content.wrapping = true;
+    content.actionCallback = NULL;
 }
 
 static void ui_sign_tx_hash_nbgl(void) {
-    if (should_display_esdt_flow) {
-        nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                                "Review transaction to\nsend ESDT on\n" APPNAME " network",
-                                "",
-                                "Reject transaction",
-                                start_review,
-                                nbgl_reject_transaction_choice);
+    make_content_list();
+    if (found_non_printable_chars) {
+        nbgl_useCaseReviewBlindSigning(TYPE_TRANSACTION,
+                                       &content,
+                                       &C_icon_multiversx_logo_64x64,
+                                       "Review transaction to\nsend EGLD on\n" APPNAME " network",
+                                       "",
+                                       "Accept risk and sign transaction?",
+                                       NULL,
+                                       review_final_callback);
     } else {
-        nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                                "Review transaction to\nsend EGLD on\n" APPNAME " network",
-                                "",
-                                "Reject transaction",
-                                start_review,
-                                nbgl_reject_transaction_choice);
+        nbgl_useCaseReview(TYPE_TRANSACTION,
+                           &content,
+                           &C_icon_multiversx_logo_64x64,
+                           should_display_esdt_flow
+                               ? "Review transaction to\nsend ESDT on\n" APPNAME " network"
+                               : "Review transaction to\nsend EGLD on\n" APPNAME " network",
+                           "",
+                           "Sign transaction on\n" APPNAME " network?",
+                           review_final_callback);
     }
 }
 
@@ -301,9 +302,42 @@ UX_STEP_VALID(ux_sign_tx_hash_flow_23_step,
                   "Reject",
               });
 
+// UI for blind signing
+UX_STEP_CB(ux_warning_error_blind_signing_1_step,
+           bnnn_paging,
+           ui_idle(),
+           {
+               "Blind signing disabled",
+               "Enable in Settings",
+           });
+
+UX_STEP_VALID(ux_warning_error_blind_signing_2_step,
+              pb,
+              send_response(0, false, true),
+              {
+                  &C_icon_crossmark,
+                  "Back",
+              });
+
+UX_FLOW(ux_error_blind_signing_disabled_flow,
+        &ux_warning_error_blind_signing_1_step,
+        &ux_warning_error_blind_signing_2_step);
+
+UX_STEP_NOCB(ux_warning_blind_signing_ahead_step,
+             pb,
+             {
+                 &C_icon_warning,
+                 "Blind signing",
+             });
+
+UX_STEP_NOCB(ux_warning_accept_blind_signing_step, pb, {&C_icon_warning, "Accept risk and"});
+
 static void display_tx_sign_flow() {
     uint8_t step = 0;
 
+    if (found_non_printable_chars) {
+        tx_flow[step++] = &ux_warning_blind_signing_ahead_step;
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_17_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_18_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_19_step;
@@ -317,6 +351,9 @@ static void display_tx_sign_flow() {
         tx_flow[step++] = &ux_sign_tx_hash_flow_25_step;
     }
     tx_flow[step++] = &ux_sign_tx_hash_flow_21_step;
+    if (found_non_printable_chars) {
+        tx_flow[step++] = &ux_warning_accept_blind_signing_step;
+    }
     tx_flow[step++] = &ux_sign_tx_hash_flow_22_step;
     tx_flow[step++] = &ux_sign_tx_hash_flow_23_step;
     tx_flow[step++] = FLOW_END_STEP;
@@ -327,6 +364,9 @@ static void display_tx_sign_flow() {
 static void display_esdt_flow() {
     uint8_t step = 0;
 
+    if (found_non_printable_chars) {
+        tx_flow[step++] = &ux_warning_blind_signing_ahead_step;
+    }
     esdt_flow[step++] = &ux_transfer_esdt_flow_24_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_25_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_26_step;
@@ -338,6 +378,9 @@ static void display_esdt_flow() {
         esdt_flow[step++] = &ux_transfer_esdt_flow_32_step;
     }
     esdt_flow[step++] = &ux_transfer_esdt_flow_28_step;
+    if (found_non_printable_chars) {
+        esdt_flow[step++] = &ux_warning_accept_blind_signing_step;
+    }
     esdt_flow[step++] = &ux_transfer_esdt_flow_29_step;
     esdt_flow[step++] = &ux_transfer_esdt_flow_30_step;
     esdt_flow[step++] = FLOW_END_STEP;
@@ -391,6 +434,7 @@ void handle_sign_tx_hash(uint8_t p1,
         THROW(err);
     }
 
+    found_non_printable_chars = false;
     uint16_t parse_err = parse_data(data_buffer, data_length);
     if (parse_err != MSG_OK) {
         init_tx_context();
@@ -419,13 +463,21 @@ void handle_sign_tx_hash(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_STAX)
-    ui_sign_tx_hash_nbgl();
-#else
-    if (should_display_esdt_flow) {
-        display_esdt_flow();
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
+    if (found_non_printable_chars && N_storage.setting_blind_signing == 0) {
+        disabled_blind_signing_tx_warn();
     } else {
-        display_tx_sign_flow();
+        ui_sign_tx_hash_nbgl();
+    }
+#else
+    if (found_non_printable_chars && N_storage.setting_blind_signing == 0) {
+        ux_flow_init(0, ux_error_blind_signing_disabled_flow, NULL);
+    } else {
+        if (should_display_esdt_flow) {
+            display_esdt_flow();
+        } else {
+            display_tx_sign_flow();
+        }
     }
 #endif
 

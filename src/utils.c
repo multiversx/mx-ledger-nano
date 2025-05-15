@@ -305,7 +305,7 @@ int compute_token_display(const char* received_origin,
     }
 
     // try to decode the base64 field
-    if (!base64decode(decoded_origin_buffer, encoded_origin, strlen(encoded_origin))) {
+    if (!base64decode(decoded_origin_buffer, encoded_origin, strlen(encoded_origin)).is_valid) {
         return AUTH_TOKEN_INVALID_RET_CODE;
     }
 
@@ -345,7 +345,7 @@ int compute_token_display(const char* received_origin,
     return build_authorizing_message(display, origin_display, ttl_display, max_display_size);
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
 static void message_rejection(void) {
     send_response(0, false, false);
@@ -371,6 +371,42 @@ void nbgl_reject_transaction_choice(void) {
                         "Yes, reject",
                         "Go back to transaction",
                         transaction_rejection);
+}
+
+static void disabled_blind_signing_tx_choice(bool confirm) {
+    send_response(0, false, false);
+    if (confirm) {
+        ui_settings();
+    } else {
+        nbgl_useCaseStatus("Transaction\nrejected", false, ui_idle);
+    }
+}
+
+static void disabled_blind_signing_msg_choice(bool confirm) {
+    send_response(0, false, false);
+    if (confirm) {
+        ui_settings();
+    } else {
+        nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
+    }
+}
+
+void disabled_blind_signing_tx_warn(void) {
+    nbgl_useCaseChoice(NULL,
+                       "This transaction cannot be clear-signed",
+                       "Enable blind signing in the settings to sign this transaction.",
+                       "Go to settings",
+                       "Reject transaction",
+                       disabled_blind_signing_tx_choice);
+}
+
+void disabled_blind_signing_msg_warn(void) {
+    nbgl_useCaseChoice(NULL,
+                       "This message cannot be clear-signed",
+                       "Enable blind signing in the settings to sign this message.",
+                       "Go to settings",
+                       "Reject message",
+                       disabled_blind_signing_msg_choice);
 }
 
 #endif

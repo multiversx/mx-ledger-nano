@@ -5,7 +5,7 @@
 #include "ux.h"
 
 // Not applicatble for Stax
-#if !defined(TARGET_STAX)
+#if !defined(TARGET_STAX) && !defined(TARGET_FLEX)
 
 static unsigned int app_version_ui_button(unsigned int button_mask,
                                           unsigned int button_mask_counter);

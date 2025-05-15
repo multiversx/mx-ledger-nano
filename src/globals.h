@@ -13,6 +13,7 @@
 #define P1_MORE        0x80
 
 #define DEFAULT_CONTRACT_DATA CONTRACT_DATA_ENABLED
+#define DEFAULT_BLIND_SIGNING BLIND_SIGNING_DISABLED
 
 extern ux_state_t ux;
 // display stepped screens
@@ -25,6 +26,7 @@ extern uint32_t bip32_address_index;
 
 typedef struct internal_storage_t {
     unsigned char setting_contract_data;
+    unsigned char setting_blind_signing;
     uint8_t initialized;
 } internal_storage_t;
 

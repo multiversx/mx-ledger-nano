@@ -2,6 +2,7 @@
 #include "get_private_key.h"
 #include "utils.h"
 #include "menu.h"
+#include "parse_tx.h"
 
 #ifdef HAVE_NBGL
 #include "nbgl_use_case.h"
@@ -11,6 +12,8 @@ typedef struct {
     uint32_t len;
     uint8_t hash[HASH_LEN];
     char strhash[2 * HASH_LEN + 1];
+    char message[MAX_DISPLAY_MESSAGE_SIZE + 1];
+    uint16_t message_received_length;
     uint8_t signature[MESSAGE_SIGNATURE_LEN];
 } msg_context_t;
 
@@ -31,51 +34,61 @@ static uint8_t set_result_signature() {
     return tx;
 }
 
-#if defined(TARGET_STAX)
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
 
-static nbgl_layoutTagValueList_t layout;
-static nbgl_layoutTagValue_t pairs_list[1];
-
-static const nbgl_pageInfoLongPress_t review_final_long_press = {
-    .text = "Sign message on\n" APPNAME " network?",
-    .icon = &C_icon_multiversx_logo_64x64,
-    .longPressText = "Hold to sign",
-    .longPressToken = 0,
-    .tuneId = TUNE_TAP_CASUAL,
-};
+static nbgl_contentTagValueList_t content;
+static nbgl_contentTagValue_t content_pairs_list[2];
 
 static void review_final_callback(bool confirmed) {
     if (confirmed) {
         int tx = set_result_signature();
         send_response(tx, true, false);
-        nbgl_useCaseStatus("MESSAGE\nSIGNED", true, ui_idle);
+        nbgl_useCaseStatus("Message\nsigned", true, ui_idle);
     } else {
-        nbgl_reject_message_choice();
+        send_response(0, false, false);
+        nbgl_useCaseStatus("Message\nrejected", false, ui_idle);
     }
 }
 
-static void start_review(void) {
-    layout.nbMaxLinesForValue = 0;
-    layout.smallCaseForValue = false;
-    layout.wrapping = true;
-    layout.pairs = pairs_list;
-    pairs_list[0].item = "hash";
-    pairs_list[0].value = msg_context.strhash;
-    layout.nbPairs = ARRAY_COUNT(pairs_list);
+static void make_content_list(void) {
+    uint8_t step = 0;
 
-    nbgl_useCaseStaticReview(&layout,
-                             &review_final_long_press,
-                             "Reject message",
-                             review_final_callback);
+    content_pairs_list[step].item = "Hash";
+    content_pairs_list[step++].value = msg_context.strhash;
+    content_pairs_list[step].item = "Message";
+    content_pairs_list[step++].value = msg_context.message;
+
+    content.pairs = content_pairs_list;
+    content.callback = NULL;
+    content.nbPairs = step;
+    content.startIndex = 0;
+    content.nbMaxLinesForValue = 2;
+    content.token = 0;
+    content.smallCaseForValue = false;
+    content.wrapping = true;
+    content.actionCallback = NULL;
 }
 
 static void ui_sign_message_nbgl(void) {
-    nbgl_useCaseReviewStart(&C_icon_multiversx_logo_64x64,
-                            "Review message to\nsign on " APPNAME "\nnetwork",
-                            "",
-                            "Reject message",
-                            start_review,
-                            nbgl_reject_message_choice);
+    make_content_list();
+    if (found_non_printable_chars) {
+        nbgl_useCaseReviewBlindSigning(TYPE_MESSAGE,
+                                       &content,
+                                       &C_icon_multiversx_logo_64x64,
+                                       "Review message to\nsign on " APPNAME "\nnetwork",
+                                       "",
+                                       "Accept risk and sign message?",
+                                       NULL,
+                                       review_final_callback);
+    } else {
+        nbgl_useCaseReview(TYPE_MESSAGE,
+                           &content,
+                           &C_icon_multiversx_logo_64x64,
+                           "Review message to\nsign on " APPNAME "\nnetwork",
+                           "",
+                           "Sign message on\n" APPNAME " network?",
+                           review_final_callback);
+    }
 }
 
 #else
@@ -87,14 +100,20 @@ UX_STEP_NOCB(ux_sign_msg_flow_14_step,
                  .title = "Hash",
                  .text = msg_context.strhash,
              });
-UX_STEP_VALID(ux_sign_msg_flow_15_step,
+UX_STEP_NOCB(ux_sign_msg_flow_15_step,
+             bnnn_paging,
+             {
+                 .title = "Message",
+                 .text = msg_context.message,
+             });
+UX_STEP_VALID(ux_sign_msg_flow_16_step,
               pb,
               send_response(set_result_signature(), true, true),
               {
                   &C_icon_validate_14,
                   "Sign message",
               });
-UX_STEP_VALID(ux_sign_msg_flow_16_step,
+UX_STEP_VALID(ux_sign_msg_flow_17_step,
               pb,
               send_response(0, false, true),
               {
@@ -105,9 +124,87 @@ UX_STEP_VALID(ux_sign_msg_flow_16_step,
 UX_FLOW(ux_sign_msg_flow,
         &ux_sign_msg_flow_14_step,
         &ux_sign_msg_flow_15_step,
-        &ux_sign_msg_flow_16_step);
+        &ux_sign_msg_flow_16_step,
+        &ux_sign_msg_flow_17_step);
+
+// UI for blind signing
+UX_STEP_CB(ux_warning_error_blind_signing_msg_1_step,
+           bnnn_paging,
+           ui_idle(),
+           {
+               "Blind signing disabled",
+               "Enable in Settings",
+           });
+
+UX_STEP_VALID(ux_warning_error_blind_signing_msg_2_step,
+              pb,
+              send_response(0, false, true),
+              {
+                  &C_icon_crossmark,
+                  "Back",
+              });
+
+UX_STEP_NOCB(ux_warning_blind_signing_msg_ahead_step,
+             pb,
+             {
+                 &C_icon_warning,
+                 "Blind signing",
+             });
+
+UX_STEP_NOCB(ux_warning_accept_blind_signing_msg_step,
+             pb,
+             {
+                 &C_icon_warning,
+                 "Accept risk and",
+             });
+
+UX_FLOW(ux_error_blind_signing_disabled_msg_flow,
+        &ux_warning_error_blind_signing_msg_1_step,
+        &ux_warning_error_blind_signing_msg_2_step);
+
+UX_FLOW(ux_blind_sign_msg_flow,
+        &ux_warning_blind_signing_msg_ahead_step,
+        &ux_sign_msg_flow_14_step,
+        &ux_sign_msg_flow_15_step,
+        &ux_warning_accept_blind_signing_msg_step,
+        &ux_sign_msg_flow_16_step,
+        &ux_sign_msg_flow_17_step);
 
 #endif
+
+static bool verify_message(char *message, size_t len) {
+    bool has_non_printable_chars = false;
+    for (size_t i = 0; i < len; i++) {
+        if ((message[i] > 0 && message[i] < 9) || (message[i] > 13 && message[i] < 32) ||
+            message[i] > 126) {
+            message[i] = '?';
+            has_non_printable_chars = true;
+        }
+    }
+    return has_non_printable_chars;
+}
+
+static void process_message(uint8_t *message, size_t data_length) {
+    uint16_t length_to_copy =
+        MIN(data_length, MAX_DISPLAY_MESSAGE_SIZE - msg_context.message_received_length);
+    if (length_to_copy > 0) {
+        memcpy(msg_context.message + msg_context.message_received_length, message, length_to_copy);
+
+        bool result = verify_message(msg_context.message + msg_context.message_received_length,
+                                     length_to_copy);
+        if (result) {
+            found_non_printable_chars = true;
+        }
+    }
+    msg_context.message_received_length += data_length;
+
+    if (msg_context.message_received_length > MAX_DISPLAY_MESSAGE_SIZE) {
+        char ellipsis[3] = "...";
+        int ellipsisLen = strlen(ellipsis);
+        memcpy(msg_context.message + MAX_DISPLAY_MESSAGE_SIZE - ellipsisLen, ellipsis, ellipsisLen);
+    }
+    msg_context.message[MAX_DISPLAY_MESSAGE_SIZE] = '\0';
+}
 
 static bool sign_message(void) {
     cx_ecfp_private_key_t private_key;
@@ -158,6 +255,11 @@ void handle_sign_msg(uint8_t p1,
         msg_context.len = U4BE(data_buffer, 0);
         data_buffer += 4;
         data_length -= 4;
+
+        found_non_printable_chars = false;
+        msg_context.message_received_length = 0;
+        memset(msg_context.message, 0, sizeof(msg_context.message));
+
         // initialize hash with the constant string to prepend
         err = cx_keccak_init_no_throw(&sha3_context, SHA3_KECCAK_BITS);
         if (err != CX_OK) {
@@ -199,6 +301,9 @@ void handle_sign_msg(uint8_t p1,
         THROW(ERR_MESSAGE_TOO_LONG);
     }
 
+    // add the received message part to the message buffer
+    process_message(data_buffer, data_length);
+
     // add the received message part to the hash and decrease the remaining length
     err = cx_hash_no_throw((cx_hash_t *) &sha3_context, 0, data_buffer, data_length, NULL, 0);
     if (err != CX_OK) {
@@ -233,10 +338,22 @@ void handle_sign_msg(uint8_t p1,
 
     app_state = APP_STATE_IDLE;
 
-#if defined(TARGET_STAX)
-    ui_sign_message_nbgl();
+#if defined(TARGET_STAX) || defined(TARGET_FLEX)
+    if (found_non_printable_chars && N_storage.setting_blind_signing == 0) {
+        disabled_blind_signing_msg_warn();
+    } else {
+        ui_sign_message_nbgl();
+    }
 #else
-    ux_flow_init(0, ux_sign_msg_flow, NULL);
+    if (found_non_printable_chars && N_storage.setting_blind_signing == 0) {
+        ux_flow_init(0, ux_error_blind_signing_disabled_msg_flow, NULL);
+    } else {
+        if (found_non_printable_chars) {
+            ux_flow_init(0, ux_blind_sign_msg_flow, NULL);
+        } else {
+            ux_flow_init(0, ux_sign_msg_flow, NULL);
+        }
+    }
 #endif
     *flags |= IO_ASYNCH_REPLY;
 }
